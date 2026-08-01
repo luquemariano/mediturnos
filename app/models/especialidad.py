@@ -1,14 +1,14 @@
 from typing import TYPE_CHECKING
+
 from sqlalchemy import Boolean, Integer, String, Text
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database.connection import Base
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-from app.models.profesional_especialidad import (
-    profesionales_especialidades,
-)
+
+
 if TYPE_CHECKING:
-    from app.models.profesional import Profesional
+    from app.models.profesional_especialidad import ProfesionalEspecialidad
+
 
 class Especialidad(Base):
     __tablename__ = "especialidades"
@@ -41,7 +41,10 @@ class Especialidad(Base):
         nullable=False,
         default=True,
     )
-    profesionales: Mapped[list["Profesional"]] = relationship(
-        secondary=profesionales_especialidades,
-        back_populates="especialidades",
+
+    profesionales_asignados: Mapped[
+        list["ProfesionalEspecialidad"]
+    ] = relationship(
+        back_populates="especialidad",
+        cascade="all, delete-orphan",
     )

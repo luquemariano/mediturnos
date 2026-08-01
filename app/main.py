@@ -1,12 +1,12 @@
 from fastapi import FastAPI
 
-from app.database.connection import Base, engine
+
 from app.models import Especialidad, Profesional
 from app.routers.especialidades import router as especialidades_router
 from app.routers.profesionales import router as profesionales_router
 
 
-Base.metadata.create_all(bind=engine)
+
 
 
 app = FastAPI(
