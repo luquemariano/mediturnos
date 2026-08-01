@@ -15,8 +15,9 @@ from app.repositories.turno_repository import (
 from app.schemas.turno import (
     TurnoActualizarEstado,
     TurnoCrear,
+    TurnoReprogramar,
 )
-
+from app.services.disponibilidad_service import obtener_horarios_libres
 
 def crear_turno(
     db: Session,
@@ -111,6 +112,52 @@ def cambiar_estado_turno(
     turno = obtener_turno(db, turno_id)
 
     turno.estado = datos.estado
+
+    db.commit()
+    db.refresh(turno)
+
+    return turno
+
+def reprogramar_turno(
+    db: Session,
+    turno_id: int,
+    datos: TurnoReprogramar,
+) -> Turno:
+    turno = obtener_turno(
+        db,
+        turno_id,
+    )
+
+    if turno.estado in {"cancelado", "finalizado"}:
+        raise HTTPException(
+            status_code=400,
+            detail="No se puede reprogramar un turno cancelado o finalizado.",
+        )
+
+    if datos.fecha_hora <= datetime.now():
+        raise HTTPException(
+            status_code=400,
+            detail="La nueva fecha y hora deben ser futuras.",
+        )
+
+    horarios_libres = obtener_horarios_libres(
+        db,
+        turno.prestacion_id,
+        datos.fecha_hora.date(),
+    )
+
+    fechas_disponibles = {
+        horario["fecha_hora"]
+        for horario in horarios_libres
+    }
+
+    if datos.fecha_hora not in fechas_disponibles:
+        raise HTTPException(
+            status_code=409,
+            detail="El horario seleccionado no está disponible.",
+        )
+
+    turno.fecha_hora = datos.fecha_hora
 
     db.commit()
     db.refresh(turno)

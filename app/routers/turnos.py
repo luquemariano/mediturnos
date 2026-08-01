@@ -12,8 +12,14 @@ from app.services.turno_service import (
     crear_turno,
     obtener_turno,
     obtener_turnos,
+    reprogramar_turno,
 )
-
+from app.schemas.turno import (
+    TurnoActualizarEstado,
+    TurnoCrear,
+    TurnoReprogramar,
+    TurnoRespuesta,
+)
 
 router = APIRouter(
     prefix="/turnos",
@@ -68,6 +74,22 @@ def actualizar_estado_turno(
     db: Session = Depends(obtener_db),
 ):
     return cambiar_estado_turno(
+        db,
+        turno_id,
+        datos,
+    )
+    
+@router.patch(
+    "/{turno_id}/reprogramar",
+    response_model=TurnoRespuesta,
+    summary="Reprogramar un turno",
+)
+def mover_turno(
+    turno_id: int,
+    datos: TurnoReprogramar,
+    db: Session = Depends(obtener_db),
+):
+    return reprogramar_turno(
         db,
         turno_id,
         datos,

@@ -24,6 +24,10 @@ class TurnoActualizarEstado(BaseModel):
     ]
 
 
+class TurnoReprogramar(BaseModel):
+    fecha_hora: datetime
+
+
 class TurnoRespuesta(BaseModel):
     id: int
     paciente_id: int
