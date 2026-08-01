@@ -4,10 +4,13 @@ from sqlalchemy import Boolean, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database.connection import Base
+from app.models.profesional_especialidad import (
+    profesionales_especialidades,
+)
 
 
 if TYPE_CHECKING:
-    from app.models.profesional_especialidad import ProfesionalEspecialidad
+    from app.models.especialidad import Especialidad
 
 
 class Profesional(Base):
@@ -50,9 +53,7 @@ class Profesional(Base):
         default=True,
     )
 
-    especialidades_asignadas: Mapped[
-        list["ProfesionalEspecialidad"]
-    ] = relationship(
-        back_populates="profesional",
-        cascade="all, delete-orphan",
+    especialidades: Mapped[list["Especialidad"]] = relationship(
+        secondary=profesionales_especialidades,
+        back_populates="profesionales",
     )

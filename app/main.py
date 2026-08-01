@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from app.models import Especialidad, Profesional
 from app.routers.especialidades import router as especialidades_router
 from app.routers.profesionales import router as profesionales_router
-
+from app.routers.prestaciones import router as prestaciones_router
 
 
 
@@ -17,6 +17,7 @@ app = FastAPI(
 
 app.include_router(especialidades_router)
 app.include_router(profesionales_router)
+app.include_router(prestaciones_router)
 
 @app.get("/")
 def inicio():
