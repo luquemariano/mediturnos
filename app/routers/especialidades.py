@@ -9,6 +9,7 @@ from app.schemas.especialidad import (
 )
 from app.services.especialidad_service import (
     crear_especialidad,
+    obtener_especialidad_por_id,
     obtener_especialidades,
 )
 
@@ -46,3 +47,24 @@ def listar_especialidades(
     db: Session = Depends(obtener_db),
 ):
     return obtener_especialidades(db)
+
+@router.get(
+    "/{especialidad_id}",
+    response_model=EspecialidadRespuesta,
+)
+def ver_especialidad(
+    especialidad_id: int,
+    db: Session = Depends(obtener_db),
+):
+    especialidad = obtener_especialidad_por_id(
+        db,
+        especialidad_id,
+    )
+
+    if especialidad is None:
+        raise HTTPException(
+            status_code=404,
+            detail="La especialidad solicitada no existe.",
+        )
+
+    return especialidad
