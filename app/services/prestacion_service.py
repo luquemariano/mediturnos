@@ -10,8 +10,12 @@ from app.repositories.prestacion_repository import (
     guardar_prestacion,
     listar_prestaciones,
 )
-from app.schemas.prestacion import PrestacionCrear
+from app.schemas.prestacion import (
+    PrestacionActualizar,
+    PrestacionCrear,
+)
 from app.models.prestacion import Prestacion
+
 
 
 def crear_prestacion(
