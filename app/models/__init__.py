@@ -1,0 +1,1 @@
+from app.models.especialidad import Especialidad
