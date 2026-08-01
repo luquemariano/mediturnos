@@ -3,11 +3,15 @@ from sqlalchemy.orm import Session
 
 from app.models.especialidad import Especialidad
 from app.repositories.especialidad_repository import (
+    actualizar_especialidad,
     buscar_por_id,
     buscar_todas,
     guardar_especialidad,
 )
-from app.schemas.especialidad import EspecialidadCrear
+from app.schemas.especialidad import (
+    EspecialidadActualizar,
+    EspecialidadCrear,
+)
 
 
 def crear_especialidad(
@@ -41,3 +45,23 @@ def obtener_especialidad_por_id(
         db,
         especialidad_id,
     )
+    
+def modificar_especialidad(
+    db: Session,
+    especialidad: Especialidad,
+    datos: EspecialidadActualizar,
+) -> Especialidad:
+    especialidad_actualizada = actualizar_especialidad(
+        especialidad,
+        datos,
+    )
+
+    try:
+        db.commit()
+        db.refresh(especialidad_actualizada)
+
+    except IntegrityError:
+        db.rollback()
+        raise
+
+    return especialidad_actualizada

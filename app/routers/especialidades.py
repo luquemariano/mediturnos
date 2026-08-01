@@ -4,15 +4,16 @@ from sqlalchemy.orm import Session
 
 from app.database.connection import obtener_db
 from app.schemas.especialidad import (
+    EspecialidadActualizar,
     EspecialidadCrear,
     EspecialidadRespuesta,
 )
 from app.services.especialidad_service import (
     crear_especialidad,
+    modificar_especialidad,
     obtener_especialidad_por_id,
     obtener_especialidades,
 )
-
 
 router = APIRouter(
     prefix="/especialidades",
@@ -68,3 +69,36 @@ def ver_especialidad(
         )
 
     return especialidad
+
+@router.patch(
+    "/{especialidad_id}",
+    response_model=EspecialidadRespuesta,
+)
+def actualizar_especialidad(
+    especialidad_id: int,
+    datos: EspecialidadActualizar,
+    db: Session = Depends(obtener_db),
+):
+    especialidad = obtener_especialidad_por_id(
+        db,
+        especialidad_id,
+    )
+
+    if especialidad is None:
+        raise HTTPException(
+            status_code=404,
+            detail="La especialidad solicitada no existe.",
+        )
+
+    try:
+        return modificar_especialidad(
+            db,
+            especialidad,
+            datos,
+        )
+
+    except IntegrityError:
+        raise HTTPException(
+            status_code=409,
+            detail="Ya existe una especialidad con ese nombre.",
+        )

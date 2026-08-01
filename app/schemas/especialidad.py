@@ -14,20 +14,24 @@ class EspecialidadCrear(BaseModel):
         ge=10,
         le=180,
     )
-    
-class EspecialidadCrear(BaseModel):
-    nombre: str = Field(
+
+
+class EspecialidadActualizar(BaseModel):
+    nombre: str | None = Field(
+        default=None,
         min_length=2,
         max_length=100,
     )
 
     descripcion: str | None = None
 
-    duracion_turno_minutos: int = Field(
-        default=30,
+    duracion_turno_minutos: int | None = Field(
+        default=None,
         ge=10,
         le=180,
     )
+
+    activa: bool | None = None
 
 
 class EspecialidadRespuesta(BaseModel):

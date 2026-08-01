@@ -2,6 +2,10 @@ from sqlalchemy.orm import Session
 
 from app.models.especialidad import Especialidad
 from app.schemas.especialidad import EspecialidadCrear
+from app.schemas.especialidad import (
+    EspecialidadActualizar,
+    EspecialidadCrear,
+)
 
 
 def guardar_especialidad(
@@ -34,3 +38,14 @@ def buscar_por_id(
         .filter(Especialidad.id == especialidad_id)
         .first()
     )
+
+def actualizar_especialidad(
+    especialidad: Especialidad,
+    datos: EspecialidadActualizar,
+) -> Especialidad:
+    cambios = datos.model_dump(exclude_unset=True)
+
+    for campo, valor in cambios.items():
+        setattr(especialidad, campo, valor)
+
+    return especialidad
