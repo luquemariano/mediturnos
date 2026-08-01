@@ -1,6 +1,17 @@
 from pydantic import BaseModel, ConfigDict, Field
 
 
+class EspecialidadProfesionalCrear(BaseModel):
+    especialidad_id: int = Field(
+        gt=0,
+    )
+
+    duracion_turno_minutos: int = Field(
+        ge=10,
+        le=180,
+    )
+
+
 class ProfesionalCrear(BaseModel):
     nombre: str = Field(
         min_length=2,
@@ -27,7 +38,7 @@ class ProfesionalCrear(BaseModel):
         max_length=150,
     )
 
-    especialidad_ids: list[int] = Field(
+    especialidades: list[EspecialidadProfesionalCrear] = Field(
         min_length=1,
     )
 
@@ -42,5 +53,3 @@ class ProfesionalRespuesta(BaseModel):
     activo: bool
 
     model_config = ConfigDict(from_attributes=True)
-    
-    

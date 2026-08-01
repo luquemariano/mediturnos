@@ -15,13 +15,25 @@ class EspecialidadesInvalidasError(Exception):
     pass
 
 
+class EspecialidadesDuplicadasError(Exception):
+    pass
+
+
 def crear_profesional(
     db: Session,
     datos: ProfesionalCrear,
 ) -> Profesional:
+    especialidad_ids = [
+        item.especialidad_id
+        for item in datos.especialidades
+    ]
+
+    if len(especialidad_ids) != len(set(especialidad_ids)):
+        raise EspecialidadesDuplicadasError
+
     especialidades = buscar_especialidades_por_ids(
         db,
-        datos.especialidad_ids,
+        especialidad_ids,
     )
 
     ids_encontrados = {
@@ -29,7 +41,7 @@ def crear_profesional(
         for especialidad in especialidades
     }
 
-    ids_solicitados = set(datos.especialidad_ids)
+    ids_solicitados = set(especialidad_ids)
 
     if ids_encontrados != ids_solicitados:
         raise EspecialidadesInvalidasError

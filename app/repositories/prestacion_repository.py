@@ -3,9 +3,7 @@ from sqlalchemy.orm import Session
 from app.models.especialidad import Especialidad
 from app.models.prestacion import Prestacion
 from app.models.profesional import Profesional
-from app.models.profesional_especialidad import (
-    profesionales_especialidades,
-)
+from app.models.profesional_especialidad import ProfesionalEspecialidad
 from app.schemas.prestacion import (
     PrestacionActualizar,
     PrestacionCrear,
@@ -38,13 +36,13 @@ def buscar_relacion_profesional_especialidad(
     db: Session,
     profesional_id: int,
     especialidad_id: int,
-):
+) -> ProfesionalEspecialidad | None:
     return (
-        db.query(profesionales_especialidades)
+        db.query(ProfesionalEspecialidad)
         .filter(
-            profesionales_especialidades.c.profesional_id
+            ProfesionalEspecialidad.profesional_id
             == profesional_id,
-            profesionales_especialidades.c.especialidad_id
+            ProfesionalEspecialidad.especialidad_id
             == especialidad_id,
         )
         .first()
@@ -85,7 +83,8 @@ def buscar_prestacion_por_id(
         .filter(Prestacion.id == prestacion_id)
         .first()
     )
-    
+
+
 def actualizar_prestacion(
     prestacion: Prestacion,
     datos: PrestacionActualizar,
