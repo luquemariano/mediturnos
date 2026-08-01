@@ -1,8 +1,10 @@
 from fastapi import FastAPI
 
 from app.database.connection import Base, engine
-from app.models import Especialidad
+from app.models import Especialidad, Profesional
 from app.routers.especialidades import router as especialidades_router
+from app.routers.profesionales import router as profesionales_router
+
 
 Base.metadata.create_all(bind=engine)
 
@@ -14,6 +16,7 @@ app = FastAPI(
 )
 
 app.include_router(especialidades_router)
+app.include_router(profesionales_router)
 
 @app.get("/")
 def inicio():
