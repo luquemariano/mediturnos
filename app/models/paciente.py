@@ -1,9 +1,14 @@
 from datetime import date
+from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, Date, String
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import Boolean, Date, ForeignKey, String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database.connection import Base
+
+
+if TYPE_CHECKING:
+    from app.models.usuario import Usuario
 
 
 class Paciente(Base):
@@ -11,6 +16,13 @@ class Paciente(Base):
 
     id: Mapped[int] = mapped_column(
         primary_key=True,
+        index=True,
+    )
+
+    usuario_id: Mapped[int | None] = mapped_column(
+        ForeignKey("usuarios.id"),
+        unique=True,
+        nullable=True,
         index=True,
     )
 
@@ -59,4 +71,8 @@ class Paciente(Base):
         Boolean,
         nullable=False,
         default=True,
+    )
+
+    usuario: Mapped["Usuario | None"] = relationship(
+        back_populates="paciente",
     )

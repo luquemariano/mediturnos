@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, String
+from sqlalchemy import Boolean, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database.connection import Base
@@ -8,6 +8,7 @@ from app.database.connection import Base
 
 if TYPE_CHECKING:
     from app.models.profesional_especialidad import ProfesionalEspecialidad
+    from app.models.usuario import Usuario
 
 
 class Profesional(Base):
@@ -15,6 +16,13 @@ class Profesional(Base):
 
     id: Mapped[int] = mapped_column(
         primary_key=True,
+        index=True,
+    )
+
+    usuario_id: Mapped[int | None] = mapped_column(
+        ForeignKey("usuarios.id"),
+        unique=True,
+        nullable=True,
         index=True,
     )
 
@@ -55,4 +63,8 @@ class Profesional(Base):
     ] = relationship(
         back_populates="profesional",
         cascade="all, delete-orphan",
+    )
+
+    usuario: Mapped["Usuario | None"] = relationship(
+        back_populates="profesional",
     )

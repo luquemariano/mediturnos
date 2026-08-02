@@ -62,10 +62,13 @@ def guardar_turno(
     )
 
     db.add(turno)
+
     return turno
 
 
-def buscar_todos(db: Session) -> list[Turno]:
+def buscar_todos(
+    db: Session,
+) -> list[Turno]:
     return (
         db.query(Turno)
         .order_by(Turno.fecha_hora)
@@ -80,5 +83,79 @@ def buscar_por_id(
     return (
         db.query(Turno)
         .filter(Turno.id == turno_id)
+        .first()
+    )
+
+
+def buscar_turnos_por_paciente_id(
+    db: Session,
+    paciente_id: int,
+) -> list[Turno]:
+    return (
+        db.query(Turno)
+        .filter(
+            Turno.paciente_id == paciente_id,
+        )
+        .order_by(Turno.fecha_hora)
+        .all()
+    )
+
+
+def buscar_turnos_por_profesional_id(
+    db: Session,
+    profesional_id: int,
+    estado: str | None = None,
+) -> list[Turno]:
+    consulta = (
+        db.query(Turno)
+        .join(
+            Prestacion,
+            Turno.prestacion_id == Prestacion.id,
+        )
+        .filter(
+            Prestacion.profesional_id == profesional_id,
+        )
+    )
+
+    if estado is not None:
+        consulta = consulta.filter(
+            Turno.estado == estado,
+        )
+
+    return (
+        consulta
+        .order_by(Turno.fecha_hora)
+        .all()
+    )
+    
+def buscar_turno_de_profesional(
+    db: Session,
+    turno_id: int,
+    profesional_id: int,
+) -> Turno | None:
+    return (
+        db.query(Turno)
+        .join(
+            Prestacion,
+            Turno.prestacion_id == Prestacion.id,
+        )
+        .filter(
+            Turno.id == turno_id,
+            Prestacion.profesional_id == profesional_id,
+        )
+        .first()
+    )
+    
+def buscar_turno_de_paciente(
+    db: Session,
+    turno_id: int,
+    paciente_id: int,
+) -> Turno | None:
+    return (
+        db.query(Turno)
+        .filter(
+            Turno.id == turno_id,
+            Turno.paciente_id == paciente_id,
+        )
         .first()
     )

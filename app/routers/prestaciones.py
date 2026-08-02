@@ -1,7 +1,9 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
+from app.core.dependencies import requiere_roles
 from app.database.connection import obtener_db
+from app.models.usuario import Usuario
 from app.schemas.prestacion import (
     PrestacionActualizar,
     PrestacionCrear,
@@ -14,6 +16,7 @@ from app.services.prestacion_service import (
     obtener_prestacion,
     obtener_prestaciones,
 )
+
 
 router = APIRouter(
     prefix="/prestaciones",
@@ -34,6 +37,9 @@ router = APIRouter(
 def registrar_prestacion(
     datos: PrestacionCrear,
     db: Session = Depends(obtener_db),
+    usuario_actual: Usuario = Depends(
+        requiere_roles("administrador")
+    ),
 ):
     return crear_prestacion(
         db,
@@ -49,6 +55,14 @@ def registrar_prestacion(
 )
 def listar_prestaciones(
     db: Session = Depends(obtener_db),
+    usuario_actual: Usuario = Depends(
+        requiere_roles(
+            "administrador",
+            "recepcionista",
+            "profesional",
+            "paciente",
+        )
+    ),
 ):
     return obtener_prestaciones(db)
 
@@ -62,12 +76,21 @@ def listar_prestaciones(
 def ver_prestacion(
     prestacion_id: int,
     db: Session = Depends(obtener_db),
+    usuario_actual: Usuario = Depends(
+        requiere_roles(
+            "administrador",
+            "recepcionista",
+            "profesional",
+            "paciente",
+        )
+    ),
 ):
     return obtener_prestacion(
         db,
         prestacion_id,
     )
-    
+
+
 @router.patch(
     "/{prestacion_id}",
     response_model=PrestacionRespuesta,
@@ -77,6 +100,9 @@ def actualizar_prestacion(
     prestacion_id: int,
     datos: PrestacionActualizar,
     db: Session = Depends(obtener_db),
+    usuario_actual: Usuario = Depends(
+        requiere_roles("administrador")
+    ),
 ):
     return modificar_prestacion(
         db,
@@ -93,6 +119,9 @@ def actualizar_prestacion(
 def eliminar_prestacion(
     prestacion_id: int,
     db: Session = Depends(obtener_db),
+    usuario_actual: Usuario = Depends(
+        requiere_roles("administrador")
+    ),
 ):
     return desactivar_prestacion(
         db,

@@ -36,3 +36,13 @@ def buscar_por_id(
         .filter(Paciente.id == paciente_id)
         .first()
     )
+    
+def buscar_paciente_por_usuario_id(
+    db: Session,
+    usuario_id: int,
+) -> Paciente | None:
+    return (
+        db.query(Paciente)
+        .filter(Paciente.usuario_id == usuario_id)
+        .first()
+    )

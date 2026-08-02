@@ -4,7 +4,9 @@ from app.models.especialidad import Especialidad
 from app.models.profesional import Profesional
 from app.models.profesional_especialidad import ProfesionalEspecialidad
 from app.schemas.profesional import ProfesionalCrear
+from sqlalchemy.orm import Session
 
+from app.models.profesional import Profesional
 
 def buscar_especialidades_por_ids(
     db: Session,
@@ -63,5 +65,14 @@ def buscar_por_id(
     return (
         db.query(Profesional)
         .filter(Profesional.id == profesional_id)
+        .first()
+    )
+def buscar_profesional_por_usuario_id(
+    db: Session,
+    usuario_id: int,
+) -> Profesional | None:
+    return (
+        db.query(Profesional)
+        .filter(Profesional.usuario_id == usuario_id)
         .first()
     )

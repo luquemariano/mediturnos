@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from app.core.dependencies import requiere_administrador
+from app.core.dependencies import requiere_roles
 from app.database.connection import obtener_db
 from app.models.usuario import Usuario
 from app.schemas.usuario import (
@@ -30,8 +30,8 @@ def registrar_usuario(
     datos: UsuarioCrear,
     db: Session = Depends(obtener_db),
     usuario_actual: Usuario = Depends(
-        requiere_administrador,
-    ),
+    requiere_roles("administrador"),
+)
 ):
     return crear_usuario(
         db,
@@ -47,7 +47,7 @@ def registrar_usuario(
 def listar_usuarios(
     db: Session = Depends(obtener_db),
     usuario_actual: Usuario = Depends(
-        requiere_administrador,
-    ),
+    requiere_roles("administrador"),
+)
 ):
     return obtener_usuarios(db)

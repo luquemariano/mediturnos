@@ -1,9 +1,11 @@
+from fastapi import HTTPException
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.models.profesional import Profesional
 from app.repositories.profesional_repository import (
     buscar_especialidades_por_ids,
+    buscar_profesional_por_usuario_id,
     buscar_por_id,
     buscar_todos,
     guardar_profesional,
@@ -77,3 +79,21 @@ def obtener_profesional_por_id(
         db,
         profesional_id,
     )
+
+
+def obtener_mi_profesional(
+    db: Session,
+    usuario_id: int,
+) -> Profesional:
+    profesional = buscar_profesional_por_usuario_id(
+        db,
+        usuario_id,
+    )
+
+    if profesional is None:
+        raise HTTPException(
+            status_code=404,
+            detail="El usuario no tiene un profesional asociado.",
+        )
+
+    return profesional

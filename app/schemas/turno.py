@@ -14,6 +14,15 @@ class TurnoCrear(BaseModel):
     )
 
 
+class TurnoCrearPropio(BaseModel):
+    prestacion_id: int = Field(gt=0)
+    fecha_hora: datetime
+    observaciones: str | None = Field(
+        default=None,
+        max_length=1000,
+    )
+
+
 class TurnoActualizarEstado(BaseModel):
     estado: Literal[
         "reservado",
@@ -36,4 +45,6 @@ class TurnoRespuesta(BaseModel):
     estado: str
     observaciones: str | None
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(
+        from_attributes=True,
+    )

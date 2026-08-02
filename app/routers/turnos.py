@@ -1,10 +1,13 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
+from app.core.dependencies import requiere_roles
 from app.database.connection import obtener_db
+from app.models.usuario import Usuario
 from app.schemas.turno import (
     TurnoActualizarEstado,
     TurnoCrear,
+    TurnoReprogramar,
     TurnoRespuesta,
 )
 from app.services.turno_service import (
@@ -14,12 +17,7 @@ from app.services.turno_service import (
     obtener_turnos,
     reprogramar_turno,
 )
-from app.schemas.turno import (
-    TurnoActualizarEstado,
-    TurnoCrear,
-    TurnoReprogramar,
-    TurnoRespuesta,
-)
+
 
 router = APIRouter(
     prefix="/turnos",
@@ -36,8 +34,17 @@ router = APIRouter(
 def registrar_turno(
     datos: TurnoCrear,
     db: Session = Depends(obtener_db),
+    usuario_actual: Usuario = Depends(
+        requiere_roles(
+            "administrador",
+            "recepcionista",
+        )
+    ),
 ):
-    return crear_turno(db, datos)
+    return crear_turno(
+        db,
+        datos,
+    )
 
 
 @router.get(
@@ -47,6 +54,13 @@ def registrar_turno(
 )
 def listar_turnos(
     db: Session = Depends(obtener_db),
+    usuario_actual: Usuario = Depends(
+        requiere_roles(
+            "administrador",
+            "recepcionista",
+            "profesional",
+        )
+    ),
 ):
     return obtener_turnos(db)
 
@@ -59,8 +73,18 @@ def listar_turnos(
 def ver_turno(
     turno_id: int,
     db: Session = Depends(obtener_db),
+    usuario_actual: Usuario = Depends(
+        requiere_roles(
+            "administrador",
+            "recepcionista",
+            "profesional",
+        )
+    ),
 ):
-    return obtener_turno(db, turno_id)
+    return obtener_turno(
+        db,
+        turno_id,
+    )
 
 
 @router.patch(
@@ -72,13 +96,20 @@ def actualizar_estado_turno(
     turno_id: int,
     datos: TurnoActualizarEstado,
     db: Session = Depends(obtener_db),
+    usuario_actual: Usuario = Depends(
+        requiere_roles(
+            "administrador",
+            "recepcionista",
+        )
+    ),
 ):
     return cambiar_estado_turno(
         db,
         turno_id,
         datos,
     )
-    
+
+
 @router.patch(
     "/{turno_id}/reprogramar",
     response_model=TurnoRespuesta,
@@ -88,6 +119,12 @@ def mover_turno(
     turno_id: int,
     datos: TurnoReprogramar,
     db: Session = Depends(obtener_db),
+    usuario_actual: Usuario = Depends(
+        requiere_roles(
+            "administrador",
+            "recepcionista",
+        )
+    ),
 ):
     return reprogramar_turno(
         db,
