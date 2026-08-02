@@ -1,13 +1,20 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
+from app.core.config import settings
 
-DATABASE_URL = "sqlite:///./mediturnos.db"
+
+engine_options = {}
+
+if settings.database_url.startswith("sqlite"):
+    engine_options["connect_args"] = {
+        "check_same_thread": False,
+    }
 
 
 engine = create_engine(
-    DATABASE_URL,
-    connect_args={"check_same_thread": False},
+    settings.database_url,
+    **engine_options,
 )
 
 
@@ -20,6 +27,7 @@ SessionLocal = sessionmaker(
 
 class Base(DeclarativeBase):
     pass
+
 
 def obtener_db():
     db = SessionLocal()
