@@ -7,7 +7,8 @@ from app.routers.prestaciones import router as prestaciones_router
 from app.routers.profesionales import router as profesionales_router
 from app.routers.turnos import router as turnos_router
 from app.routers import pagos
-
+from app.routers.usuarios import router as usuarios_router
+from app.routers.auth import router as auth_router
 
 app = FastAPI(
     title="MediTurnos API",
@@ -23,6 +24,8 @@ app.include_router(pacientes_router)
 app.include_router(turnos_router)
 app.include_router(disponibilidades_router)
 app.include_router(pagos.router)
+app.include_router(usuarios_router)
+app.include_router(auth_router)
 
 
 @app.get("/")

@@ -5,6 +5,9 @@ class Settings(BaseSettings):
     database_url: str = "sqlite:///./mediturnos.db"
     mercado_pago_access_token: str = ""
     mercado_pago_webhook_secret: str = ""
+    jwt_secret_key: str
+    jwt_algorithm: str = "HS256"
+    jwt_expire_minutes: int = 60
 
     model_config = SettingsConfigDict(
         env_file=".env",

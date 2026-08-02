@@ -6,3 +6,4 @@ from app.models.profesional import Profesional
 from app.models.profesional_especialidad import ProfesionalEspecialidad
 from app.models.turno import Turno
 from app.models.pago import Pago
+from app.models.usuario import Usuario
