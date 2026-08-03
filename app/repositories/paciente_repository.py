@@ -2,6 +2,9 @@ from sqlalchemy.orm import Session
 
 from app.models.paciente import Paciente
 from app.schemas.paciente import PacienteCrear
+from sqlalchemy.orm import Session
+
+from app.models.paciente import Paciente
 
 
 def guardar_paciente(
