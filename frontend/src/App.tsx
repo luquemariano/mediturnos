@@ -4,11 +4,14 @@ import axios from "axios";
 
 import "./App.css";
 import Dashboard from "./components/Dashboard";
+import Pacientes from "./components/Pacientes";
 import {
   iniciarSesion,
   obtenerUsuarioActual,
 } from "./services/authService";
 import type { UsuarioActual } from "./types/auth";
+
+type Vista = "dashboard" | "pacientes";
 
 function App() {
   const [email, setEmail] = useState("");
@@ -17,6 +20,8 @@ function App() {
   const [cargando, setCargando] = useState(false);
   const [usuario, setUsuario] =
     useState<UsuarioActual | null>(null);
+  const [vista, setVista] =
+    useState<Vista>("dashboard");
 
   async function manejarInicioSesion(
     evento: FormEvent<HTMLFormElement>,
@@ -40,12 +45,8 @@ function App() {
       const usuarioActual =
         await obtenerUsuarioActual();
 
-      console.log(
-        "Usuario actual:",
-        usuarioActual,
-      );
-
       setUsuario(usuarioActual);
+      setVista("dashboard");
     } catch (error) {
       if (axios.isAxiosError(error)) {
         const detalle =
@@ -68,16 +69,31 @@ function App() {
 
   function cerrarSesion() {
     localStorage.removeItem("access_token");
+
     setUsuario(null);
+    setVista("dashboard");
     setPassword("");
     setMensaje("");
   }
 
   if (usuario) {
+    if (vista === "pacientes") {
+      return (
+        <Pacientes
+          onVolver={() =>
+            setVista("dashboard")
+          }
+        />
+      );
+    }
+
     return (
       <Dashboard
         nombre={usuario.nombre}
         rol={usuario.rol}
+        onAbrirPacientes={() =>
+          setVista("pacientes")
+        }
         onCerrarSesion={cerrarSesion}
       />
     );

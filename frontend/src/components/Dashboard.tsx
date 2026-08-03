@@ -1,6 +1,7 @@
 type DashboardProps = {
   nombre: string;
   rol: string;
+  onAbrirPacientes: () => void;
   onCerrarSesion: () => void;
 };
 
@@ -37,7 +38,9 @@ const modulos: Modulo[] = [
   },
 ];
 
-function formatearRol(rol: string): string {
+function formatearRol(
+  rol: string,
+): string {
   if (!rol) {
     return "Usuario";
   }
@@ -51,14 +54,25 @@ function formatearRol(rol: string): string {
 function Dashboard({
   nombre,
   rol,
+  onAbrirPacientes,
   onCerrarSesion,
 }: DashboardProps) {
+  function manejarModulo(
+    titulo: string,
+  ) {
+    if (titulo === "Pacientes") {
+      onAbrirPacientes();
+    }
+  }
+
   return (
     <main className="pagina-dashboard">
       <section className="dashboard">
         <header className="dashboard-encabezado">
           <div className="marca dashboard-marca">
-            <span className="marca-icono">+</span>
+            <span className="marca-icono">
+              +
+            </span>
 
             <div>
               <h1>MediTurnos</h1>
@@ -75,7 +89,9 @@ function Dashboard({
 
             <div>
               <strong>{nombre}</strong>
-              <span>{formatearRol(rol)}</span>
+              <span>
+                {formatearRol(rol)}
+              </span>
             </div>
           </div>
         </header>
@@ -108,13 +124,21 @@ function Dashboard({
               key={modulo.titulo}
               type="button"
               className="modulo-tarjeta"
+              onClick={() =>
+                manejarModulo(
+                  modulo.titulo,
+                )
+              }
             >
               <span className="modulo-icono">
                 {modulo.icono}
               </span>
 
               <span className="modulo-contenido">
-                <strong>{modulo.titulo}</strong>
+                <strong>
+                  {modulo.titulo}
+                </strong>
+
                 <small>
                   {modulo.descripcion}
                 </small>
