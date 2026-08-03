@@ -89,3 +89,50 @@ button {
 button:hover {
   background: #1d4ed8;
 }
+
+.mensaje-login {
+  text-align: center;
+  color: #344054;
+  font-size: 14px;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.tarjeta-bienvenida {
+  display: grid;
+  gap: 24px;
+}
+
+.usuario-bienvenida {
+  display: grid;
+  gap: 10px;
+}
+
+.usuario-bienvenida h2 {
+  color: #172033;
+  font-size: 24px;
+}
+
+.usuario-bienvenida p {
+  color: #667085;
+}
+
+.etiqueta-bienvenida {
+  color: #2563eb !important;
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.boton-cerrar-sesion {
+  background: #e9eef8;
+  color: #172033;
+}
+
+.boton-cerrar-sesion:hover {
+  background: #d9e2f2;
+}
