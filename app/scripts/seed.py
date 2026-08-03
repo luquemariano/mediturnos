@@ -12,9 +12,50 @@ from app.models.profesional_especialidad import (
     ProfesionalEspecialidad,
 )
 from app.models.turno import Turno
+from app.models.usuario import Usuario
+from app.core.security import generar_hash_password
 
 
 MARCA_TURNO_DEMO = "[DEMO_MEDI_TURNOS]"
+ADMIN_DEMO_EMAIL = "admin@mediturnos.demo"
+ADMIN_DEMO_PASSWORD = "Demo1234!"
+
+
+
+
+def obtener_o_crear_admin_demo(
+    db: Session,
+) -> Usuario:
+    usuario = (
+        db.query(Usuario)
+        .filter(Usuario.email == ADMIN_DEMO_EMAIL)
+        .first()
+    )
+
+    password_hash = generar_hash_password(
+        ADMIN_DEMO_PASSWORD,
+    )
+
+    if usuario is not None:
+        usuario.nombre = "Administrador Demo"
+        usuario.password_hash = password_hash
+        usuario.rol = "administrador"
+        usuario.activo = True
+
+        return usuario
+
+    usuario = Usuario(
+        nombre="Administrador Demo",
+        email=ADMIN_DEMO_EMAIL,
+        password_hash=password_hash,
+        rol="administrador",
+        activo=True,
+    )
+
+    db.add(usuario)
+    db.flush()
+
+    return usuario
 
 
 def obtener_o_crear_especialidad(
@@ -282,6 +323,10 @@ def eliminar_turnos_demo(
 def cargar_datos_demo(
     db: Session,
 ) -> None:
+    print("Cargando administrador demo...")
+
+    obtener_o_crear_admin_demo(db)
+
     print("Cargando especialidades...")
 
     clinica_medica = obtener_o_crear_especialidad(
@@ -701,6 +746,11 @@ def cargar_datos_demo(
     print("Prestaciones: 6")
     print("Pacientes demo disponibles: 8")
     print("Turnos demo recreados: 15")
+    print("")
+    print("Credenciales de acceso demo")
+    print("---------------------------")
+    print(f"Email: {ADMIN_DEMO_EMAIL}")
+    print(f"Contraseña: {ADMIN_DEMO_PASSWORD}")
 
 
 def main() -> None:
