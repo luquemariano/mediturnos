@@ -39,10 +39,21 @@ class TurnoReprogramar(BaseModel):
 
 class TurnoRespuesta(BaseModel):
     id: int
+
     paciente_id: int
+    paciente_nombre: str
+
     prestacion_id: int
+    prestacion_nombre: str
+
+    profesional_nombre: str
+
+    especialidad_nombre: str
+
     fecha_hora: datetime
+
     estado: str
+
     observaciones: str | None
 
     model_config = ConfigDict(

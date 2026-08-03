@@ -1,11 +1,12 @@
 from datetime import datetime
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.models.paciente import Paciente
 from app.models.prestacion import Prestacion
 from app.models.turno import Turno
 from app.schemas.turno import TurnoCrear
+
 
 
 def buscar_paciente_por_id(
@@ -71,6 +72,13 @@ def buscar_todos(
 ) -> list[Turno]:
     return (
         db.query(Turno)
+        .options(
+            joinedload(Turno.paciente),
+            joinedload(Turno.prestacion)
+            .joinedload(Prestacion.profesional),
+            joinedload(Turno.prestacion)
+            .joinedload(Prestacion.especialidad),
+        )
         .order_by(Turno.fecha_hora)
         .all()
     )

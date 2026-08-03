@@ -5,23 +5,39 @@ import axios from "axios";
 import "./App.css";
 import Dashboard from "./components/Dashboard";
 import Pacientes from "./components/Pacientes";
+import Turnos from "./components/Turnos";
 import {
   iniciarSesion,
   obtenerUsuarioActual,
 } from "./services/authService";
 import type { UsuarioActual } from "./types/auth";
 
-type Vista = "dashboard" | "pacientes";
+
+type Vista =
+  | "dashboard"
+  | "pacientes"
+  | "turnos";
+
 
 function App() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [mensaje, setMensaje] = useState("");
-  const [cargando, setCargando] = useState(false);
+  const [email, setEmail] =
+    useState("");
+
+  const [password, setPassword] =
+    useState("");
+
+  const [mensaje, setMensaje] =
+    useState("");
+
+  const [cargando, setCargando] =
+    useState(false);
+
   const [usuario, setUsuario] =
     useState<UsuarioActual | null>(null);
+
   const [vista, setVista] =
     useState<Vista>("dashboard");
+
 
   async function manejarInicioSesion(
     evento: FormEvent<HTMLFormElement>,
@@ -32,10 +48,11 @@ function App() {
     setCargando(true);
 
     try {
-      const respuesta = await iniciarSesion({
-        email,
-        password,
-      });
+      const respuesta =
+        await iniciarSesion({
+          email,
+          password,
+        });
 
       localStorage.setItem(
         "access_token",
@@ -67,8 +84,11 @@ function App() {
     }
   }
 
+
   function cerrarSesion() {
-    localStorage.removeItem("access_token");
+    localStorage.removeItem(
+      "access_token",
+    );
 
     setUsuario(null);
     setVista("dashboard");
@@ -76,10 +96,21 @@ function App() {
     setMensaje("");
   }
 
+
   if (usuario) {
     if (vista === "pacientes") {
       return (
         <Pacientes
+          onVolver={() =>
+            setVista("dashboard")
+          }
+        />
+      );
+    }
+
+    if (vista === "turnos") {
+      return (
+        <Turnos
           onVolver={() =>
             setVista("dashboard")
           }
@@ -94,19 +125,26 @@ function App() {
         onAbrirPacientes={() =>
           setVista("pacientes")
         }
+        onAbrirTurnos={() =>
+          setVista("turnos")
+        }
         onCerrarSesion={cerrarSesion}
       />
     );
   }
 
+
   return (
     <main className="pagina-login">
       <section className="tarjeta-login">
         <div className="marca">
-          <span className="marca-icono">+</span>
+          <span className="marca-icono">
+            +
+          </span>
 
           <div>
             <h1>MediTurnos</h1>
+
             <p>
               Gestión médica simple y segura
             </p>
@@ -124,9 +162,13 @@ function App() {
               type="email"
               value={email}
               onChange={(evento) =>
-                setEmail(evento.target.value)
+                setEmail(
+                  evento.target.value,
+                )
               }
-              placeholder="usuario@mediturnos.com"
+              placeholder={
+                "usuario@mediturnos.com"
+              }
               required
             />
           </div>
@@ -141,9 +183,13 @@ function App() {
               type="password"
               value={password}
               onChange={(evento) =>
-                setPassword(evento.target.value)
+                setPassword(
+                  evento.target.value,
+                )
               }
-              placeholder="Ingresá tu contraseña"
+              placeholder={
+                "Ingresá tu contraseña"
+              }
               required
             />
           </div>

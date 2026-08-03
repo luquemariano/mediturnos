@@ -48,4 +48,29 @@ class Turno(Base):
     )
 
     paciente: Mapped["Paciente"] = relationship()
+
     prestacion: Mapped["Prestacion"] = relationship()
+
+    @property
+    def paciente_nombre(self) -> str:
+        return (
+            f"{self.paciente.nombre} "
+            f"{self.paciente.apellido}"
+        )
+
+    @property
+    def prestacion_nombre(self) -> str:
+        return self.prestacion.nombre
+
+    @property
+    def profesional_nombre(self) -> str:
+        profesional = self.prestacion.profesional
+
+        return (
+            f"{profesional.nombre} "
+            f"{profesional.apellido}"
+        )
+
+    @property
+    def especialidad_nombre(self) -> str:
+        return self.prestacion.especialidad.nombre

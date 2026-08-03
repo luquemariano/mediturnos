@@ -2,41 +2,18 @@ type DashboardProps = {
   nombre: string;
   rol: string;
   onAbrirPacientes: () => void;
+  onAbrirTurnos: () => void;
   onCerrarSesion: () => void;
 };
+
 
 type Modulo = {
   titulo: string;
   descripcion: string;
   icono: string;
+  accion?: () => void;
 };
 
-const modulos: Modulo[] = [
-  {
-    titulo: "Pacientes",
-    descripcion:
-      "Consultar y administrar la información de los pacientes.",
-    icono: "👥",
-  },
-  {
-    titulo: "Profesionales",
-    descripcion:
-      "Gestionar profesionales, matrículas y especialidades.",
-    icono: "🩺",
-  },
-  {
-    titulo: "Turnos",
-    descripcion:
-      "Consultar reservas, estados y agenda médica.",
-    icono: "📅",
-  },
-  {
-    titulo: "Pagos",
-    descripcion:
-      "Revisar pagos y operaciones vinculadas a los turnos.",
-    icono: "💳",
-  },
-];
 
 function formatearRol(
   rol: string,
@@ -51,19 +28,43 @@ function formatearRol(
   );
 }
 
+
 function Dashboard({
   nombre,
   rol,
   onAbrirPacientes,
+  onAbrirTurnos,
   onCerrarSesion,
 }: DashboardProps) {
-  function manejarModulo(
-    titulo: string,
-  ) {
-    if (titulo === "Pacientes") {
-      onAbrirPacientes();
-    }
-  }
+  const modulos: Modulo[] = [
+    {
+      titulo: "Pacientes",
+      descripcion:
+        "Consultar y administrar la información de los pacientes.",
+      icono: "👥",
+      accion: onAbrirPacientes,
+    },
+    {
+      titulo: "Profesionales",
+      descripcion:
+        "Gestionar profesionales, matrículas y especialidades.",
+      icono: "🩺",
+    },
+    {
+      titulo: "Turnos",
+      descripcion:
+        "Consultar reservas, estados y agenda médica.",
+      icono: "📅",
+      accion: onAbrirTurnos,
+    },
+    {
+      titulo: "Pagos",
+      descripcion:
+        "Revisar pagos y operaciones vinculadas a los turnos.",
+      icono: "💳",
+    },
+  ];
+
 
   return (
     <main className="pagina-dashboard">
@@ -76,6 +77,7 @@ function Dashboard({
 
             <div>
               <h1>MediTurnos</h1>
+
               <p>
                 Gestión médica simple y segura
               </p>
@@ -84,11 +86,14 @@ function Dashboard({
 
           <div className="usuario-resumen">
             <div className="usuario-avatar">
-              {nombre.charAt(0).toUpperCase()}
+              {nombre
+                .charAt(0)
+                .toUpperCase()}
             </div>
 
             <div>
               <strong>{nombre}</strong>
+
               <span>
                 {formatearRol(rol)}
               </span>
@@ -107,8 +112,8 @@ function Dashboard({
             </h2>
 
             <p>
-              Desde este panel podés acceder a
-              los principales módulos de
+              Desde este panel podés acceder
+              a los principales módulos de
               MediTurnos.
             </p>
           </div>
@@ -124,11 +129,8 @@ function Dashboard({
               key={modulo.titulo}
               type="button"
               className="modulo-tarjeta"
-              onClick={() =>
-                manejarModulo(
-                  modulo.titulo,
-                )
-              }
+              onClick={modulo.accion}
+              disabled={!modulo.accion}
             >
               <span className="modulo-icono">
                 {modulo.icono}
@@ -145,7 +147,9 @@ function Dashboard({
               </span>
 
               <span className="modulo-flecha">
-                →
+                {modulo.accion
+                  ? "→"
+                  : "Próximamente"}
               </span>
             </button>
           ))}
