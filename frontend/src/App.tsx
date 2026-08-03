@@ -3,6 +3,7 @@ import type { FormEvent } from "react";
 import axios from "axios";
 
 import "./App.css";
+import Dashboard from "./components/Dashboard";
 import {
   iniciarSesion,
   obtenerUsuarioActual,
@@ -14,9 +15,8 @@ function App() {
   const [password, setPassword] = useState("");
   const [mensaje, setMensaje] = useState("");
   const [cargando, setCargando] = useState(false);
-  const [usuario, setUsuario] = useState<UsuarioActual | null>(
-    null,
-  );
+  const [usuario, setUsuario] =
+    useState<UsuarioActual | null>(null);
 
   async function manejarInicioSesion(
     evento: FormEvent<HTMLFormElement>,
@@ -37,13 +37,19 @@ function App() {
         respuesta.access_token,
       );
 
-      const usuarioActual = await obtenerUsuarioActual();
+      const usuarioActual =
+        await obtenerUsuarioActual();
+
+      console.log(
+        "Usuario actual:",
+        usuarioActual,
+      );
 
       setUsuario(usuarioActual);
-      setMensaje("");
     } catch (error) {
       if (axios.isAxiosError(error)) {
-        const detalle = error.response?.data?.detail;
+        const detalle =
+          error.response?.data?.detail;
 
         setMensaje(
           typeof detalle === "string"
@@ -62,54 +68,18 @@ function App() {
 
   function cerrarSesion() {
     localStorage.removeItem("access_token");
-
     setUsuario(null);
-    setEmail("");
     setPassword("");
     setMensaje("");
   }
 
   if (usuario) {
     return (
-      <main className="pagina-login">
-        <section className="tarjeta-login tarjeta-bienvenida">
-          <div className="marca">
-            <span className="marca-icono">+</span>
-
-            <div>
-              <h1>MediTurnos</h1>
-              <p>Gestión médica simple y segura</p>
-            </div>
-          </div>
-
-          <div className="usuario-bienvenida">
-            <p className="etiqueta-bienvenida">
-              Sesión iniciada
-            </p>
-
-            <h2>
-              Bienvenido, {usuario.nombre}
-            </h2>
-
-            <p>
-              Rol:{" "}
-              <strong>{usuario.rol}</strong>
-            </p>
-
-            <p>
-              {usuario.email}
-            </p>
-          </div>
-
-          <button
-            type="button"
-            className="boton-cerrar-sesion"
-            onClick={cerrarSesion}
-          >
-            Cerrar sesión
-          </button>
-        </section>
-      </main>
+      <Dashboard
+        nombre={usuario.nombre}
+        rol={usuario.rol}
+        onCerrarSesion={cerrarSesion}
+      />
     );
   }
 
@@ -121,7 +91,9 @@ function App() {
 
           <div>
             <h1>MediTurnos</h1>
-            <p>Gestión médica simple y segura</p>
+            <p>
+              Gestión médica simple y segura
+            </p>
           </div>
         </div>
 
