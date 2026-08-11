@@ -8,7 +8,9 @@ from mercadopago.webhook import (
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
+from app.core.dependencies import requiere_roles
 from app.database.connection import obtener_db
+from app.models.usuario import Usuario
 from app.schemas.pago import PagoRespuesta
 from app.services.pago_service import (
     crear_preferencia_pago,
@@ -32,10 +34,18 @@ router = APIRouter(
 def crear_preferencia(
     turno_id: int,
     db: Session = Depends(obtener_db),
+    usuario_actual: Usuario = Depends(
+        requiere_roles(
+            "administrador",
+            "recepcionista",
+            "paciente",
+        )
+    ),
 ):
     return crear_preferencia_pago(
         db,
         turno_id,
+        usuario_actual,
     )
 
 
@@ -47,10 +57,18 @@ def crear_preferencia(
 def consultar_pago_turno(
     turno_id: int,
     db: Session = Depends(obtener_db),
+    usuario_actual: Usuario = Depends(
+        requiere_roles(
+            "administrador",
+            "recepcionista",
+            "paciente",
+        )
+    ),
 ):
     return obtener_pago_por_turno(
         db,
         turno_id,
+        usuario_actual,
     )
 
 

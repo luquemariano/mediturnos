@@ -6,6 +6,8 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.models.pago import Pago
+from app.models.turno import Turno
+from app.models.usuario import Usuario
 from app.repositories.pago_repository import (
     actualizar_pago_desde_mercado_pago,
     buscar_pago_por_turno,
@@ -15,10 +17,11 @@ from app.repositories.pago_repository import (
 )
 
 
-def crear_preferencia_pago(
+def validar_acceso_pago(
     db: Session,
     turno_id: int,
-) -> Pago:
+    usuario_actual: Usuario,
+) -> Turno:
     turno = buscar_turno_por_id(
         db,
         turno_id,
@@ -29,6 +32,35 @@ def crear_preferencia_pago(
             status_code=404,
             detail="Turno no encontrado.",
         )
+
+    if usuario_actual.rol in {
+        "administrador",
+        "recepcionista",
+    }:
+        return turno
+
+    if (
+        usuario_actual.rol != "paciente"
+        or turno.paciente.usuario_id != usuario_actual.id
+    ):
+        raise HTTPException(
+            status_code=403,
+            detail="No tiene permisos para operar sobre este pago.",
+        )
+
+    return turno
+
+
+def crear_preferencia_pago(
+    db: Session,
+    turno_id: int,
+    usuario_actual: Usuario,
+) -> Pago:
+    turno = validar_acceso_pago(
+        db,
+        turno_id,
+        usuario_actual,
+    )
 
     if turno.estado in {"cancelado", "finalizado"}:
         raise HTTPException(
@@ -187,7 +219,14 @@ def procesar_notificacion_pago(
 def obtener_pago_por_turno(
     db: Session,
     turno_id: int,
+    usuario_actual: Usuario,
 ) -> Pago:
+    validar_acceso_pago(
+        db,
+        turno_id,
+        usuario_actual,
+    )
+
     pago = buscar_pago_por_turno(
         db,
         turno_id,
