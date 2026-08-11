@@ -2,7 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.core.dependencies import requiere_roles
 from app.database.connection import obtener_db
+from app.models.usuario import Usuario
 from app.schemas.especialidad import (
     EspecialidadActualizar,
     EspecialidadCrear,
@@ -29,6 +31,9 @@ router = APIRouter(
 def registrar_especialidad(
     datos: EspecialidadCrear,
     db: Session = Depends(obtener_db),
+    usuario_actual: Usuario = Depends(
+        requiere_roles("administrador")
+    ),
 ):
     try:
         return crear_especialidad(db, datos)
@@ -46,6 +51,14 @@ def registrar_especialidad(
 )
 def listar_especialidades(
     db: Session = Depends(obtener_db),
+    usuario_actual: Usuario = Depends(
+        requiere_roles(
+            "administrador",
+            "recepcionista",
+            "profesional",
+            "paciente",
+        )
+    ),
 ):
     return obtener_especialidades(db)
 
@@ -56,6 +69,14 @@ def listar_especialidades(
 def ver_especialidad(
     especialidad_id: int,
     db: Session = Depends(obtener_db),
+    usuario_actual: Usuario = Depends(
+        requiere_roles(
+            "administrador",
+            "recepcionista",
+            "profesional",
+            "paciente",
+        )
+    ),
 ):
     especialidad = obtener_especialidad_por_id(
         db,
@@ -78,6 +99,9 @@ def actualizar_especialidad(
     especialidad_id: int,
     datos: EspecialidadActualizar,
     db: Session = Depends(obtener_db),
+    usuario_actual: Usuario = Depends(
+        requiere_roles("administrador")
+    ),
 ):
     especialidad = obtener_especialidad_por_id(
         db,

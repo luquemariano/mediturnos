@@ -1,7 +1,9 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
+from app.core.dependencies import requiere_roles
 from app.database.connection import obtener_db
+from app.models.usuario import Usuario
 from app.schemas.disponibilidad import (
     DisponibilidadCrear,
     DisponibilidadRespuesta,
@@ -13,12 +15,39 @@ from app.services.disponibilidad_service import (
     obtener_disponibilidades_profesional,
     obtener_horarios_libres,
 )
+from app.services.profesional_service import obtener_mi_profesional
 from datetime import date
 
 router = APIRouter(
     prefix="/disponibilidades",
     tags=["Disponibilidades"],
 )
+
+
+def validar_gestion_disponibilidad(
+    db: Session,
+    usuario_actual: Usuario,
+    profesional_id: int,
+) -> None:
+    if usuario_actual.rol in {
+        "administrador",
+        "recepcionista",
+    }:
+        return
+
+    profesional = obtener_mi_profesional(
+        db,
+        usuario_actual.id,
+    )
+
+    if profesional.id != profesional_id:
+        raise HTTPException(
+            status_code=403,
+            detail=(
+                "No tiene permisos para gestionar la "
+                "disponibilidad de otro profesional."
+            ),
+        )
 
 
 @router.post(
@@ -30,7 +59,20 @@ router = APIRouter(
 def registrar_disponibilidad(
     datos: DisponibilidadCrear,
     db: Session = Depends(obtener_db),
+    usuario_actual: Usuario = Depends(
+        requiere_roles(
+            "administrador",
+            "recepcionista",
+            "profesional",
+        )
+    ),
 ):
+    validar_gestion_disponibilidad(
+        db,
+        usuario_actual,
+        datos.profesional_id,
+    )
+
     return crear_disponibilidad(
         db,
         datos,
@@ -44,6 +86,12 @@ def registrar_disponibilidad(
 )
 def listar_disponibilidades(
     db: Session = Depends(obtener_db),
+    usuario_actual: Usuario = Depends(
+        requiere_roles(
+            "administrador",
+            "recepcionista",
+        )
+    ),
 ):
     return obtener_disponibilidades(db)
 
@@ -56,7 +104,20 @@ def listar_disponibilidades(
 def listar_disponibilidad_profesional(
     profesional_id: int,
     db: Session = Depends(obtener_db),
+    usuario_actual: Usuario = Depends(
+        requiere_roles(
+            "administrador",
+            "recepcionista",
+            "profesional",
+        )
+    ),
 ):
+    validar_gestion_disponibilidad(
+        db,
+        usuario_actual,
+        profesional_id,
+    )
+
     return obtener_disponibilidades_profesional(
         db,
         profesional_id,
@@ -71,6 +132,14 @@ def listar_horarios_libres(
     prestacion_id: int,
     fecha: date,
     db: Session = Depends(obtener_db),
+    usuario_actual: Usuario = Depends(
+        requiere_roles(
+            "administrador",
+            "recepcionista",
+            "profesional",
+            "paciente",
+        )
+    ),
 ):
     return obtener_horarios_libres(
         db,
