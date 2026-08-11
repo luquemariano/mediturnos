@@ -73,6 +73,7 @@ def crear_turno(
         db,
         prestacion.profesional_id,
         datos.fecha_hora,
+        prestacion.duracion_minutos,
     )
 
     if conflicto is not None:
@@ -177,10 +178,25 @@ def reprogramar_turno(
             detail="La nueva fecha y hora deben ser futuras.",
         )
 
+    conflicto = buscar_conflicto_horario(
+        db,
+        turno.prestacion.profesional_id,
+        datos.fecha_hora,
+        turno.prestacion.duracion_minutos,
+        turno_id_excluido=turno.id,
+    )
+
+    if conflicto is not None:
+        raise HTTPException(
+            status_code=409,
+            detail="El profesional ya tiene un turno en ese horario.",
+        )
+
     horarios_libres = obtener_horarios_libres(
         db,
         turno.prestacion_id,
         datos.fecha_hora.date(),
+        turno_id_excluido=turno.id,
     )
 
     fechas_disponibles = {

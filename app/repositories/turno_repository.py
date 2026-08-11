@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from sqlalchemy.orm import Session, joinedload
 
@@ -34,21 +34,46 @@ def buscar_prestacion_por_id(
 def buscar_conflicto_horario(
     db: Session,
     profesional_id: int,
-    fecha_hora: datetime,
+    inicio_nuevo: datetime,
+    duracion_minutos: int,
+    turno_id_excluido: int | None = None,
 ) -> Turno | None:
-    return (
+    fin_nuevo = inicio_nuevo + timedelta(
+        minutes=duracion_minutos,
+    )
+
+    consulta = (
         db.query(Turno)
         .join(
             Prestacion,
             Turno.prestacion_id == Prestacion.id,
         )
+        .options(joinedload(Turno.prestacion))
         .filter(
             Prestacion.profesional_id == profesional_id,
-            Turno.fecha_hora == fecha_hora,
+            Turno.fecha_hora < fin_nuevo,
             Turno.estado != "cancelado",
         )
-        .first()
     )
+
+    if turno_id_excluido is not None:
+        consulta = consulta.filter(
+            Turno.id != turno_id_excluido,
+        )
+
+    for turno in consulta.all():
+        inicio_existente = turno.fecha_hora
+        fin_existente = inicio_existente + timedelta(
+            minutes=turno.prestacion.duracion_minutos,
+        )
+
+        if (
+            inicio_nuevo < fin_existente
+            and fin_nuevo > inicio_existente
+        ):
+            return turno
+
+    return None
 
 
 def guardar_turno(

@@ -77,6 +77,7 @@ def obtener_horarios_libres(
     db: Session,
     prestacion_id: int,
     fecha: date,
+    turno_id_excluido: int | None = None,
 ) -> list[dict]:
     prestacion = buscar_prestacion(
         db,
@@ -116,6 +117,7 @@ def obtener_horarios_libres(
         db,
         prestacion.profesional_id,
         fecha,
+        turno_id_excluido,
     )
 
     duracion = timedelta(

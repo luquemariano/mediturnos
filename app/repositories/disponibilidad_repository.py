@@ -90,6 +90,7 @@ def buscar_turnos_del_dia(
     db: Session,
     profesional_id: int,
     fecha: date,
+    turno_id_excluido: int | None = None,
 ) -> list[Turno]:
     inicio_dia = datetime.combine(
         fecha,
@@ -101,7 +102,7 @@ def buscar_turnos_del_dia(
         time.max,
     )
 
-    return (
+    consulta = (
         db.query(Turno)
         .join(
             Prestacion,
@@ -113,5 +114,11 @@ def buscar_turnos_del_dia(
             Turno.fecha_hora <= fin_dia,
             Turno.estado != "cancelado",
         )
-        .all()
     )
+
+    if turno_id_excluido is not None:
+        consulta = consulta.filter(
+            Turno.id != turno_id_excluido,
+        )
+
+    return consulta.all()
