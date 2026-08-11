@@ -7,12 +7,14 @@ import {
 import axios from "axios";
 
 import "./Profesionales.css";
+import ModalProfesional from "./ModalProfesional";
 import { obtenerProfesionales } from "../services/profesionalService";
 import type { Profesional } from "../types/profesional";
 
 
 type ProfesionalesProps = {
   onVolver: () => void;
+  rol: string;
 };
 
 
@@ -29,6 +31,7 @@ function normalizarTexto(
 
 function Profesionales({
   onVolver,
+  rol,
 }: ProfesionalesProps) {
   const [profesionales, setProfesionales] =
     useState<Profesional[]>([]);
@@ -40,6 +43,12 @@ function Profesionales({
     useState(true);
 
   const [mensajeError, setMensajeError] =
+    useState("");
+
+  const [mostrarFormulario,
+    setMostrarFormulario] = useState(false);
+
+  const [mensajeExito, setMensajeExito] =
     useState("");
 
 
@@ -112,6 +121,21 @@ function Profesionales({
   }
 
 
+  function manejarProfesionalCreado(
+    profesional: Profesional,
+  ) {
+    setProfesionales((datosAnteriores) => [
+      profesional,
+      ...datosAnteriores,
+    ]);
+    setBusqueda("");
+    setMostrarFormulario(false);
+    setMensajeExito(
+      `${profesional.nombre} ${profesional.apellido} fue registrado correctamente.`,
+    );
+  }
+
+
   return (
     <main className="pagina-dashboard">
       <section className="dashboard">
@@ -150,7 +174,29 @@ function Profesionales({
                 sus datos de contacto y matrícula.
               </p>
             </div>
+
+            {rol === "administrador" && (
+              <button
+                type="button"
+                className="boton-primario"
+                onClick={() => {
+                  setMensajeExito("");
+                  setMostrarFormulario(true);
+                }}
+              >
+                Nuevo profesional
+              </button>
+            )}
           </div>
+
+          {mensajeExito && (
+            <p
+              className="profesionales-exito"
+              role="status"
+            >
+              {mensajeExito}
+            </p>
+          )}
 
           {!cargando
             && !mensajeError
@@ -339,6 +385,17 @@ function Profesionales({
             )}
         </section>
       </section>
+
+      {mostrarFormulario && (
+        <ModalProfesional
+          onCerrar={() =>
+            setMostrarFormulario(false)
+          }
+          onProfesionalCreado={
+            manejarProfesionalCreado
+          }
+        />
+      )}
     </main>
   );
 }

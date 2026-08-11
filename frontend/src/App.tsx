@@ -123,6 +123,7 @@ function App() {
     if (vista === "profesionales") {
       return (
         <Profesionales
+          rol={usuario.rol}
           onVolver={() =>
             setVista("dashboard")
           }
