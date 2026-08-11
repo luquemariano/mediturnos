@@ -359,6 +359,16 @@ def cargar_datos_demo(
         duracion_turno_minutos=30,
     )
 
+    psiquiatria = obtener_o_crear_especialidad(
+        db=db,
+        nombre="Psiquiatría",
+        descripcion=(
+            "Evaluación, diagnóstico y tratamiento "
+            "de la salud mental."
+        ),
+        duracion_turno_minutos=50,
+    )
+
     print("Cargando profesionales...")
 
     carlos_perez = obtener_o_crear_profesional(
@@ -397,6 +407,15 @@ def cargar_datos_demo(
         email="lucia.fernandez@mediturnos.demo",
     )
 
+    sofia_ramirez = obtener_o_crear_profesional(
+        db=db,
+        nombre="Sofía",
+        apellido="Ramírez",
+        matricula="MP-DEMO-PSIQ-001",
+        telefono="3515551105",
+        email="sofia.ramirez@mediturnos.demo",
+    )
+
     print(
         "Vinculando profesionales "
         "con especialidades..."
@@ -428,6 +447,13 @@ def cargar_datos_demo(
         profesional=lucia_fernandez,
         especialidad=cardiologia,
         duracion_turno_minutos=30,
+    )
+
+    vincular_profesional_especialidad(
+        db=db,
+        profesional=sofia_ramirez,
+        especialidad=psiquiatria,
+        duracion_turno_minutos=50,
     )
 
     print("Cargando prestaciones...")
@@ -514,6 +540,20 @@ def cargar_datos_demo(
         modalidad="presencial",
         profesional=martin_lopez,
         especialidad=pediatria,
+    )
+
+    obtener_o_crear_prestacion(
+        db=db,
+        nombre="Consulta psiquiátrica",
+        descripcion=(
+            "Evaluación clínica y seguimiento "
+            "de la salud mental."
+        ),
+        duracion_minutos=50,
+        precio=Decimal("28000.00"),
+        modalidad="presencial",
+        profesional=sofia_ramirez,
+        especialidad=psiquiatria,
     )
 
     print("Cargando pacientes demo...")
@@ -741,9 +781,9 @@ def cargar_datos_demo(
     print("")
     print("Datos demo cargados correctamente.")
     print("----------------------------------")
-    print("Especialidades: 3")
-    print("Profesionales: 4")
-    print("Prestaciones: 6")
+    print("Especialidades: 4")
+    print("Profesionales: 5")
+    print("Prestaciones: 7")
     print("Pacientes demo disponibles: 8")
     print("Turnos demo recreados: 15")
     print("")
