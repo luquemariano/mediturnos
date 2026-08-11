@@ -33,11 +33,9 @@ def obtener_usuario_actual(
     )
 
     token = credenciales.credentials
-    print("TOKEN RECIBIDO:", token)
 
     try:
         payload = verificar_access_token(token)
-        print("PAYLOAD:", payload)
 
         usuario_id = payload.get("sub")
 

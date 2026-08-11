@@ -750,7 +750,6 @@ def cargar_datos_demo(
     print("Credenciales de acceso demo")
     print("---------------------------")
     print(f"Email: {ADMIN_DEMO_EMAIL}")
-    print(f"Contraseña: {ADMIN_DEMO_PASSWORD}")
 
 
 def main() -> None:
