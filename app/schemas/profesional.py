@@ -1,4 +1,9 @@
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    field_validator,
+)
 
 
 class EspecialidadProfesionalCrear(BaseModel):
@@ -41,6 +46,53 @@ class ProfesionalCrear(BaseModel):
     especialidades: list[EspecialidadProfesionalCrear] = Field(
         min_length=1,
     )
+
+
+class ProfesionalActualizar(BaseModel):
+    nombre: str | None = Field(
+        default=None,
+        min_length=2,
+        max_length=100,
+    )
+
+    apellido: str | None = Field(
+        default=None,
+        min_length=2,
+        max_length=100,
+    )
+
+    matricula: str | None = Field(
+        default=None,
+        min_length=3,
+        max_length=50,
+    )
+
+    telefono: str | None = Field(
+        default=None,
+        max_length=30,
+    )
+
+    email: str | None = Field(
+        default=None,
+        max_length=150,
+    )
+
+    @field_validator(
+        "nombre",
+        "apellido",
+        "matricula",
+    )
+    @classmethod
+    def validar_campos_requeridos(
+        cls,
+        valor: str | None,
+    ) -> str:
+        if valor is None:
+            raise ValueError(
+                "El campo no puede ser nulo."
+            )
+
+        return valor
 
 
 class ProfesionalRespuesta(BaseModel):

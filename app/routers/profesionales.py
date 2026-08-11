@@ -9,6 +9,7 @@ from app.core.dependencies import (
 from app.database.connection import obtener_db
 from app.models.usuario import Usuario
 from app.schemas.profesional import (
+    ProfesionalActualizar,
     ProfesionalCrear,
     ProfesionalRespuesta,
 )
@@ -17,6 +18,7 @@ from app.services.profesional_service import (
     EspecialidadesDuplicadasError,
     EspecialidadesInvalidasError,
     crear_profesional,
+    modificar_profesional,
     obtener_mi_profesional,
     obtener_profesional_por_id,
     obtener_profesionales,
@@ -233,3 +235,43 @@ def ver_profesional(
         )
 
     return profesional
+
+
+@router.patch(
+    "/{profesional_id}",
+    response_model=ProfesionalRespuesta,
+    summary="Actualizar datos básicos de un profesional",
+)
+def actualizar_profesional(
+    profesional_id: int,
+    datos: ProfesionalActualizar,
+    db: Session = Depends(obtener_db),
+    usuario_actual: Usuario = Depends(
+        requiere_roles("administrador")
+    ),
+):
+    profesional = obtener_profesional_por_id(
+        db,
+        profesional_id,
+    )
+
+    if profesional is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Profesional no encontrado.",
+        )
+
+    try:
+        return modificar_profesional(
+            db,
+            profesional,
+            datos,
+        )
+
+    except IntegrityError:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "Ya existe un profesional con esa matrícula."
+            ),
+        )

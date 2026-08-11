@@ -3,7 +3,10 @@ from sqlalchemy.orm import Session
 from app.models.especialidad import Especialidad
 from app.models.profesional import Profesional
 from app.models.profesional_especialidad import ProfesionalEspecialidad
-from app.schemas.profesional import ProfesionalCrear
+from app.schemas.profesional import (
+    ProfesionalActualizar,
+    ProfesionalCrear,
+)
 from sqlalchemy.orm import Session
 
 from app.models.profesional import Profesional
@@ -67,6 +70,20 @@ def buscar_por_id(
         .filter(Profesional.id == profesional_id)
         .first()
     )
+
+
+def actualizar_profesional(
+    profesional: Profesional,
+    datos: ProfesionalActualizar,
+) -> Profesional:
+    cambios = datos.model_dump(exclude_unset=True)
+
+    for campo, valor in cambios.items():
+        setattr(profesional, campo, valor)
+
+    return profesional
+
+
 def buscar_profesional_por_usuario_id(
     db: Session,
     usuario_id: int,

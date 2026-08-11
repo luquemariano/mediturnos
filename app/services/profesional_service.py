@@ -4,13 +4,17 @@ from sqlalchemy.orm import Session
 
 from app.models.profesional import Profesional
 from app.repositories.profesional_repository import (
+    actualizar_profesional,
     buscar_especialidades_por_ids,
     buscar_profesional_por_usuario_id,
     buscar_por_id,
     buscar_todos,
     guardar_profesional,
 )
-from app.schemas.profesional import ProfesionalCrear
+from app.schemas.profesional import (
+    ProfesionalActualizar,
+    ProfesionalCrear,
+)
 
 
 class EspecialidadesInvalidasError(Exception):
@@ -79,6 +83,27 @@ def obtener_profesional_por_id(
         db,
         profesional_id,
     )
+
+
+def modificar_profesional(
+    db: Session,
+    profesional: Profesional,
+    datos: ProfesionalActualizar,
+) -> Profesional:
+    profesional_actualizado = actualizar_profesional(
+        profesional,
+        datos,
+    )
+
+    try:
+        db.commit()
+        db.refresh(profesional_actualizado)
+
+    except IntegrityError:
+        db.rollback()
+        raise
+
+    return profesional_actualizado
 
 
 def obtener_mi_profesional(
