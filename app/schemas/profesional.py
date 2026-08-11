@@ -77,6 +77,13 @@ class ProfesionalActualizar(BaseModel):
         max_length=150,
     )
 
+    especialidades: list[
+        EspecialidadProfesionalCrear
+    ] | None = Field(
+        default=None,
+        min_length=1,
+    )
+
     @field_validator(
         "nombre",
         "apellido",
@@ -94,6 +101,28 @@ class ProfesionalActualizar(BaseModel):
 
         return valor
 
+    @field_validator("especialidades")
+    @classmethod
+    def validar_especialidades_requeridas(
+        cls,
+        valor: list[
+            EspecialidadProfesionalCrear
+        ] | None,
+    ) -> list[EspecialidadProfesionalCrear]:
+        if valor is None:
+            raise ValueError(
+                "El campo no puede ser nulo."
+            )
+
+        return valor
+
+
+class EspecialidadProfesionalRespuesta(BaseModel):
+    especialidad_id: int
+    duracion_turno_minutos: int | None
+
+    model_config = ConfigDict(from_attributes=True)
+
 
 class ProfesionalRespuesta(BaseModel):
     id: int
@@ -103,5 +132,10 @@ class ProfesionalRespuesta(BaseModel):
     telefono: str | None
     email: str | None
     activo: bool
+    especialidades: list[
+        EspecialidadProfesionalRespuesta
+    ] = Field(
+        validation_alias="especialidades_asignadas",
+    )
 
     model_config = ConfigDict(from_attributes=True)

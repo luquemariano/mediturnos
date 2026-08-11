@@ -15,6 +15,7 @@ from app.schemas.profesional import (
 )
 from app.schemas.turno import TurnoRespuesta
 from app.services.profesional_service import (
+    EspecialidadesConPrestacionesError,
     EspecialidadesDuplicadasError,
     EspecialidadesInvalidasError,
     crear_profesional,
@@ -240,7 +241,7 @@ def ver_profesional(
 @router.patch(
     "/{profesional_id}",
     response_model=ProfesionalRespuesta,
-    summary="Actualizar datos básicos de un profesional",
+    summary="Actualizar un profesional",
 )
 def actualizar_profesional(
     profesional_id: int,
@@ -273,5 +274,29 @@ def actualizar_profesional(
             status_code=409,
             detail=(
                 "Ya existe un profesional con esa matrícula."
+            ),
+        )
+
+    except EspecialidadesDuplicadasError:
+        raise HTTPException(
+            status_code=400,
+            detail="No se puede repetir una especialidad.",
+        )
+
+    except EspecialidadesInvalidasError:
+        raise HTTPException(
+            status_code=400,
+            detail="Una o más especialidades no existen.",
+        )
+
+    except EspecialidadesConPrestacionesError as error:
+        nombres = ", ".join(error.nombres)
+
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "No se puede quitar la especialidad "
+                f"'{nombres}' porque tiene prestaciones "
+                "asociadas a este profesional."
             ),
         )

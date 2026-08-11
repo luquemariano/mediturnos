@@ -38,12 +38,18 @@ def limpiar_usuario_autenticado():
     )
 
 
-def crear_especialidad(client) -> int:
+def crear_especialidad(
+    client,
+    nombre: str = "Clínica Médica",
+    duracion_turno_minutos: int = 30,
+) -> int:
     respuesta = client.post(
         "/especialidades/",
         json={
-            "nombre": "Clínica Médica",
-            "duracion_turno_minutos": 30,
+            "nombre": nombre,
+            "duracion_turno_minutos": (
+                duracion_turno_minutos
+            ),
         },
     )
 
@@ -56,6 +62,7 @@ def crear_profesional(
     especialidad_id: int,
     matricula: str,
     email: str | None = None,
+    especialidades: list[dict] | None = None,
 ) -> dict:
     respuesta = client.post(
         "/profesionales/",
@@ -65,7 +72,7 @@ def crear_profesional(
             "matricula": matricula,
             "telefono": "+54 11 5555-1234",
             "email": email,
-            "especialidades": [
+            "especialidades": especialidades or [
                 {
                     "especialidad_id": especialidad_id,
                     "duracion_turno_minutos": 45,
@@ -166,3 +173,302 @@ def test_rechaza_conflicto_de_matricula(client):
     )
     assert consulta.status_code == 200
     assert consulta.json()["matricula"] == "MP-EDIT-002"
+
+
+def test_actualiza_especialidad_y_duracion(client):
+    autenticar_como("administrador")
+    especialidad_id = crear_especialidad(client)
+    profesional = crear_profesional(
+        client,
+        especialidad_id,
+        "MP-EDIT-001",
+    )
+
+    respuesta = client.patch(
+        f"/profesionales/{profesional['id']}",
+        json={
+            "especialidades": [
+                {
+                    "especialidad_id": especialidad_id,
+                    "duracion_turno_minutos": 60,
+                }
+            ]
+        },
+    )
+
+    assert respuesta.status_code == 200
+    datos = respuesta.json()
+    assert datos["nombre"] == "Ana"
+    assert datos["matricula"] == "MP-EDIT-001"
+    assert datos["especialidades"] == [
+        {
+            "especialidad_id": especialidad_id,
+            "duracion_turno_minutos": 60,
+        }
+    ]
+
+
+def test_actualiza_multiples_especialidades(client):
+    autenticar_como("administrador")
+    clinica_id = crear_especialidad(client)
+    cardiologia_id = crear_especialidad(
+        client,
+        "Cardiología",
+        40,
+    )
+    profesional = crear_profesional(
+        client,
+        clinica_id,
+        "MP-EDIT-001",
+    )
+
+    respuesta = client.patch(
+        f"/profesionales/{profesional['id']}",
+        json={
+            "especialidades": [
+                {
+                    "especialidad_id": clinica_id,
+                    "duracion_turno_minutos": 30,
+                },
+                {
+                    "especialidad_id": cardiologia_id,
+                    "duracion_turno_minutos": 50,
+                },
+            ]
+        },
+    )
+
+    assert respuesta.status_code == 200
+    assert respuesta.json()["especialidades"] == [
+        {
+            "especialidad_id": clinica_id,
+            "duracion_turno_minutos": 30,
+        },
+        {
+            "especialidad_id": cardiologia_id,
+            "duracion_turno_minutos": 50,
+        },
+    ]
+
+
+def test_rechaza_especialidad_inexistente(client):
+    autenticar_como("administrador")
+    especialidad_id = crear_especialidad(client)
+    profesional = crear_profesional(
+        client,
+        especialidad_id,
+        "MP-EDIT-001",
+    )
+
+    respuesta = client.patch(
+        f"/profesionales/{profesional['id']}",
+        json={
+            "especialidades": [
+                {
+                    "especialidad_id": 999,
+                    "duracion_turno_minutos": 40,
+                }
+            ]
+        },
+    )
+
+    assert respuesta.status_code == 400
+    assert respuesta.json()["detail"] == (
+        "Una o más especialidades no existen."
+    )
+
+    consulta = client.get(
+        f"/profesionales/{profesional['id']}"
+    )
+    assert consulta.json()["especialidades"] == [
+        {
+            "especialidad_id": especialidad_id,
+            "duracion_turno_minutos": 45,
+        }
+    ]
+
+
+def test_rechaza_especialidades_duplicadas(client):
+    autenticar_como("administrador")
+    especialidad_id = crear_especialidad(client)
+    profesional = crear_profesional(
+        client,
+        especialidad_id,
+        "MP-EDIT-001",
+    )
+
+    respuesta = client.patch(
+        f"/profesionales/{profesional['id']}",
+        json={
+            "especialidades": [
+                {
+                    "especialidad_id": especialidad_id,
+                    "duracion_turno_minutos": 30,
+                },
+                {
+                    "especialidad_id": especialidad_id,
+                    "duracion_turno_minutos": 50,
+                },
+            ]
+        },
+    )
+
+    assert respuesta.status_code == 400
+    assert respuesta.json()["detail"] == (
+        "No se puede repetir una especialidad."
+    )
+
+
+def crear_prestacion(
+    client,
+    profesional_id: int,
+    especialidad_id: int,
+) -> dict:
+    respuesta = client.post(
+        "/prestaciones/",
+        json={
+            "nombre": "Consulta asociada",
+            "descripcion": None,
+            "duracion_minutos": 40,
+            "precio": "25000.00",
+            "modalidad": "presencial",
+            "profesional_id": profesional_id,
+            "especialidad_id": especialidad_id,
+        },
+    )
+
+    assert respuesta.status_code == 201
+    return respuesta.json()
+
+
+def crear_profesional_con_dos_especialidades(client):
+    clinica_id = crear_especialidad(client)
+    cardiologia_id = crear_especialidad(
+        client,
+        "Cardiología",
+        40,
+    )
+    profesional = crear_profesional(
+        client,
+        clinica_id,
+        "MP-EDIT-001",
+        especialidades=[
+            {
+                "especialidad_id": clinica_id,
+                "duracion_turno_minutos": 45,
+            },
+            {
+                "especialidad_id": cardiologia_id,
+                "duracion_turno_minutos": 40,
+            },
+        ],
+    )
+
+    return profesional, clinica_id, cardiologia_id
+
+
+def test_quita_especialidad_sin_prestaciones(client):
+    autenticar_como("administrador")
+    profesional, clinica_id, _ = (
+        crear_profesional_con_dos_especialidades(
+            client
+        )
+    )
+
+    respuesta = client.patch(
+        f"/profesionales/{profesional['id']}",
+        json={
+            "especialidades": [
+                {
+                    "especialidad_id": clinica_id,
+                    "duracion_turno_minutos": 45,
+                }
+            ]
+        },
+    )
+
+    assert respuesta.status_code == 200
+    assert respuesta.json()["especialidades"] == [
+        {
+            "especialidad_id": clinica_id,
+            "duracion_turno_minutos": 45,
+        }
+    ]
+
+
+def test_bloquea_quitar_especialidad_con_prestacion(client):
+    autenticar_como("administrador")
+    profesional, clinica_id, cardiologia_id = (
+        crear_profesional_con_dos_especialidades(
+            client
+        )
+    )
+    crear_prestacion(
+        client,
+        profesional["id"],
+        cardiologia_id,
+    )
+
+    respuesta = client.patch(
+        f"/profesionales/{profesional['id']}",
+        json={
+            "especialidades": [
+                {
+                    "especialidad_id": clinica_id,
+                    "duracion_turno_minutos": 45,
+                }
+            ]
+        },
+    )
+
+    assert respuesta.status_code == 409
+    assert respuesta.json()["detail"] == (
+        "No se puede quitar la especialidad "
+        "'Cardiología' porque tiene prestaciones "
+        "asociadas a este profesional."
+    )
+
+
+def test_fallo_al_quitar_especialidad_es_atomico(client):
+    autenticar_como("administrador")
+    profesional, clinica_id, cardiologia_id = (
+        crear_profesional_con_dos_especialidades(
+            client
+        )
+    )
+    crear_prestacion(
+        client,
+        profesional["id"],
+        cardiologia_id,
+    )
+
+    respuesta = client.patch(
+        f"/profesionales/{profesional['id']}",
+        json={
+            "nombre": "Nombre modificado",
+            "especialidades": [
+                {
+                    "especialidad_id": clinica_id,
+                    "duracion_turno_minutos": 60,
+                }
+            ],
+        },
+    )
+
+    assert respuesta.status_code == 409
+
+    consulta = client.get(
+        f"/profesionales/{profesional['id']}"
+    )
+    datos = consulta.json()
+    assert datos["nombre"] == "Ana"
+    assert datos["especialidades"] == [
+        {
+            "especialidad_id": clinica_id,
+            "duracion_turno_minutos": 45,
+        },
+        {
+            "especialidad_id": cardiologia_id,
+            "duracion_turno_minutos": 40,
+        },
+    ]
