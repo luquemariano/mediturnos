@@ -207,3 +207,32 @@ def test_reprogramacion_excluye_el_propio_turno(
 
     assert reprogramado.id == turno.id
     assert reprogramado.fecha_hora == turno.fecha_hora
+
+
+def test_reprogramacion_conserva_deteccion_de_solapamientos(
+    escenario_turnos,
+):
+    turno = crear_existente(
+        escenario_turnos,
+        time(9, 0),
+        duracion=30,
+    )
+    crear_existente(
+        escenario_turnos,
+        time(10, 0),
+        duracion=60,
+    )
+
+    with pytest.raises(HTTPException) as error:
+        reprogramar_turno(
+            escenario_turnos["db"],
+            turno.id,
+            TurnoReprogramar(
+                fecha_hora=datetime.combine(
+                    escenario_turnos["fecha"],
+                    time(10, 30),
+                ),
+            ),
+        )
+
+    assert error.value.status_code == 409

@@ -9,8 +9,9 @@ from app.models.especialidad import Especialidad
 from app.models.paciente import Paciente
 from app.models.prestacion import Prestacion
 from app.models.profesional import Profesional
-from app.schemas.turno import TurnoCrear
-from app.services.turno_service import crear_turno
+from app.models.turno import Turno
+from app.schemas.turno import TurnoCrear, TurnoReprogramar
+from app.services.turno_service import crear_turno, reprogramar_turno
 from tests.conftest import SessionTest
 
 
@@ -86,6 +87,33 @@ def crear_en_horario(
     )
 
 
+def reprogramar_en_horario(
+    escenario,
+    hora_inicio,
+):
+    turno = Turno(
+        paciente_id=escenario["paciente_id"],
+        prestacion_id=escenario["prestacion_id"],
+        fecha_hora=datetime.combine(
+            escenario["fecha"],
+            time(10, 0),
+        ),
+    )
+    escenario["db"].add(turno)
+    escenario["db"].commit()
+
+    return reprogramar_turno(
+        escenario["db"],
+        turno.id,
+        TurnoReprogramar(
+            fecha_hora=datetime.combine(
+                escenario["fecha"],
+                hora_inicio,
+            ),
+        ),
+    )
+
+
 def test_permite_inicio_exacto_de_disponibilidad(
     escenario_disponibilidad,
 ):
@@ -142,6 +170,63 @@ def test_ignora_disponibilidad_inactiva(
 
     with pytest.raises(HTTPException) as error:
         crear_en_horario(
+            escenario_disponibilidad,
+            time(10, 0),
+        )
+
+    assert error.value.status_code == 409
+
+
+@pytest.mark.parametrize(
+    "hora_inicio",
+    [
+        time(9, 0),
+        time(9, 15),
+        time(11, 30),
+    ],
+)
+def test_reprogramacion_acepta_mismos_limites_que_creacion(
+    escenario_disponibilidad,
+    hora_inicio,
+):
+    turno = reprogramar_en_horario(
+        escenario_disponibilidad,
+        hora_inicio,
+    )
+
+    assert turno.fecha_hora.time() == hora_inicio
+
+
+@pytest.mark.parametrize(
+    "hora_inicio",
+    [
+        time(8, 45),
+        time(11, 45),
+    ],
+)
+def test_reprogramacion_rechaza_mismos_limites_que_creacion(
+    escenario_disponibilidad,
+    hora_inicio,
+):
+    with pytest.raises(HTTPException) as error:
+        reprogramar_en_horario(
+            escenario_disponibilidad,
+            hora_inicio,
+        )
+
+    assert error.value.status_code == 409
+
+
+def test_reprogramacion_ignora_disponibilidad_inactiva(
+    escenario_disponibilidad,
+):
+    db = escenario_disponibilidad["db"]
+    disponibilidad = db.query(Disponibilidad).one()
+    disponibilidad.activa = False
+    db.commit()
+
+    with pytest.raises(HTTPException) as error:
+        reprogramar_en_horario(
             escenario_disponibilidad,
             time(10, 0),
         )
