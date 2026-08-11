@@ -19,6 +19,7 @@ import type {
   Profesional,
   ProfesionalActualizar,
   ProfesionalCrear,
+  EspecialidadProfesionalCrear,
 } from "../types/profesional";
 
 
@@ -40,6 +41,11 @@ type FormularioProfesional = {
   duracionTurnoMinutos: string;
 };
 
+type EspecialidadEditada = {
+  especialidadId: string;
+  duracionTurnoMinutos: string;
+};
+
 function crearFormularioInicial(
   profesional?: Profesional | null,
 ): FormularioProfesional {
@@ -52,6 +58,39 @@ function crearFormularioInicial(
     especialidadId: "",
     duracionTurnoMinutos: "",
   };
+}
+
+
+function crearEspecialidadesIniciales(
+  profesional?: Profesional | null,
+): EspecialidadEditada[] {
+  return (profesional?.especialidades ?? []).map(
+    (especialidad) => ({
+      especialidadId: String(
+        especialidad.especialidad_id,
+      ),
+      duracionTurnoMinutos:
+        especialidad.duracion_turno_minutos
+          === null
+          ? ""
+          : String(
+            especialidad.duracion_turno_minutos,
+          ),
+    }),
+  );
+}
+
+
+function firmaEspecialidades(
+  especialidades: EspecialidadEditada[],
+): string {
+  return especialidades
+    .map((especialidad) => (
+      `${especialidad.especialidadId}:`
+      + especialidad.duracionTurnoMinutos
+    ))
+    .sort()
+    .join("|");
 }
 
 
@@ -100,10 +139,16 @@ function ModalProfesional({
   const [especialidades, setEspecialidades] =
     useState<Especialidad[]>([]);
 
-  const [cargandoEspecialidades,
-    setCargandoEspecialidades] = useState(
-      !esEdicion,
+  const [especialidadesEditadas,
+    setEspecialidadesEditadas] =
+    useState<EspecialidadEditada[]>(
+      () => crearEspecialidadesIniciales(
+        profesional,
+      ),
     );
+
+  const [cargandoEspecialidades,
+    setCargandoEspecialidades] = useState(true);
 
   const [guardando, setGuardando] =
     useState(false);
@@ -121,11 +166,7 @@ function ModalProfesional({
         const datos =
           await obtenerEspecialidades();
 
-        setEspecialidades(
-          datos.filter((especialidad) =>
-            especialidad.activa
-          ),
-        );
+        setEspecialidades(datos);
       } catch (error) {
         setMensajeError(
           obtenerMensajeError(
@@ -140,10 +181,8 @@ function ModalProfesional({
 
 
   useEffect(() => {
-    if (!esEdicion) {
-      cargarEspecialidades();
-    }
-  }, [cargarEspecialidades, esEdicion]);
+    cargarEspecialidades();
+  }, [cargarEspecialidades]);
 
 
   function manejarCambio(
@@ -174,6 +213,82 @@ function ModalProfesional({
       ...datosAnteriores,
       [name]: value,
     }));
+  }
+
+
+  function agregarEspecialidad() {
+    const idsSeleccionados = new Set(
+      especialidadesEditadas.map(
+        (item) => Number(item.especialidadId),
+      ),
+    );
+    const especialidadDisponible =
+      especialidades.find(
+        (item) =>
+          item.activa
+          && !idsSeleccionados.has(item.id),
+      );
+
+    if (!especialidadDisponible) {
+      return;
+    }
+
+    setEspecialidadesEditadas((anteriores) => [
+      ...anteriores,
+      {
+        especialidadId: String(
+          especialidadDisponible.id,
+        ),
+        duracionTurnoMinutos: String(
+          especialidadDisponible
+            .duracion_turno_minutos,
+        ),
+      },
+    ]);
+  }
+
+
+  function quitarEspecialidad(indice: number) {
+    setEspecialidadesEditadas((anteriores) =>
+      anteriores.filter(
+        (_, posicion) => posicion !== indice,
+      )
+    );
+  }
+
+
+  function cambiarEspecialidadEditada(
+    indice: number,
+    campo: keyof EspecialidadEditada,
+    valor: string,
+  ) {
+    setEspecialidadesEditadas((anteriores) =>
+      anteriores.map((item, posicion) => {
+        if (posicion !== indice) {
+          return item;
+        }
+
+        if (campo === "especialidadId") {
+          const especialidad = especialidades.find(
+            (opcion) => opcion.id === Number(valor),
+          );
+
+          return {
+            especialidadId: valor,
+            duracionTurnoMinutos: especialidad
+              ? String(
+                especialidad.duracion_turno_minutos,
+              )
+              : "",
+          };
+        }
+
+        return {
+          ...item,
+          [campo]: valor,
+        };
+      })
+    );
   }
 
 
@@ -232,6 +347,58 @@ function ModalProfesional({
       return;
     }
 
+    let especialidadesActualizadas:
+      EspecialidadProfesionalCrear[] | undefined;
+
+    if (profesional) {
+      const especialidadesOriginales =
+        crearEspecialidadesIniciales(profesional);
+      const especialidadesCambiaron =
+        firmaEspecialidades(especialidadesEditadas)
+        !== firmaEspecialidades(
+          especialidadesOriginales,
+        );
+
+      if (especialidadesCambiaron) {
+        const ids = especialidadesEditadas.map(
+          (item) => Number(item.especialidadId),
+        );
+        const duraciones = especialidadesEditadas.map(
+          (item) => Number(
+            item.duracionTurnoMinutos,
+          ),
+        );
+        const especialidadesValidas =
+          especialidadesEditadas.length > 0
+          && ids.every(
+            (id) => Number.isInteger(id) && id > 0,
+          )
+          && new Set(ids).size === ids.length
+          && duraciones.every(
+            (duracion) =>
+              Number.isInteger(duracion)
+              && duracion >= 10
+              && duracion <= 180,
+          );
+
+        if (!especialidadesValidas) {
+          setMensajeError(
+            "Agregá al menos una especialidad y revisá sus duraciones.",
+          );
+          return;
+        }
+
+        especialidadesActualizadas =
+          especialidadesEditadas.map(
+            (_, indice) => ({
+              especialidad_id: ids[indice],
+              duracion_turno_minutos:
+                duraciones[indice],
+            }),
+          );
+      }
+    }
+
     setGuardando(true);
 
     try {
@@ -260,6 +427,11 @@ function ModalProfesional({
           telefono !== (profesional.telefono ?? "")
         ) {
           cambios.telefono = telefono || null;
+        }
+
+        if (especialidadesActualizadas) {
+          cambios.especialidades =
+            especialidadesActualizadas;
         }
 
         profesionalGuardado =
@@ -332,7 +504,7 @@ function ModalProfesional({
 
             <p>
               {esEdicion
-                ? "Actualizá los datos básicos del profesional."
+                ? "Actualizá sus datos y especialidades asignadas."
                 : "Completá los datos requeridos para registrar al profesional."}
             </p>
           </div>
@@ -428,7 +600,11 @@ function ModalProfesional({
                       : "Seleccioná una especialidad"}
                   </option>
 
-                  {especialidades.map(
+                  {especialidades
+                    .filter((especialidad) =>
+                      especialidad.activa
+                    )
+                    .map(
                     (especialidad) => (
                       <option
                         key={especialidad.id}
@@ -496,11 +672,158 @@ function ModalProfesional({
                 />
               </div>
             )}
+
+            {esEdicion && (
+              <section className="editor-especialidades-profesional">
+                <header className="editor-especialidades-encabezado">
+                  <div>
+                    <h3>Especialidades</h3>
+                    <p>
+                      Administrá las especialidades y
+                      la duración de sus turnos.
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="boton-secundario"
+                    onClick={agregarEspecialidad}
+                    disabled={
+                      guardando
+                      || cargandoEspecialidades
+                      || !especialidades.some(
+                        (especialidad) =>
+                          especialidad.activa
+                          && !especialidadesEditadas
+                            .some(
+                              (item) =>
+                                Number(
+                                  item.especialidadId,
+                                ) === especialidad.id,
+                            ),
+                      )
+                    }
+                  >
+                    Agregar especialidad
+                  </button>
+                </header>
+
+                <div className="editor-especialidades-lista">
+                  {especialidadesEditadas.map(
+                    (item, indice) => (
+                      <div
+                        className="editor-especialidad-fila"
+                        key={`${item.especialidadId}-${indice}`}
+                      >
+                        <div className="campo-formulario">
+                          <label
+                            htmlFor={`especialidad-editada-${indice}`}
+                          >
+                            Especialidad *
+                          </label>
+
+                          <select
+                            id={`especialidad-editada-${indice}`}
+                            value={item.especialidadId}
+                            onChange={(evento) =>
+                              cambiarEspecialidadEditada(
+                                indice,
+                                "especialidadId",
+                                evento.target.value,
+                              )
+                            }
+                            disabled={
+                              guardando
+                              || cargandoEspecialidades
+                            }
+                            required
+                          >
+                            {especialidades
+                              .filter((especialidad) =>
+                                (
+                                  especialidad.activa
+                                  || especialidad.id
+                                    === Number(
+                                      item.especialidadId,
+                                    )
+                                )
+                                && !especialidadesEditadas
+                                  .some(
+                                    (seleccionada,
+                                      posicion) =>
+                                      posicion !== indice
+                                      && Number(
+                                        seleccionada
+                                          .especialidadId,
+                                      ) === especialidad.id,
+                                  )
+                              )
+                              .map((especialidad) => (
+                                <option
+                                  key={especialidad.id}
+                                  value={especialidad.id}
+                                >
+                                  {especialidad.nombre}
+                                </option>
+                              ))}
+                          </select>
+                        </div>
+
+                        <div className="campo-formulario">
+                          <label
+                            htmlFor={`duracion-editada-${indice}`}
+                          >
+                            Duración (minutos) *
+                          </label>
+
+                          <input
+                            id={`duracion-editada-${indice}`}
+                            type="number"
+                            value={
+                              item.duracionTurnoMinutos
+                            }
+                            onChange={(evento) =>
+                              cambiarEspecialidadEditada(
+                                indice,
+                                "duracionTurnoMinutos",
+                                evento.target.value,
+                              )
+                            }
+                            min={10}
+                            max={180}
+                            step={1}
+                            disabled={guardando}
+                            required
+                          />
+                        </div>
+
+                        <button
+                          type="button"
+                          className="editor-especialidad-quitar"
+                          onClick={() =>
+                            quitarEspecialidad(indice)
+                          }
+                          disabled={
+                            guardando
+                            || especialidadesEditadas.length
+                              === 1
+                          }
+                        >
+                          Quitar
+                        </button>
+                      </div>
+                    ),
+                  )}
+                </div>
+              </section>
+            )}
           </div>
 
           {!esEdicion
             && !cargandoEspecialidades
-            && especialidades.length === 0
+            && !especialidades.some(
+              (especialidad) => especialidad.activa,
+            )
             && !mensajeError
             && (
               <p className="mensaje-formulario-error">
@@ -533,10 +856,12 @@ function ModalProfesional({
               className="boton-primario"
               disabled={
                 guardando
-                || (!esEdicion
-                  && (
-                    cargandoEspecialidades
-                    || especialidades.length === 0
+                || cargandoEspecialidades
+                || (esEdicion
+                  ? especialidades.length === 0
+                  : !especialidades.some(
+                    (especialidad) =>
+                      especialidad.activa,
                   ))
               }
             >

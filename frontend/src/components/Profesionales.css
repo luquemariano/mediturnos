@@ -296,6 +296,72 @@
   color: #667085;
 }
 
+.editor-especialidades-profesional {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 16px;
+  margin-top: 4px;
+  padding-top: 22px;
+  border-top: 1px solid #eaecf0;
+}
+
+.editor-especialidades-encabezado {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.editor-especialidades-encabezado h3 {
+  color: #172033;
+  font-size: 17px;
+}
+
+.editor-especialidades-encabezado p {
+  margin-top: 5px;
+  color: #667085;
+  font-size: 13px;
+}
+
+.editor-especialidades-lista {
+  display: grid;
+  gap: 12px;
+}
+
+.editor-especialidad-fila {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1fr) minmax(150px, 0.45fr) auto;
+  align-items: end;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid #e4e7ec;
+  border-radius: 12px;
+  background: #f9fafb;
+}
+
+.editor-especialidad-quitar {
+  min-height: 43px;
+  padding: 9px 12px;
+  border: 1px solid #fda29b;
+  border-radius: 8px;
+  background: #fff;
+  color: #b42318;
+  font-family: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.editor-especialidad-quitar:hover:not(:disabled) {
+  background: #fef3f2;
+}
+
+.editor-especialidad-quitar:disabled {
+  border-color: #d0d5dd;
+  color: #98a2b3;
+  cursor: not-allowed;
+}
+
 .profesional-activo {
   background: #ecfdf3;
   color: #067647;
@@ -349,6 +415,15 @@
 
   .profesionales-contador {
     align-self: flex-end;
+  }
+
+  .editor-especialidades-encabezado {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .editor-especialidad-fila {
+    grid-template-columns: 1fr;
   }
 }
 

@@ -6,6 +6,12 @@ export interface Profesional {
   telefono: string | null;
   email: string | null;
   activo: boolean;
+  especialidades: EspecialidadProfesional[];
+}
+
+export interface EspecialidadProfesional {
+  especialidad_id: number;
+  duracion_turno_minutos: number | null;
 }
 
 export interface EspecialidadProfesionalCrear {
@@ -28,4 +34,5 @@ export interface ProfesionalActualizar {
   matricula?: string;
   telefono?: string | null;
   email?: string | null;
+  especialidades?: EspecialidadProfesionalCrear[];
 }
