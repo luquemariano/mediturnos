@@ -51,6 +51,10 @@ function Profesionales({
   const [mensajeExito, setMensajeExito] =
     useState("");
 
+  const [profesionalEnEdicion,
+    setProfesionalEnEdicion] =
+    useState<Profesional | null>(null);
+
 
   const cargarProfesionales =
     useCallback(async () => {
@@ -121,18 +125,33 @@ function Profesionales({
   }
 
 
-  function manejarProfesionalCreado(
+  function manejarProfesionalGuardado(
     profesional: Profesional,
   ) {
-    setProfesionales((datosAnteriores) => [
-      profesional,
-      ...datosAnteriores,
-    ]);
-    setBusqueda("");
+    if (profesionalEnEdicion) {
+      setProfesionales((datosAnteriores) =>
+        datosAnteriores.map((item) =>
+          item.id === profesional.id
+            ? profesional
+            : item
+        )
+      );
+      setMensajeExito(
+        `${profesional.nombre} ${profesional.apellido} fue actualizado correctamente.`,
+      );
+    } else {
+      setProfesionales((datosAnteriores) => [
+        profesional,
+        ...datosAnteriores,
+      ]);
+      setBusqueda("");
+      setMensajeExito(
+        `${profesional.nombre} ${profesional.apellido} fue registrado correctamente.`,
+      );
+    }
+
     setMostrarFormulario(false);
-    setMensajeExito(
-      `${profesional.nombre} ${profesional.apellido} fue registrado correctamente.`,
-    );
+    setProfesionalEnEdicion(null);
   }
 
 
@@ -181,6 +200,7 @@ function Profesionales({
                 className="boton-primario"
                 onClick={() => {
                   setMensajeExito("");
+                  setProfesionalEnEdicion(null);
                   setMostrarFormulario(true);
                 }}
               >
@@ -324,6 +344,9 @@ function Profesionales({
                       <th>Matrícula</th>
                       <th>Teléfono</th>
                       <th>Estado</th>
+                      {rol === "administrador" && (
+                        <th>Acciones</th>
+                      )}
                     </tr>
                   </thead>
 
@@ -376,6 +399,24 @@ function Profesionales({
                                 : "Inactivo"}
                             </span>
                           </td>
+
+                          {rol === "administrador" && (
+                            <td>
+                              <button
+                                type="button"
+                                className="profesionales-boton-editar"
+                                onClick={() => {
+                                  setMensajeExito("");
+                                  setProfesionalEnEdicion(
+                                    profesional,
+                                  );
+                                  setMostrarFormulario(true);
+                                }}
+                              >
+                                Editar
+                              </button>
+                            </td>
+                          )}
                         </tr>
                       ),
                     )}
@@ -388,11 +429,13 @@ function Profesionales({
 
       {mostrarFormulario && (
         <ModalProfesional
-          onCerrar={() =>
-            setMostrarFormulario(false)
-          }
-          onProfesionalCreado={
-            manejarProfesionalCreado
+          profesional={profesionalEnEdicion}
+          onCerrar={() => {
+            setMostrarFormulario(false);
+            setProfesionalEnEdicion(null);
+          }}
+          onProfesionalGuardado={
+            manejarProfesionalGuardado
           }
         />
       )}

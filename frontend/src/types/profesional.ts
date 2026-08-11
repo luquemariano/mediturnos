@@ -21,3 +21,11 @@ export interface ProfesionalCrear {
   email?: string;
   especialidades: EspecialidadProfesionalCrear[];
 }
+
+export interface ProfesionalActualizar {
+  nombre?: string;
+  apellido?: string;
+  matricula?: string;
+  telefono?: string | null;
+  email?: string | null;
+}

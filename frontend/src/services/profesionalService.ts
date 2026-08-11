@@ -1,6 +1,7 @@
 import api from "../api/api";
 import type {
   Profesional,
+  ProfesionalActualizar,
   ProfesionalCrear,
 } from "../types/profesional";
 
@@ -20,6 +21,19 @@ export async function crearProfesional(
 ): Promise<Profesional> {
   const respuesta = await api.post<Profesional>(
     "/profesionales/",
+    datos,
+  );
+
+  return respuesta.data;
+}
+
+
+export async function actualizarProfesional(
+  profesionalId: number,
+  datos: ProfesionalActualizar,
+): Promise<Profesional> {
+  const respuesta = await api.patch<Profesional>(
+    `/profesionales/${profesionalId}`,
     datos,
   );
 

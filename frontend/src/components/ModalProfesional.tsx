@@ -10,19 +10,24 @@ import type {
 import axios from "axios";
 
 import { obtenerEspecialidades } from "../services/especialidadService";
-import { crearProfesional } from "../services/profesionalService";
+import {
+  actualizarProfesional,
+  crearProfesional,
+} from "../services/profesionalService";
 import type { Especialidad } from "../types/especialidad";
 import type {
   Profesional,
+  ProfesionalActualizar,
   ProfesionalCrear,
 } from "../types/profesional";
 
 
 type ModalProfesionalProps = {
   onCerrar: () => void;
-  onProfesionalCreado: (
+  onProfesionalGuardado: (
     profesional: Profesional,
   ) => void;
+  profesional?: Profesional | null;
 };
 
 type FormularioProfesional = {
@@ -35,19 +40,24 @@ type FormularioProfesional = {
   duracionTurnoMinutos: string;
 };
 
-const formularioInicial: FormularioProfesional = {
-  nombre: "",
-  apellido: "",
-  matricula: "",
-  email: "",
-  telefono: "",
-  especialidadId: "",
-  duracionTurnoMinutos: "",
-};
+function crearFormularioInicial(
+  profesional?: Profesional | null,
+): FormularioProfesional {
+  return {
+    nombre: profesional?.nombre ?? "",
+    apellido: profesional?.apellido ?? "",
+    matricula: profesional?.matricula ?? "",
+    email: profesional?.email ?? "",
+    telefono: profesional?.telefono ?? "",
+    especialidadId: "",
+    duracionTurnoMinutos: "",
+  };
+}
 
 
 function obtenerMensajeError(
   error: unknown,
+  mensajePredeterminado: string,
 ): string {
   if (!axios.isAxiosError(error)) {
     return "Ocurrió un error inesperado.";
@@ -71,24 +81,29 @@ function obtenerMensajeError(
     }
   }
 
-  return "No se pudo registrar el profesional. Revisá los datos ingresados.";
+  return mensajePredeterminado;
 }
 
 
 function ModalProfesional({
   onCerrar,
-  onProfesionalCreado,
+  onProfesionalGuardado,
+  profesional,
 }: ModalProfesionalProps) {
+  const esEdicion = Boolean(profesional);
+
   const [formulario, setFormulario] =
     useState<FormularioProfesional>(
-      formularioInicial,
+      () => crearFormularioInicial(profesional),
     );
 
   const [especialidades, setEspecialidades] =
     useState<Especialidad[]>([]);
 
   const [cargandoEspecialidades,
-    setCargandoEspecialidades] = useState(true);
+    setCargandoEspecialidades] = useState(
+      !esEdicion,
+    );
 
   const [guardando, setGuardando] =
     useState(false);
@@ -113,7 +128,10 @@ function ModalProfesional({
         );
       } catch (error) {
         setMensajeError(
-          obtenerMensajeError(error),
+          obtenerMensajeError(
+            error,
+            "No se pudieron cargar las especialidades.",
+          ),
         );
       } finally {
         setCargandoEspecialidades(false);
@@ -122,8 +140,10 @@ function ModalProfesional({
 
 
   useEffect(() => {
-    cargarEspecialidades();
-  }, [cargarEspecialidades]);
+    if (!esEdicion) {
+      cargarEspecialidades();
+    }
+  }, [cargarEspecialidades, esEdicion]);
 
 
   function manejarCambio(
@@ -179,11 +199,22 @@ function ModalProfesional({
       nombre.length < 2
       || apellido.length < 2
       || matricula.length < 3
-      || !Number.isInteger(especialidadId)
-      || especialidadId <= 0
-      || !Number.isInteger(duracionTurnoMinutos)
-      || duracionTurnoMinutos < 10
-      || duracionTurnoMinutos > 180
+    ) {
+      setMensajeError(
+        "Completá correctamente todos los campos obligatorios.",
+      );
+      return;
+    }
+
+    if (
+      !esEdicion
+      && (
+        !Number.isInteger(especialidadId)
+        || especialidadId <= 0
+        || !Number.isInteger(duracionTurnoMinutos)
+        || duracionTurnoMinutos < 10
+        || duracionTurnoMinutos > 180
+      )
     ) {
       setMensajeError(
         "Completá correctamente todos los campos obligatorios.",
@@ -201,31 +232,72 @@ function ModalProfesional({
       return;
     }
 
-    const datos: ProfesionalCrear = {
-      nombre,
-      apellido,
-      matricula,
-      ...(telefono ? { telefono } : {}),
-      ...(email ? { email } : {}),
-      especialidades: [
-        {
-          especialidad_id: especialidadId,
-          duracion_turno_minutos:
-            duracionTurnoMinutos,
-        },
-      ],
-    };
-
     setGuardando(true);
 
     try {
-      const profesionalCreado =
-        await crearProfesional(datos);
+      let profesionalGuardado: Profesional;
 
-      onProfesionalCreado(profesionalCreado);
+      if (profesional) {
+        const cambios: ProfesionalActualizar = {};
+
+        if (nombre !== profesional.nombre) {
+          cambios.nombre = nombre;
+        }
+
+        if (apellido !== profesional.apellido) {
+          cambios.apellido = apellido;
+        }
+
+        if (matricula !== profesional.matricula) {
+          cambios.matricula = matricula;
+        }
+
+        if (email !== (profesional.email ?? "")) {
+          cambios.email = email || null;
+        }
+
+        if (
+          telefono !== (profesional.telefono ?? "")
+        ) {
+          cambios.telefono = telefono || null;
+        }
+
+        profesionalGuardado =
+          await actualizarProfesional(
+            profesional.id,
+            cambios,
+          );
+      } else {
+        const datos: ProfesionalCrear = {
+          nombre,
+          apellido,
+          matricula,
+          ...(telefono ? { telefono } : {}),
+          ...(email ? { email } : {}),
+          especialidades: [
+            {
+              especialidad_id: especialidadId,
+              duracion_turno_minutos:
+                duracionTurnoMinutos,
+            },
+          ],
+        };
+
+        profesionalGuardado =
+          await crearProfesional(datos);
+      }
+
+      onProfesionalGuardado(
+        profesionalGuardado,
+      );
     } catch (error) {
       setMensajeError(
-        obtenerMensajeError(error),
+        obtenerMensajeError(
+          error,
+          esEdicion
+            ? "No se pudo actualizar el profesional. Revisá los datos ingresados."
+            : "No se pudo registrar el profesional. Revisá los datos ingresados.",
+        ),
       );
     } finally {
       setGuardando(false);
@@ -247,16 +319,21 @@ function ModalProfesional({
         <header className="modal-encabezado">
           <div>
             <p className="modal-etiqueta">
-              Nuevo registro
+              {esEdicion
+                ? "Edición"
+                : "Nuevo registro"}
             </p>
 
             <h2 id="titulo-modal-profesional">
-              Nuevo profesional
+              {esEdicion
+                ? "Editar profesional"
+                : "Nuevo profesional"}
             </h2>
 
             <p>
-              Completá los datos requeridos para
-              registrar al profesional.
+              {esEdicion
+                ? "Actualizá los datos básicos del profesional."
+                : "Completá los datos requeridos para registrar al profesional."}
             </p>
           </div>
 
@@ -328,40 +405,42 @@ function ModalProfesional({
               />
             </div>
 
-            <div className="campo-formulario">
-              <label htmlFor="profesional-especialidad">
-                Especialidad *
-              </label>
+            {!esEdicion && (
+              <div className="campo-formulario">
+                <label htmlFor="profesional-especialidad">
+                  Especialidad *
+                </label>
 
-              <select
-                id="profesional-especialidad"
-                name="especialidadId"
-                value={formulario.especialidadId}
-                onChange={manejarCambio}
-                disabled={
-                  cargandoEspecialidades
-                  || guardando
-                }
-                required
-              >
-                <option value="">
-                  {cargandoEspecialidades
-                    ? "Cargando especialidades..."
-                    : "Seleccioná una especialidad"}
-                </option>
+                <select
+                  id="profesional-especialidad"
+                  name="especialidadId"
+                  value={formulario.especialidadId}
+                  onChange={manejarCambio}
+                  disabled={
+                    cargandoEspecialidades
+                    || guardando
+                  }
+                  required
+                >
+                  <option value="">
+                    {cargandoEspecialidades
+                      ? "Cargando especialidades..."
+                      : "Seleccioná una especialidad"}
+                  </option>
 
-                {especialidades.map(
-                  (especialidad) => (
-                    <option
-                      key={especialidad.id}
-                      value={especialidad.id}
-                    >
-                      {especialidad.nombre}
-                    </option>
-                  ),
-                )}
-              </select>
-            </div>
+                  {especialidades.map(
+                    (especialidad) => (
+                      <option
+                        key={especialidad.id}
+                        value={especialidad.id}
+                      >
+                        {especialidad.nombre}
+                      </option>
+                    ),
+                  )}
+                </select>
+              </div>
+            )}
 
             <div className="campo-formulario">
               <label htmlFor="profesional-email">
@@ -395,29 +474,32 @@ function ModalProfesional({
               />
             </div>
 
-            <div className="campo-formulario">
-              <label htmlFor="profesional-duracion">
-                Duración del turno (minutos) *
-              </label>
+            {!esEdicion && (
+              <div className="campo-formulario">
+                <label htmlFor="profesional-duracion">
+                  Duración del turno (minutos) *
+                </label>
 
-              <input
-                id="profesional-duracion"
-                name="duracionTurnoMinutos"
-                type="number"
-                value={
-                  formulario.duracionTurnoMinutos
-                }
-                onChange={manejarCambio}
-                min={10}
-                max={180}
-                step={1}
-                disabled={guardando}
-                required
-              />
-            </div>
+                <input
+                  id="profesional-duracion"
+                  name="duracionTurnoMinutos"
+                  type="number"
+                  value={
+                    formulario.duracionTurnoMinutos
+                  }
+                  onChange={manejarCambio}
+                  min={10}
+                  max={180}
+                  step={1}
+                  disabled={guardando}
+                  required
+                />
+              </div>
+            )}
           </div>
 
-          {!cargandoEspecialidades
+          {!esEdicion
+            && !cargandoEspecialidades
             && especialidades.length === 0
             && !mensajeError
             && (
@@ -451,13 +533,18 @@ function ModalProfesional({
               className="boton-primario"
               disabled={
                 guardando
-                || cargandoEspecialidades
-                || especialidades.length === 0
+                || (!esEdicion
+                  && (
+                    cargandoEspecialidades
+                    || especialidades.length === 0
+                  ))
               }
             >
               {guardando
                 ? "Guardando..."
-                : "Guardar profesional"}
+                : esEdicion
+                  ? "Guardar cambios"
+                  : "Guardar profesional"}
             </button>
           </footer>
         </form>
