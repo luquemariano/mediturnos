@@ -2,6 +2,7 @@ type DashboardProps = {
   nombre: string;
   rol: string;
   onAbrirPacientes: () => void;
+  onAbrirProfesionales: () => void;
   onAbrirTurnos: () => void;
   onCerrarSesion: () => void;
 };
@@ -33,6 +34,7 @@ function Dashboard({
   nombre,
   rol,
   onAbrirPacientes,
+  onAbrirProfesionales,
   onAbrirTurnos,
   onCerrarSesion,
 }: DashboardProps) {
@@ -49,6 +51,7 @@ function Dashboard({
       descripcion:
         "Gestionar profesionales, matrículas y especialidades.",
       icono: "🩺",
+      accion: onAbrirProfesionales,
     },
     {
       titulo: "Turnos",
