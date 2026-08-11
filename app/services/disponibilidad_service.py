@@ -73,6 +73,47 @@ def obtener_disponibilidades_profesional(
         profesional_id,
     )
 
+
+def validar_turno_dentro_disponibilidad(
+    db: Session,
+    profesional_id: int,
+    fecha_hora: datetime,
+    duracion_minutos: int,
+) -> None:
+    disponibilidades = buscar_por_dia(
+        db,
+        profesional_id,
+        fecha_hora.weekday(),
+    )
+    fin_turno = fecha_hora + timedelta(
+        minutes=duracion_minutos,
+    )
+
+    for disponibilidad in disponibilidades:
+        inicio_disponibilidad = datetime.combine(
+            fecha_hora.date(),
+            disponibilidad.hora_inicio,
+        )
+        fin_disponibilidad = datetime.combine(
+            fecha_hora.date(),
+            disponibilidad.hora_fin,
+        )
+
+        if (
+            inicio_disponibilidad <= fecha_hora
+            and fin_turno <= fin_disponibilidad
+        ):
+            return
+
+    raise HTTPException(
+        status_code=409,
+        detail=(
+            "El horario seleccionado no está dentro de la "
+            "disponibilidad del profesional."
+        ),
+    )
+
+
 def obtener_horarios_libres(
     db: Session,
     prestacion_id: int,

@@ -22,7 +22,10 @@ from app.schemas.turno import (
     TurnoCrearPropio,
     TurnoReprogramar,
 )
-from app.services.disponibilidad_service import obtener_horarios_libres
+from app.services.disponibilidad_service import (
+    obtener_horarios_libres,
+    validar_turno_dentro_disponibilidad,
+)
 
 
 def crear_turno(
@@ -68,6 +71,13 @@ def crear_turno(
             status_code=400,
             detail="La fecha y hora deben ser futuras.",
         )
+
+    validar_turno_dentro_disponibilidad(
+        db,
+        prestacion.profesional_id,
+        datos.fecha_hora,
+        prestacion.duracion_minutos,
+    )
 
     conflicto = buscar_conflicto_horario(
         db,
