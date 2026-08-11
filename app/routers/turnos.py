@@ -58,7 +58,6 @@ def listar_turnos(
         requiere_roles(
             "administrador",
             "recepcionista",
-            "profesional",
         )
     ),
 ):
@@ -77,7 +76,6 @@ def ver_turno(
         requiere_roles(
             "administrador",
             "recepcionista",
-            "profesional",
         )
     ),
 ):
