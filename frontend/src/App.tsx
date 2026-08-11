@@ -4,6 +4,7 @@ import axios from "axios";
 
 import "./App.css";
 import Dashboard from "./components/Dashboard";
+import Especialidades from "./components/Especialidades";
 import Pacientes from "./components/Pacientes";
 import Profesionales from "./components/Profesionales";
 import Turnos from "./components/Turnos";
@@ -17,6 +18,7 @@ import type { UsuarioActual } from "./types/auth";
 type Vista =
   | "dashboard"
   | "pacientes"
+  | "especialidades"
   | "profesionales"
   | "turnos";
 
@@ -131,6 +133,16 @@ function App() {
       );
     }
 
+    if (vista === "especialidades") {
+      return (
+        <Especialidades
+          onVolver={() =>
+            setVista("dashboard")
+          }
+        />
+      );
+    }
+
     return (
       <Dashboard
         nombre={usuario.nombre}
@@ -140,6 +152,9 @@ function App() {
         }
         onAbrirProfesionales={() =>
           setVista("profesionales")
+        }
+        onAbrirEspecialidades={() =>
+          setVista("especialidades")
         }
         onAbrirTurnos={() =>
           setVista("turnos")

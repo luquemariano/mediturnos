@@ -3,6 +3,7 @@ type DashboardProps = {
   rol: string;
   onAbrirPacientes: () => void;
   onAbrirProfesionales: () => void;
+  onAbrirEspecialidades: () => void;
   onAbrirTurnos: () => void;
   onCerrarSesion: () => void;
 };
@@ -35,6 +36,7 @@ function Dashboard({
   rol,
   onAbrirPacientes,
   onAbrirProfesionales,
+  onAbrirEspecialidades,
   onAbrirTurnos,
   onCerrarSesion,
 }: DashboardProps) {
@@ -53,6 +55,17 @@ function Dashboard({
       icono: "🩺",
       accion: onAbrirProfesionales,
     },
+    ...(rol === "administrador"
+      ? [
+        {
+          titulo: "Especialidades",
+          descripcion:
+            "Configurar especialidades y duraciones predeterminadas.",
+          icono: "✦",
+          accion: onAbrirEspecialidades,
+        },
+      ]
+      : []),
     {
       titulo: "Turnos",
       descripcion:
