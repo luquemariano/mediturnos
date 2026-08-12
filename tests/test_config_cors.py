@@ -100,6 +100,7 @@ def test_cors_configura_metodos_y_headers_explicitos():
         "GET",
         "POST",
         "PATCH",
+        "DELETE",
         "OPTIONS",
     ]
     assert middleware.kwargs["allow_headers"] == [

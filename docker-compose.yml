@@ -41,18 +41,16 @@ services:
       JWT_SECRET_KEY: ${JWT_SECRET_KEY}
       JWT_ALGORITHM: ${JWT_ALGORITHM}
       JWT_EXPIRE_MINUTES: ${JWT_EXPIRE_MINUTES}
+      PORT: ${PORT:-8000}
+      BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL:-}
+      BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD:-}
+      BOOTSTRAP_ADMIN_NAME: ${BOOTSTRAP_ADMIN_NAME:-Administrador}
       DEMO_SEED_ENABLED: ${DEMO_SEED_ENABLED:-false}
       DEMO_ADMIN_EMAIL: ${DEMO_ADMIN_EMAIL:-}
       DEMO_ADMIN_PASSWORD: ${DEMO_ADMIN_PASSWORD:-}
       DEMO_ADMIN_RESET_PASSWORD: ${DEMO_ADMIN_RESET_PASSWORD:-false}
 
     ports:
-      - "8000:8000"
-
-    command: >
-      sh -c "
-      alembic upgrade head &&
-      uvicorn app.main:app --host 0.0.0.0 --port 8000
-      "
+      - "${PORT:-8000}:${PORT:-8000}"
 volumes:
   postgres_data:

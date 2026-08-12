@@ -153,6 +153,23 @@ Swagger:
 http://127.0.0.1:8000/docs
 ```
 
+El contenedor aplica `alembic upgrade head` antes de iniciar Uvicorn. El
+puerto se controla con `PORT` y usa `8000` si no se configura. En
+`APP_ENV=production`, la API valida la configuración de PostgreSQL, JWT y
+CORS, y deshabilita `/docs`, `/redoc` y `/openapi.json`. Los endpoints
+`/health/live` y `/health/ready` quedan disponibles para monitoreo.
+
+Para crear manualmente el primer administrador de una instalación vacía,
+configurá `BOOTSTRAP_ADMIN_EMAIL`, `BOOTSTRAP_ADMIN_PASSWORD` y,
+opcionalmente, `BOOTSTRAP_ADMIN_NAME`. Luego ejecutá:
+
+```bash
+docker compose --env-file .env exec api python -m app.scripts.bootstrap_admin
+```
+
+Este comando no se ejecuta durante el arranque y se bloquea si ya existe un
+administrador o si el email pertenece a otra cuenta.
+
 ### 4. Cargar datos demo
 
 El seed está deshabilitado por defecto. Antes de ejecutarlo, configurá
