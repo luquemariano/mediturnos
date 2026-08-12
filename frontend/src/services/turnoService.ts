@@ -45,6 +45,7 @@ export async function crearTurno(
 export async function obtenerHorariosLibres(
   prestacionId: number,
   fecha: string,
+  turnoIdExcluido?: number,
 ): Promise<HorarioLibre[]> {
   const respuesta = await api.get<HorarioLibre[]>(
     "/disponibilidades/horarios-libres/",
@@ -52,7 +53,22 @@ export async function obtenerHorariosLibres(
       params: {
         prestacion_id: prestacionId,
         fecha,
+        turno_id_excluido: turnoIdExcluido,
       },
+    },
+  );
+
+  return respuesta.data;
+}
+
+export async function reprogramarTurno(
+  turnoId: number,
+  fechaHora: string,
+): Promise<Turno> {
+  const respuesta = await api.patch<Turno>(
+    `/turnos/${turnoId}/reprogramar`,
+    {
+      fecha_hora: fechaHora,
     },
   );
 

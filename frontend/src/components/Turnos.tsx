@@ -8,6 +8,7 @@ import axios from "axios";
 
 import "./Turnos.css";
 import ModalNuevoTurno from "./ModalNuevoTurno";
+import ModalReprogramarTurno from "./ModalReprogramarTurno";
 import {
   cambiarEstadoTurno,
   obtenerTurnos,
@@ -153,6 +154,9 @@ function Turnos({
 
   const [mostrarNuevoTurno, setMostrarNuevoTurno] =
     useState(false);
+
+  const [turnoAReprogramar, setTurnoAReprogramar] =
+    useState<Turno | null>(null);
 
 
   const cargarTurnos =
@@ -612,6 +616,26 @@ function Turnos({
                                     </button>
                                   )}
 
+                                {["administrador", "recepcionista"].includes(rol)
+                                  && turno.estado
+                                  !== "cancelado"
+                                  && turno.estado
+                                  !== "finalizado"
+                                  && (
+                                    <button
+                                      type="button"
+                                      className="accion-reprogramar"
+                                      disabled={turnoActualizando === turno.id}
+                                      onClick={() => {
+                                        setMensajeError("");
+                                        setMensajeExito("");
+                                        setTurnoAReprogramar(turno);
+                                      }}
+                                    >
+                                      Reprogramar
+                                    </button>
+                                  )}
+
                                 {turno.estado
                                   !== "cancelado"
                                   && turno.estado
@@ -659,6 +683,26 @@ function Turnos({
           }}
         />
       )}
+
+      {turnoAReprogramar
+        && ["administrador", "recepcionista"].includes(rol)
+        && (
+          <ModalReprogramarTurno
+            turno={turnoAReprogramar}
+            onCerrar={() => setTurnoAReprogramar(null)}
+            onTurnoReprogramado={(turnoActualizado) => {
+              setTurnos((actuales) => actuales.map((turno) =>
+                turno.id === turnoActualizado.id
+                  ? turnoActualizado
+                  : turno
+              ));
+              setTurnoAReprogramar(null);
+              setMensajeExito(
+                `El turno de ${turnoActualizado.paciente_nombre} fue reprogramado correctamente.`,
+              );
+            }}
+          />
+        )}
     </main>
   );
 }
