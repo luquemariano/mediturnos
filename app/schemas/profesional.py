@@ -1,6 +1,7 @@
 from pydantic import (
     BaseModel,
     ConfigDict,
+    EmailStr,
     Field,
     field_validator,
 )
@@ -38,7 +39,7 @@ class ProfesionalCrear(BaseModel):
         max_length=30,
     )
 
-    email: str | None = Field(
+    email: EmailStr | None = Field(
         default=None,
         max_length=150,
     )
@@ -72,7 +73,7 @@ class ProfesionalActualizar(BaseModel):
         max_length=30,
     )
 
-    email: str | None = Field(
+    email: EmailStr | None = Field(
         default=None,
         max_length=150,
     )

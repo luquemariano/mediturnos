@@ -23,3 +23,8 @@ export async function crearPaciente(
 
   return respuesta.data;
 }
+
+export async function obtenerMiPerfilPaciente(): Promise<Paciente> {
+  const respuesta = await api.get<Paciente>("/pacientes/me");
+  return respuesta.data;
+}

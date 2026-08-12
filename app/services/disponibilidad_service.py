@@ -45,6 +45,25 @@ def crear_disponibilidad(
             detail="El profesional está inactivo.",
         )
 
+    disponibilidades_del_dia = buscar_por_dia(
+        db,
+        datos.profesional_id,
+        datos.dia_semana,
+    )
+
+    if any(
+        datos.hora_inicio < disponibilidad.hora_fin
+        and datos.hora_fin > disponibilidad.hora_inicio
+        for disponibilidad in disponibilidades_del_dia
+    ):
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "La disponibilidad se solapa con otro horario "
+                "activo del profesional para el mismo día."
+            ),
+        )
+
     disponibilidad = guardar_disponibilidad(
         db,
         datos,
@@ -214,6 +233,7 @@ def obtener_horarios_libres(
     )
 
     horarios_libres = []
+    horarios_agregados = set()
 
     for disponibilidad in disponibilidades:
         horario_actual = fecha_hora_civil_a_utc(
@@ -245,12 +265,16 @@ def obtener_horarios_libres(
                     existe_conflicto = True
                     break
 
-            if not existe_conflicto:
+            if (
+                not existe_conflicto
+                and horario_actual not in horarios_agregados
+            ):
                 horarios_libres.append(
                     {
                         "fecha_hora": horario_actual,
                     }
                 )
+                horarios_agregados.add(horario_actual)
 
             horario_actual += duracion
 

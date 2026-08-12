@@ -15,6 +15,11 @@ Promise<Profesional[]> {
   return respuesta.data;
 }
 
+export async function obtenerMiPerfilProfesional(): Promise<Profesional> {
+  const respuesta = await api.get<Profesional>("/profesionales/me");
+  return respuesta.data;
+}
+
 
 export async function crearProfesional(
   datos: ProfesionalCrear,

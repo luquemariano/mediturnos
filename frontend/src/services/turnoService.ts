@@ -16,6 +16,37 @@ Promise<Turno[]> {
   return respuesta.data;
 }
 
+export async function obtenerMiAgendaProfesional(): Promise<Turno[]> {
+  const respuesta = await api.get<Turno[]>("/profesionales/me/agenda");
+  return respuesta.data;
+}
+
+export async function obtenerMisTurnosPaciente(): Promise<Turno[]> {
+  const respuesta = await api.get<Turno[]>("/pacientes/me/turnos");
+  return respuesta.data;
+}
+
+export async function cancelarMiTurno(turnoId: number): Promise<Turno> {
+  const respuesta = await api.patch<Turno>(
+    `/pacientes/me/turnos/${turnoId}/cancelar`,
+  );
+  return respuesta.data;
+}
+
+export async function finalizarMiTurno(turnoId: number): Promise<Turno> {
+  const respuesta = await api.patch<Turno>(
+    `/profesionales/me/agenda/${turnoId}/finalizar`,
+  );
+  return respuesta.data;
+}
+
+export async function marcarAusenteMiTurno(turnoId: number): Promise<Turno> {
+  const respuesta = await api.patch<Turno>(
+    `/profesionales/me/agenda/${turnoId}/ausente`,
+  );
+  return respuesta.data;
+}
+
 
 export async function cambiarEstadoTurno(
   turnoId: number,

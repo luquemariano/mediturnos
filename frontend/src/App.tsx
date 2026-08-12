@@ -10,6 +10,9 @@ import Pacientes from "./components/Pacientes";
 import Prestaciones from "./components/Prestaciones";
 import Profesionales from "./components/Profesionales";
 import Turnos from "./components/Turnos";
+import AgendaPropia from "./components/AgendaPropia";
+import MiDisponibilidad from "./components/MiDisponibilidad";
+import PerfilPropio from "./components/PerfilPropio";
 import {
   iniciarSesion,
   obtenerUsuarioActual,
@@ -29,7 +32,8 @@ type Vista =
   | "prestaciones"
   | "profesionales"
   | "turnos"
-  | "disponibilidades";
+  | "disponibilidades"
+  | "perfil";
 
 
 function App() {
@@ -172,6 +176,9 @@ function App() {
     }
 
     if (vista === "turnos") {
+      if (usuario.rol === "profesional" || usuario.rol === "paciente") {
+        return <AgendaPropia tipo={usuario.rol} onVolver={() => setVista("dashboard")} />;
+      }
       return (
         <Turnos
           rol={usuario.rol}
@@ -184,13 +191,19 @@ function App() {
 
     if (
       vista === "disponibilidades"
-      && ["administrador", "recepcionista"].includes(usuario.rol)
     ) {
-      return (
+      if (usuario.rol === "profesional") {
+        return <MiDisponibilidad onVolver={() => setVista("dashboard")} />;
+      }
+      if (["administrador", "recepcionista"].includes(usuario.rol)) return (
         <Disponibilidades
           onVolver={() => setVista("dashboard")}
         />
       );
+    }
+
+    if (vista === "perfil" && ["profesional", "paciente"].includes(usuario.rol)) {
+      return <PerfilPropio tipo={usuario.rol as "profesional" | "paciente"} onVolver={() => setVista("dashboard")} />;
     }
 
     if (vista === "profesionales") {
@@ -249,6 +262,7 @@ function App() {
         onAbrirDisponibilidades={() =>
           setVista("disponibilidades")
         }
+        onAbrirPerfil={() => setVista("perfil")}
         onCerrarSesion={cerrarSesion}
       />
     );

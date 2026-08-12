@@ -40,6 +40,54 @@ MENSAJE_HORARIO_NO_DISPONIBLE = (
     "El horario ya no está disponible."
 )
 
+TRANSICIONES_ESTADO_PERMITIDAS = {
+    "reservado": {
+        "reservado",
+        "confirmado",
+        "cancelado",
+        "finalizado",
+        "ausente",
+    },
+    "confirmado": {
+        "reservado",
+        "confirmado",
+        "cancelado",
+        "finalizado",
+        "ausente",
+    },
+    # Se conserva la reapertura desde cancelado para que una
+    # confirmación de pago válida pueda confirmar el turno.
+    "cancelado": {"reservado", "confirmado", "cancelado"},
+    "finalizado": set(),
+    "ausente": set(),
+}
+ESTADOS_TERMINALES = {"finalizado", "ausente"}
+
+
+def validar_transicion_estado(
+    estado_actual: str,
+    estado_nuevo: str,
+) -> None:
+    if estado_nuevo not in TRANSICIONES_ESTADO_PERMITIDAS.get(
+        estado_actual,
+        set(),
+    ):
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                f"El turno está {estado_actual} y no puede cambiar "
+                f"al estado {estado_nuevo}."
+            ),
+        )
+
+
+def aplicar_transicion_estado(
+    turno: Turno,
+    estado_nuevo: str,
+) -> None:
+    validar_transicion_estado(turno.estado, estado_nuevo)
+    turno.estado = estado_nuevo
+
 
 def _confirmar_cambio_turno(
     db: Session,
@@ -212,6 +260,8 @@ def cambiar_estado_turno(
         turno_id,
     )
 
+    validar_transicion_estado(turno.estado, datos.estado)
+
     if (
         turno.estado == "cancelado"
         and datos.estado != "cancelado"
@@ -221,7 +271,7 @@ def cambiar_estado_turno(
             turno.profesional_id,
         )
 
-    turno.estado = datos.estado
+    aplicar_transicion_estado(turno, datos.estado)
 
     return _confirmar_cambio_turno(db, turno)
 
@@ -236,7 +286,7 @@ def reprogramar_turno(
         turno_id,
     )
 
-    if turno.estado in {"cancelado", "finalizado"}:
+    if turno.estado in {"cancelado", "finalizado", "ausente"}:
         raise HTTPException(
             status_code=400,
             detail=(
@@ -350,13 +400,7 @@ def finalizar_turno_profesional(
             detail="No se puede finalizar un turno cancelado.",
         )
 
-    if turno.estado == "finalizado":
-        raise HTTPException(
-            status_code=409,
-            detail="El turno ya se encuentra finalizado.",
-        )
-
-    turno.estado = "finalizado"
+    aplicar_transicion_estado(turno, "finalizado")
 
     db.commit()
     db.refresh(turno)
@@ -387,19 +431,7 @@ def marcar_ausente_turno_profesional(
             detail="No se puede marcar ausente un turno cancelado.",
         )
 
-    if turno.estado == "finalizado":
-        raise HTTPException(
-            status_code=400,
-            detail="No se puede marcar ausente un turno finalizado.",
-        )
-
-    if turno.estado == "ausente":
-        raise HTTPException(
-            status_code=409,
-            detail="El turno ya está marcado como ausente.",
-        )
-
-    turno.estado = "ausente"
+    aplicar_transicion_estado(turno, "ausente")
 
     db.commit()
     db.refresh(turno)
@@ -429,19 +461,7 @@ def cancelar_turno_paciente(
             detail="El turno ya se encuentra cancelado.",
         )
 
-    if turno.estado == "finalizado":
-        raise HTTPException(
-            status_code=400,
-            detail="No se puede cancelar un turno finalizado.",
-        )
-
-    if turno.estado == "ausente":
-        raise HTTPException(
-            status_code=400,
-            detail="No se puede cancelar un turno marcado como ausente.",
-        )
-
-    turno.estado = "cancelado"
+    aplicar_transicion_estado(turno, "cancelado")
 
     db.commit()
     db.refresh(turno)

@@ -24,7 +24,11 @@ from app.repositories.pago_repository import (
 from app.repositories.turno_repository import (
     bloquear_agenda_profesional,
 )
-from app.services.turno_service import es_conflicto_agenda
+from app.services.turno_service import (
+    ESTADOS_TERMINALES,
+    aplicar_transicion_estado,
+    es_conflicto_agenda,
+)
 
 
 ESTADOS_PAGO_NEGATIVOS = {
@@ -33,7 +37,6 @@ ESTADOS_PAGO_NEGATIVOS = {
     "refunded",
     "charged_back",
 }
-ESTADOS_TURNO_TERMINALES = {"finalizado", "ausente"}
 MOTIVO_HORARIO_REUTILIZADO = "horario_reutilizado"
 
 
@@ -461,13 +464,13 @@ def procesar_notificacion_pago(
     pago.motivo_revision = None
 
     if estado == "approved":
-        if turno.estado not in ESTADOS_TURNO_TERMINALES:
-            turno.estado = "confirmado"
+        if turno.estado not in ESTADOS_TERMINALES:
+            aplicar_transicion_estado(turno, "confirmado")
     elif (
         estado in ESTADOS_PAGO_NEGATIVOS
-        and turno.estado not in ESTADOS_TURNO_TERMINALES
+        and turno.estado not in ESTADOS_TERMINALES
     ):
-        turno.estado = "cancelado"
+        aplicar_transicion_estado(turno, "cancelado")
 
     try:
         db.commit()
