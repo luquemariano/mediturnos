@@ -8,9 +8,11 @@ from decimal import Decimal
 
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.database.connection import SessionLocal
 from app.models.especialidad import Especialidad
 from app.models.paciente import Paciente
+from app.models.pago import Pago
 from app.models.prestacion import Prestacion
 from app.models.profesional import Profesional
 from app.models.profesional_especialidad import (
@@ -22,8 +24,47 @@ from app.core.security import generar_hash_password
 
 
 MARCA_TURNO_DEMO = "[DEMO_MEDI_TURNOS]"
-ADMIN_DEMO_EMAIL = "admin@mediturnos.demo"
-ADMIN_DEMO_PASSWORD = "Demo1234!"
+NOMBRE_ADMIN_DEMO = "Administrador Demo"
+
+
+class ConfiguracionSeedInvalidaError(RuntimeError):
+    pass
+
+
+class CuentaAdminNoDemoError(RuntimeError):
+    pass
+
+
+class TurnosDemoConPagosError(RuntimeError):
+    pass
+
+
+def validar_ejecucion_seed() -> None:
+    if settings.app_env == "production":
+        raise ConfiguracionSeedInvalidaError(
+            "El seed demo no puede ejecutarse en production."
+        )
+
+    if not settings.demo_seed_enabled:
+        raise ConfiguracionSeedInvalidaError(
+            "El seed demo está deshabilitado. Configurá "
+            "DEMO_SEED_ENABLED=true para ejecutarlo."
+        )
+
+    if not (settings.demo_admin_email or "").strip():
+        raise ConfiguracionSeedInvalidaError(
+            "DEMO_ADMIN_EMAIL es obligatorio para ejecutar "
+            "el seed demo."
+        )
+
+
+def obtener_password_demo() -> str | None:
+    if settings.demo_admin_password is None:
+        return None
+
+    password = settings.demo_admin_password.get_secret_value()
+
+    return password if password else None
 
 
 
@@ -31,28 +72,51 @@ ADMIN_DEMO_PASSWORD = "Demo1234!"
 def obtener_o_crear_admin_demo(
     db: Session,
 ) -> Usuario:
+    email = (settings.demo_admin_email or "").strip()
     usuario = (
         db.query(Usuario)
-        .filter(Usuario.email == ADMIN_DEMO_EMAIL)
+        .filter(Usuario.email == email)
         .first()
     )
 
-    password_hash = generar_hash_password(
-        ADMIN_DEMO_PASSWORD,
-    )
-
     if usuario is not None:
-        usuario.nombre = "Administrador Demo"
-        usuario.password_hash = password_hash
-        usuario.rol = "administrador"
+        if (
+            usuario.nombre != NOMBRE_ADMIN_DEMO
+            or usuario.rol != "administrador"
+        ):
+            raise CuentaAdminNoDemoError(
+                "La cuenta configurada en DEMO_ADMIN_EMAIL ya "
+                "existe, pero no puede identificarse inequívocamente "
+                "como el administrador demo."
+            )
+
+        if settings.demo_admin_reset_password:
+            password = obtener_password_demo()
+
+            if password is None:
+                raise ConfiguracionSeedInvalidaError(
+                    "DEMO_ADMIN_PASSWORD es obligatorio cuando "
+                    "DEMO_ADMIN_RESET_PASSWORD=true."
+                )
+
+            usuario.password_hash = generar_hash_password(password)
+
         usuario.activo = True
 
         return usuario
 
+    password = obtener_password_demo()
+
+    if password is None:
+        raise ConfiguracionSeedInvalidaError(
+            "DEMO_ADMIN_PASSWORD es obligatorio para crear el "
+            "administrador demo."
+        )
+
     usuario = Usuario(
-        nombre="Administrador Demo",
-        email=ADMIN_DEMO_EMAIL,
-        password_hash=password_hash,
+        nombre=NOMBRE_ADMIN_DEMO,
+        email=email,
+        password_hash=generar_hash_password(password),
         rol="administrador",
         activo=True,
     )
@@ -319,13 +383,29 @@ def eliminar_turnos_demo(
         .all()
     )
 
+    ids_turnos_demo = [turno.id for turno in turnos_demo]
+
+    if ids_turnos_demo:
+        pago_asociado = (
+            db.query(Pago.id)
+            .filter(Pago.turno_id.in_(ids_turnos_demo))
+            .first()
+        )
+
+        if pago_asociado is not None:
+            raise TurnosDemoConPagosError(
+                "No se pueden recrear los turnos demo porque uno "
+                "o más tienen pagos asociados. No se eliminó ningún "
+                "turno ni pago."
+            )
+
     for turno in turnos_demo:
         db.delete(turno)
 
     db.flush()
 
 
-def cargar_datos_demo(
+def _cargar_datos_demo(
     db: Session,
 ) -> None:
     print("Cargando administrador demo...")
@@ -781,8 +861,9 @@ def cargar_datos_demo(
             descripcion_demo=descripcion,
         )
 
-    db.commit()
 
+
+def imprimir_resumen_seed() -> None:
     print("")
     print("Datos demo cargados correctamente.")
     print("----------------------------------")
@@ -794,7 +875,22 @@ def cargar_datos_demo(
     print("")
     print("Credenciales de acceso demo")
     print("---------------------------")
-    print(f"Email: {ADMIN_DEMO_EMAIL}")
+    print(f"Email: {settings.demo_admin_email}")
+
+
+def cargar_datos_demo(
+    db: Session,
+) -> None:
+    validar_ejecucion_seed()
+
+    try:
+        _cargar_datos_demo(db)
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+
+    imprimir_resumen_seed()
 
 
 def main() -> None:

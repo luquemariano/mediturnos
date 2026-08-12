@@ -155,6 +155,21 @@ http://127.0.0.1:8000/docs
 
 ### 4. Cargar datos demo
 
+El seed está deshabilitado por defecto. Antes de ejecutarlo, configurá
+explícitamente estas variables en `.env`:
+
+```dotenv
+APP_ENV=demo
+DEMO_SEED_ENABLED=true
+DEMO_ADMIN_EMAIL=tu_admin_demo@ejemplo.com
+DEMO_ADMIN_PASSWORD=elegir_una_contraseña_segura
+DEMO_ADMIN_RESET_PASSWORD=false
+```
+
+`APP_ENV=production` bloquea siempre la ejecución. Si el administrador demo
+ya existe, su contraseña sólo se reemplaza cuando
+`DEMO_ADMIN_RESET_PASSWORD=true`.
+
 ```bash
 docker compose --env-file .env exec api python -m app.scripts.seed
 ```
@@ -162,9 +177,9 @@ docker compose --env-file .env exec api python -m app.scripts.seed
 El script crea o actualiza:
 
 - 1 administrador demo.
-- 3 especialidades.
-- 4 profesionales.
-- 6 prestaciones.
+- 4 especialidades.
+- 5 profesionales.
+- 7 prestaciones.
 - 8 pacientes demo.
 - 15 turnos con diferentes estados.
 
@@ -186,12 +201,10 @@ http://localhost:5173
 
 ## Credenciales demo
 
-```text
-Email: admin@mediturnos.demo
-Contraseña: Demo1234!
-```
-
-Estas credenciales existen únicamente para facilitar la evaluación local del proyecto.
+El email y la contraseña son los valores que configures en
+`DEMO_ADMIN_EMAIL` y `DEMO_ADMIN_PASSWORD`. No hay una contraseña demo
+predeterminada. Estas credenciales deben utilizarse únicamente para
+desarrollo local o ambientes de demostración.
 
 ## Capturas
 

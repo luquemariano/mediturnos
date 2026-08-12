@@ -1,4 +1,6 @@
-from pydantic import AnyHttpUrl, TypeAdapter, field_validator
+from typing import Literal
+
+from pydantic import AnyHttpUrl, SecretStr, TypeAdapter, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -6,6 +8,12 @@ adaptador_origen_http = TypeAdapter(AnyHttpUrl)
 
 
 class Settings(BaseSettings):
+    app_env: Literal[
+        "development",
+        "demo",
+        "test",
+        "production",
+    ] = "development"
     database_url: str = "sqlite:///./mediturnos.db"
     app_timezone: str = "America/Argentina/Buenos_Aires"
     cors_allowed_origins: list[str] = [
@@ -17,6 +25,10 @@ class Settings(BaseSettings):
     jwt_secret_key: str
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 60
+    demo_seed_enabled: bool = False
+    demo_admin_email: str | None = None
+    demo_admin_password: SecretStr | None = None
+    demo_admin_reset_password: bool = False
 
     @field_validator("cors_allowed_origins")
     @classmethod
