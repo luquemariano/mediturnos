@@ -21,3 +21,14 @@ export interface Turno {
   estado: EstadoTurno;
   observaciones: string | null;
 }
+
+export interface TurnoCrear {
+  paciente_id: number;
+  prestacion_id: number;
+  fecha_hora: string;
+  observaciones: string | null;
+}
+
+export interface HorarioLibre {
+  fecha_hora: string;
+}

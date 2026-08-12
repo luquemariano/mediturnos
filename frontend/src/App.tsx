@@ -119,6 +119,7 @@ function App() {
     if (vista === "turnos") {
       return (
         <Turnos
+          rol={usuario.rol}
           onVolver={() =>
             setVista("dashboard")
           }

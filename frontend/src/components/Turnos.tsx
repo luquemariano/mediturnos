@@ -7,6 +7,7 @@ import {
 import axios from "axios";
 
 import "./Turnos.css";
+import ModalNuevoTurno from "./ModalNuevoTurno";
 import {
   cambiarEstadoTurno,
   obtenerTurnos,
@@ -19,6 +20,7 @@ import type {
 
 type TurnosProps = {
   onVolver: () => void;
+  rol: string;
 };
 
 
@@ -145,6 +147,7 @@ function agruparTurnosPorFecha(
 
 function Turnos({
   onVolver,
+  rol,
 }: TurnosProps) {
   const [turnos, setTurnos] =
     useState<Turno[]>([]);
@@ -166,6 +169,9 @@ function Turnos({
 
   const [turnoActualizando, setTurnoActualizando] =
     useState<number | null>(null);
+
+  const [mostrarNuevoTurno, setMostrarNuevoTurno] =
+    useState(false);
 
 
   const cargarTurnos =
@@ -343,7 +349,22 @@ function Turnos({
               </p>
             </div>
 
-            <div className="turnos-resumen">
+            <div className="turnos-cabecera-acciones">
+              {["administrador", "recepcionista"].includes(rol) && (
+                <button
+                  type="button"
+                  className="boton-primario"
+                  onClick={() => {
+                    setMensajeError("");
+                    setMensajeExito("");
+                    setMostrarNuevoTurno(true);
+                  }}
+                >
+                  Nuevo turno
+                </button>
+              )}
+
+              <div className="turnos-resumen">
               <strong>
                 {turnosFiltrados.length}
               </strong>
@@ -352,7 +373,8 @@ function Turnos({
                 {turnosFiltrados.length === 1
                   ? "turno visible"
                   : "turnos visibles"}
-              </span>
+                </span>
+              </div>
             </div>
           </div>
 
@@ -649,6 +671,19 @@ function Turnos({
             )}
         </section>
       </section>
+
+      {mostrarNuevoTurno && (
+        <ModalNuevoTurno
+          onCerrar={() => setMostrarNuevoTurno(false)}
+          onTurnoCreado={(turno) => {
+            setTurnos((actuales) => [...actuales, turno]);
+            setMostrarNuevoTurno(false);
+            setMensajeExito(
+              `El turno de ${turno.paciente_nombre} fue creado correctamente.`,
+            );
+          }}
+        />
+      )}
     </main>
   );
 }
