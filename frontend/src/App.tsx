@@ -6,6 +6,7 @@ import "./App.css";
 import Dashboard from "./components/Dashboard";
 import Especialidades from "./components/Especialidades";
 import Pacientes from "./components/Pacientes";
+import Prestaciones from "./components/Prestaciones";
 import Profesionales from "./components/Profesionales";
 import Turnos from "./components/Turnos";
 import {
@@ -19,6 +20,7 @@ type Vista =
   | "dashboard"
   | "pacientes"
   | "especialidades"
+  | "prestaciones"
   | "profesionales"
   | "turnos";
 
@@ -143,6 +145,19 @@ function App() {
       );
     }
 
+    if (
+      vista === "prestaciones"
+      && usuario.rol === "administrador"
+    ) {
+      return (
+        <Prestaciones
+          onVolver={() =>
+            setVista("dashboard")
+          }
+        />
+      );
+    }
+
     return (
       <Dashboard
         nombre={usuario.nombre}
@@ -155,6 +170,9 @@ function App() {
         }
         onAbrirEspecialidades={() =>
           setVista("especialidades")
+        }
+        onAbrirPrestaciones={() =>
+          setVista("prestaciones")
         }
         onAbrirTurnos={() =>
           setVista("turnos")

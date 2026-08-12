@@ -4,6 +4,7 @@ type DashboardProps = {
   onAbrirPacientes: () => void;
   onAbrirProfesionales: () => void;
   onAbrirEspecialidades: () => void;
+  onAbrirPrestaciones: () => void;
   onAbrirTurnos: () => void;
   onCerrarSesion: () => void;
 };
@@ -37,6 +38,7 @@ function Dashboard({
   onAbrirPacientes,
   onAbrirProfesionales,
   onAbrirEspecialidades,
+  onAbrirPrestaciones,
   onAbrirTurnos,
   onCerrarSesion,
 }: DashboardProps) {
@@ -63,6 +65,13 @@ function Dashboard({
             "Configurar especialidades y duraciones predeterminadas.",
           icono: "✦",
           accion: onAbrirEspecialidades,
+        },
+        {
+          titulo: "Prestaciones",
+          descripcion:
+            "Gestionar servicios, duraciones y modalidades.",
+          icono: "✚",
+          accion: onAbrirPrestaciones,
         },
       ]
       : []),
