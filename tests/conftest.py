@@ -1,3 +1,5 @@
+import os
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -8,13 +10,23 @@ from app.database.connection import Base, obtener_db
 from app.main import app
 
 
-TEST_DATABASE_URL = "sqlite://"
+TEST_DATABASE_URL = os.getenv(
+    "TEST_DATABASE_URL",
+    "sqlite://",
+)
 
+
+opciones_engine = {}
+
+if TEST_DATABASE_URL.startswith("sqlite"):
+    opciones_engine = {
+        "connect_args": {"check_same_thread": False},
+        "poolclass": StaticPool,
+    }
 
 engine_test = create_engine(
     TEST_DATABASE_URL,
-    connect_args={"check_same_thread": False},
-    poolclass=StaticPool,
+    **opciones_engine,
 )
 
 

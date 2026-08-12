@@ -1,4 +1,9 @@
 from datetime import datetime, time, timedelta
+
+from app.core.datetime_utils import (
+    fecha_actual_negocio,
+    fecha_hora_civil_a_utc,
+)
 from decimal import Decimal
 
 from sqlalchemy.orm import Session
@@ -264,11 +269,11 @@ def construir_fecha(
     hora: int,
     minuto: int,
 ) -> datetime:
-    fecha = datetime.now().date() + timedelta(
+    fecha = fecha_actual_negocio() + timedelta(
         days=dias_desde_hoy,
     )
 
-    return datetime.combine(
+    return fecha_hora_civil_a_utc(
         fecha,
         time(
             hour=hora,

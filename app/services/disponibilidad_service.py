@@ -14,6 +14,14 @@ from app.repositories.disponibilidad_repository import (
 from app.schemas.disponibilidad import DisponibilidadCrear
 from datetime import date, datetime, timedelta
 
+from app.core.datetime_utils import (
+    ZONA_NEGOCIO,
+    a_zona_negocio,
+    desde_base_utc,
+    fecha_actual_negocio,
+    fecha_hora_civil_a_utc,
+)
+
 
 def crear_disponibilidad(
     db: Session,
@@ -80,6 +88,7 @@ def validar_turno_dentro_disponibilidad(
     fecha_hora: datetime,
     duracion_minutos: int,
 ) -> None:
+    fecha_hora = a_zona_negocio(fecha_hora)
     disponibilidades = buscar_por_dia(
         db,
         profesional_id,
@@ -93,10 +102,12 @@ def validar_turno_dentro_disponibilidad(
         inicio_disponibilidad = datetime.combine(
             fecha_hora.date(),
             disponibilidad.hora_inicio,
+            tzinfo=ZONA_NEGOCIO,
         )
         fin_disponibilidad = datetime.combine(
             fecha_hora.date(),
             disponibilidad.hora_fin,
+            tzinfo=ZONA_NEGOCIO,
         )
 
         if (
@@ -137,7 +148,7 @@ def obtener_horarios_libres(
             detail="La prestación está inactiva.",
         )
 
-    if fecha < date.today():
+    if fecha < fecha_actual_negocio():
         raise HTTPException(
             status_code=400,
             detail="La fecha no puede ser anterior a hoy.",
@@ -168,12 +179,12 @@ def obtener_horarios_libres(
     horarios_libres = []
 
     for disponibilidad in disponibilidades:
-        horario_actual = datetime.combine(
+        horario_actual = fecha_hora_civil_a_utc(
             fecha,
             disponibilidad.hora_inicio,
         )
 
-        fin_disponibilidad = datetime.combine(
+        fin_disponibilidad = fecha_hora_civil_a_utc(
             fecha,
             disponibilidad.hora_fin,
         )
@@ -184,7 +195,9 @@ def obtener_horarios_libres(
             existe_conflicto = False
 
             for turno in turnos_ocupados:
-                inicio_turno = turno.fecha_hora
+                inicio_turno = desde_base_utc(
+                    turno.fecha_hora,
+                )
                 fin_turno = (
                     inicio_turno
                     + timedelta(

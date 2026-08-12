@@ -3,6 +3,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     database_url: str = "sqlite:///./mediturnos.db"
+    app_timezone: str = "America/Argentina/Buenos_Aires"
     mercado_pago_access_token: str = ""
     mercado_pago_webhook_secret: str = ""
     jwt_secret_key: str

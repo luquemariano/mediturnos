@@ -6,6 +6,7 @@ from app.models.paciente import Paciente
 from app.models.prestacion import Prestacion
 from app.models.turno import Turno
 from app.schemas.turno import TurnoCrear
+from app.core.datetime_utils import desde_base_utc
 
 
 
@@ -62,7 +63,9 @@ def buscar_conflicto_horario(
         )
 
     for turno in consulta.all():
-        inicio_existente = turno.fecha_hora
+        inicio_existente = desde_base_utc(
+            turno.fecha_hora,
+        )
         fin_existente = inicio_existente + timedelta(
             minutes=turno.prestacion.duracion_minutos,
         )

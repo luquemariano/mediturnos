@@ -1,9 +1,10 @@
-from datetime import datetime
-
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from app.models.turno import Turno
+from app.core.datetime_utils import (
+    ahora_utc,
+)
 from app.repositories.turno_repository import (
     buscar_conflicto_horario,
     buscar_paciente_por_id,
@@ -65,7 +66,7 @@ def crear_turno(
             detail="La prestación está inactiva.",
         )
 
-    if datos.fecha_hora <= datetime.now():
+    if datos.fecha_hora <= ahora_utc():
         raise HTTPException(
             status_code=400,
             detail="La fecha y hora deben ser futuras.",
@@ -181,7 +182,7 @@ def reprogramar_turno(
             ),
         )
 
-    if datos.fecha_hora <= datetime.now():
+    if datos.fecha_hora <= ahora_utc():
         raise HTTPException(
             status_code=400,
             detail="La nueva fecha y hora deben ser futuras.",

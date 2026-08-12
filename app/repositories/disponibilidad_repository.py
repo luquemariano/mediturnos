@@ -3,7 +3,9 @@ from sqlalchemy.orm import Session
 from app.models.disponibilidad import Disponibilidad
 from app.models.profesional import Profesional
 from app.schemas.disponibilidad import DisponibilidadCrear
-from datetime import date, datetime, time
+from datetime import date, timedelta, time
+
+from app.core.datetime_utils import fecha_hora_civil_a_utc
 
 from app.models.prestacion import Prestacion
 from app.models.turno import Turno
@@ -92,14 +94,14 @@ def buscar_turnos_del_dia(
     fecha: date,
     turno_id_excluido: int | None = None,
 ) -> list[Turno]:
-    inicio_dia = datetime.combine(
+    inicio_dia = fecha_hora_civil_a_utc(
         fecha,
         time.min,
     )
 
-    fin_dia = datetime.combine(
-        fecha,
-        time.max,
+    fin_dia = fecha_hora_civil_a_utc(
+        fecha + timedelta(days=1),
+        time.min,
     )
 
     consulta = (
@@ -111,7 +113,7 @@ def buscar_turnos_del_dia(
         .filter(
             Prestacion.profesional_id == profesional_id,
             Turno.fecha_hora >= inicio_dia,
-            Turno.fecha_hora <= fin_dia,
+            Turno.fecha_hora < fin_dia,
             Turno.estado != "cancelado",
         )
     )

@@ -16,6 +16,11 @@ import type {
   EstadoTurno,
   Turno,
 } from "../types/turno";
+import {
+  claveFechaNegocio,
+  formatearFechaAgrupada,
+  formatearHoraTurno,
+} from "../utils/fechaTurno";
 
 
 type TurnosProps = {
@@ -71,32 +76,10 @@ function normalizarTexto(
 }
 
 
-function formatearFecha(
-  fechaHora: string,
-): string {
-  return new Intl.DateTimeFormat(
-    "es-AR",
-    {
-      weekday: "long",
-      day: "2-digit",
-      month: "long",
-      year: "numeric",
-    },
-  ).format(new Date(fechaHora));
-}
-
-
 function formatearHora(
   fechaHora: string,
 ): string {
-  return new Intl.DateTimeFormat(
-    "es-AR",
-    {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    },
-  ).format(new Date(fechaHora));
+  return formatearHoraTurno(fechaHora);
 }
 
 
@@ -126,11 +109,9 @@ function agruparTurnosPorFecha(
       grupos: Record<string, Turno[]>,
       turno,
     ) => {
-      const clave = new Date(
+      const clave = claveFechaNegocio(
         turno.fecha_hora,
-      )
-        .toISOString()
-        .slice(0, 10);
+      );
 
       if (!grupos[clave]) {
         grupos[clave] = [];
@@ -499,21 +480,15 @@ function Turnos({
                       <header className="agenda-dia-encabezado">
                         <div>
                           <span>
-                            {new Date(
-                              `${fecha}T12:00:00`,
-                            ).toLocaleDateString(
-                              "es-AR",
-                              {
-                                day: "2-digit",
-                                month: "2-digit",
-                              },
-                            )}
+                            {fecha
+                              .split("-")
+                              .reverse()
+                              .slice(0, 2)
+                              .join("/")}
                           </span>
 
                           <h3>
-                            {formatearFecha(
-                              `${fecha}T12:00:00`,
-                            )}
+                            {formatearFechaAgrupada(fecha)}
                           </h3>
                         </div>
 

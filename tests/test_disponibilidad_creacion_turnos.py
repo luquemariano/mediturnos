@@ -10,6 +10,11 @@ from app.models.paciente import Paciente
 from app.models.prestacion import Prestacion
 from app.models.profesional import Profesional
 from app.models.turno import Turno
+from app.core.datetime_utils import (
+    desde_base_utc,
+    fecha_hora_civil_a_utc,
+    utc_a_zona_negocio,
+)
 from app.schemas.turno import TurnoCrear, TurnoReprogramar
 from app.services.turno_service import crear_turno, reprogramar_turno
 from tests.conftest import SessionTest
@@ -94,7 +99,7 @@ def reprogramar_en_horario(
     turno = Turno(
         paciente_id=escenario["paciente_id"],
         prestacion_id=escenario["prestacion_id"],
-        fecha_hora=datetime.combine(
+        fecha_hora=fecha_hora_civil_a_utc(
             escenario["fecha"],
             time(10, 0),
         ),
@@ -122,7 +127,9 @@ def test_permite_inicio_exacto_de_disponibilidad(
         time(9, 0),
     )
 
-    assert turno.fecha_hora.time() == time(9, 0)
+    assert utc_a_zona_negocio(
+        desde_base_utc(turno.fecha_hora),
+    ).time() == time(9, 0)
 
 
 def test_permite_fin_exacto_de_disponibilidad(
@@ -133,7 +140,9 @@ def test_permite_fin_exacto_de_disponibilidad(
         time(11, 30),
     )
 
-    assert turno.fecha_hora.time() == time(11, 30)
+    assert utc_a_zona_negocio(
+        desde_base_utc(turno.fecha_hora),
+    ).time() == time(11, 30)
 
 
 def test_rechaza_inicio_anterior_a_disponibilidad(
@@ -194,7 +203,9 @@ def test_reprogramacion_acepta_mismos_limites_que_creacion(
         hora_inicio,
     )
 
-    assert turno.fecha_hora.time() == hora_inicio
+    assert utc_a_zona_negocio(
+        desde_base_utc(turno.fecha_hora),
+    ).time() == hora_inicio
 
 
 @pytest.mark.parametrize(

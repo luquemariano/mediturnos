@@ -13,6 +13,10 @@ import type { Paciente } from "../types/paciente";
 import type { Prestacion } from "../types/prestacion";
 import type { Profesional } from "../types/profesional";
 import type { HorarioLibre, Turno } from "../types/turno";
+import {
+  fechaActualNegocio,
+  formatearHoraTurno,
+} from "../utils/fechaTurno";
 
 type ModalNuevoTurnoProps = {
   onCerrar: () => void;
@@ -39,10 +43,7 @@ function mensajeError(error: unknown, alternativo: string): string {
 }
 
 function formatearHorario(fechaHora: string): string {
-  const hora = fechaHora.includes("T")
-    ? fechaHora.split("T")[1]?.slice(0, 5)
-    : fechaHora.slice(11, 16);
-  return `${hora} hs`;
+  return `${formatearHoraTurno(fechaHora)} hs`;
 }
 
 function ModalNuevoTurno({ onCerrar, onTurnoCreado }: ModalNuevoTurnoProps) {
@@ -148,12 +149,7 @@ function ModalNuevoTurno({ onCerrar, onTurnoCreado }: ModalNuevoTurnoProps) {
     }
   }
 
-  const hoy = new Date();
-  const fechaMinima = [
-    hoy.getFullYear(),
-    String(hoy.getMonth() + 1).padStart(2, "0"),
-    String(hoy.getDate()).padStart(2, "0"),
-  ].join("-");
+  const fechaMinima = fechaActualNegocio();
 
   return (
     <div className="modal-turno-fondo" role="presentation">

@@ -31,7 +31,7 @@ class Turno(Base):
     )
 
     fecha_hora: Mapped[datetime] = mapped_column(
-        DateTime,
+        DateTime(timezone=True),
         nullable=False,
         index=True,
     )

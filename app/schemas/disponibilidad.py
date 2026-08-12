@@ -1,6 +1,8 @@
 from datetime import datetime, time
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+
+from app.core.datetime_utils import desde_base_utc
 
 
 class DisponibilidadCrear(BaseModel):
@@ -31,3 +33,8 @@ class DisponibilidadRespuesta(BaseModel):
 
 class HorarioLibreRespuesta(BaseModel):
     fecha_hora: datetime
+
+    @field_validator("fecha_hora", mode="before")
+    @classmethod
+    def agregar_zona_negocio(cls, valor: datetime) -> datetime:
+        return desde_base_utc(valor)

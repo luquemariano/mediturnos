@@ -10,6 +10,11 @@ from app.models.paciente import Paciente
 from app.models.prestacion import Prestacion
 from app.models.profesional import Profesional
 from app.models.turno import Turno
+from app.core.datetime_utils import (
+    desde_base_utc,
+    fecha_hora_civil_a_utc,
+    utc_a_zona_negocio,
+)
 from app.schemas.turno import TurnoCrear, TurnoReprogramar
 from app.services.turno_service import crear_turno, reprogramar_turno
 from tests.conftest import SessionTest
@@ -82,7 +87,7 @@ def crear_existente(
     turno = Turno(
         paciente_id=escenario["paciente"].id,
         prestacion_id=escenario["prestaciones"][duracion].id,
-        fecha_hora=datetime.combine(
+        fecha_hora=fecha_hora_civil_a_utc(
             escenario["fecha"],
             hora_inicio,
         ),
@@ -165,7 +170,9 @@ def test_permite_turnos_consecutivos(escenario_turnos):
         ),
     )
 
-    assert turno.fecha_hora.time() == time(10, 30)
+    assert utc_a_zona_negocio(
+        desde_base_utc(turno.fecha_hora),
+    ).time() == time(10, 30)
 
 
 def test_ignora_turnos_cancelados(escenario_turnos):
@@ -185,7 +192,9 @@ def test_ignora_turnos_cancelados(escenario_turnos):
         ),
     )
 
-    assert turno.fecha_hora.time() == time(10, 15)
+    assert utc_a_zona_negocio(
+        desde_base_utc(turno.fecha_hora),
+    ).time() == time(10, 15)
 
 
 def test_reprogramacion_excluye_el_propio_turno(
