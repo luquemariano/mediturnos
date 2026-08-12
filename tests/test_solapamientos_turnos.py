@@ -3,6 +3,7 @@ from decimal import Decimal
 
 import pytest
 from fastapi import HTTPException
+from sqlalchemy.exc import IntegrityError
 
 from app.models.disponibilidad import Disponibilidad
 from app.models.especialidad import Especialidad
@@ -16,7 +17,11 @@ from app.core.datetime_utils import (
     utc_a_zona_negocio,
 )
 from app.schemas.turno import TurnoCrear, TurnoReprogramar
-from app.services.turno_service import crear_turno, reprogramar_turno
+from app.services.turno_service import (
+    _confirmar_cambio_turno,
+    crear_turno,
+    reprogramar_turno,
+)
 from tests.conftest import SessionTest
 
 
@@ -245,3 +250,161 @@ def test_reprogramacion_conserva_deteccion_de_solapamientos(
         )
 
     assert error.value.status_code == 409
+
+
+def test_reprogramacion_usa_profesional_persistido_del_turno(
+    escenario_turnos,
+):
+    db = escenario_turnos["db"]
+    turno = crear_existente(
+        escenario_turnos,
+        time(10, 0),
+        duracion=30,
+    )
+    otro_profesional = Profesional(
+        nombre="Laura",
+        apellido="Alternativa",
+        matricula="MP-SOLAP-002",
+    )
+    db.add(otro_profesional)
+    db.flush()
+
+    turno.prestacion.profesional_id = otro_profesional.id
+    db.commit()
+
+    assert turno.profesional_id != (
+        turno.prestacion.profesional_id
+    )
+
+    reprogramado = reprogramar_turno(
+        db,
+        turno.id,
+        TurnoReprogramar(fecha_hora=turno.fecha_hora),
+    )
+
+    assert reprogramado.id == turno.id
+    assert reprogramado.profesional_id == turno.profesional_id
+
+
+def test_integrity_error_no_relacionado_no_se_convierte_en_409(
+    escenario_turnos,
+    monkeypatch,
+):
+    db = escenario_turnos["db"]
+    turno = crear_existente(
+        escenario_turnos,
+        time(10, 0),
+    )
+
+    class ErrorOriginal:
+        sqlstate = "23505"
+
+    error_integridad = IntegrityError(
+        "INSERT",
+        {},
+        ErrorOriginal(),
+    )
+    rollback_ejecutado = False
+
+    def commit_fallido():
+        raise error_integridad
+
+    def rollback_controlado():
+        nonlocal rollback_ejecutado
+        rollback_ejecutado = True
+
+    monkeypatch.setattr(db, "commit", commit_fallido)
+    monkeypatch.setattr(db, "rollback", rollback_controlado)
+
+    with pytest.raises(IntegrityError) as error:
+        _confirmar_cambio_turno(db, turno)
+
+    assert error.value is error_integridad
+    assert rollback_ejecutado is True
+
+
+def test_conflicto_constraint_agenda_se_convierte_en_409(
+    escenario_turnos,
+    monkeypatch,
+):
+    db = escenario_turnos["db"]
+    turno = crear_existente(
+        escenario_turnos,
+        time(10, 0),
+    )
+
+    class Diagnostico:
+        constraint_name = (
+            "ex_turnos_profesional_intervalo_activo"
+        )
+
+    class ErrorOriginal:
+        sqlstate = "23P01"
+        diag = Diagnostico()
+
+    error_integridad = IntegrityError(
+        "UPDATE",
+        {},
+        ErrorOriginal(),
+    )
+    rollback_ejecutado = False
+
+    def commit_fallido():
+        raise error_integridad
+
+    def rollback_controlado():
+        nonlocal rollback_ejecutado
+        rollback_ejecutado = True
+
+    monkeypatch.setattr(db, "commit", commit_fallido)
+    monkeypatch.setattr(db, "rollback", rollback_controlado)
+
+    with pytest.raises(HTTPException) as error:
+        _confirmar_cambio_turno(db, turno)
+
+    assert error.value.status_code == 409
+    assert error.value.detail == (
+        "El horario ya no está disponible."
+    )
+    assert rollback_ejecutado is True
+
+
+def test_otra_exclusion_constraint_no_se_convierte_en_409(
+    escenario_turnos,
+    monkeypatch,
+):
+    db = escenario_turnos["db"]
+    turno = crear_existente(
+        escenario_turnos,
+        time(10, 0),
+    )
+
+    class Diagnostico:
+        constraint_name = "ex_otra_regla"
+
+    class ErrorOriginal:
+        sqlstate = "23P01"
+        diag = Diagnostico()
+
+    error_integridad = IntegrityError(
+        "UPDATE",
+        {},
+        ErrorOriginal(),
+    )
+    rollback_ejecutado = False
+
+    def commit_fallido():
+        raise error_integridad
+
+    def rollback_controlado():
+        nonlocal rollback_ejecutado
+        rollback_ejecutado = True
+
+    monkeypatch.setattr(db, "commit", commit_fallido)
+    monkeypatch.setattr(db, "rollback", rollback_controlado)
+
+    with pytest.raises(IntegrityError) as error:
+        _confirmar_cambio_turno(db, turno)
+
+    assert error.value is error_integridad
+    assert rollback_ejecutado is True

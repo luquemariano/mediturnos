@@ -1,4 +1,7 @@
+from datetime import timedelta
+
 from fastapi import HTTPException
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.models.turno import Turno
@@ -6,6 +9,7 @@ from app.core.datetime_utils import (
     ahora_utc,
 )
 from app.repositories.turno_repository import (
+    bloquear_agenda_profesional,
     buscar_conflicto_horario,
     buscar_paciente_por_id,
     buscar_por_id,
@@ -26,6 +30,48 @@ from app.schemas.turno import (
 from app.services.disponibilidad_service import (
     validar_turno_dentro_disponibilidad,
 )
+
+
+SQLSTATE_CONFLICTO_EXCLUSION = "23P01"
+CONSTRAINT_AGENDA_SIN_SOLAPAMIENTOS = (
+    "ex_turnos_profesional_intervalo_activo"
+)
+MENSAJE_HORARIO_NO_DISPONIBLE = (
+    "El horario ya no está disponible."
+)
+
+
+def _confirmar_cambio_turno(
+    db: Session,
+    turno: Turno,
+) -> Turno:
+    try:
+        db.commit()
+    except IntegrityError as error:
+        db.rollback()
+        sqlstate = getattr(error.orig, "sqlstate", None)
+        diagnostico = getattr(error.orig, "diag", None)
+        constraint_name = getattr(
+            diagnostico,
+            "constraint_name",
+            None,
+        )
+
+        if (
+            sqlstate == SQLSTATE_CONFLICTO_EXCLUSION
+            and constraint_name
+            == CONSTRAINT_AGENDA_SIN_SOLAPAMIENTOS
+        ):
+            raise HTTPException(
+                status_code=409,
+                detail=MENSAJE_HORARIO_NO_DISPONIBLE,
+            ) from None
+
+        raise
+
+    db.refresh(turno)
+
+    return turno
 
 
 def crear_turno(
@@ -72,6 +118,11 @@ def crear_turno(
             detail="La fecha y hora deben ser futuras.",
         )
 
+    bloquear_agenda_profesional(
+        db,
+        prestacion.profesional_id,
+    )
+
     validar_turno_dentro_disponibilidad(
         db,
         prestacion.profesional_id,
@@ -89,18 +140,20 @@ def crear_turno(
     if conflicto is not None:
         raise HTTPException(
             status_code=409,
-            detail="El profesional ya tiene un turno en ese horario.",
+            detail=MENSAJE_HORARIO_NO_DISPONIBLE,
         )
 
     turno = guardar_turno(
         db,
         datos,
+        profesional_id=prestacion.profesional_id,
+        fecha_fin=(
+            datos.fecha_hora
+            + timedelta(minutes=prestacion.duracion_minutos)
+        ),
     )
 
-    db.commit()
-    db.refresh(turno)
-
-    return turno
+    return _confirmar_cambio_turno(db, turno)
 
 
 def crear_turno_propio(
@@ -155,12 +208,18 @@ def cambiar_estado_turno(
         turno_id,
     )
 
+    if (
+        turno.estado == "cancelado"
+        and datos.estado != "cancelado"
+    ):
+        bloquear_agenda_profesional(
+            db,
+            turno.profesional_id,
+        )
+
     turno.estado = datos.estado
 
-    db.commit()
-    db.refresh(turno)
-
-    return turno
+    return _confirmar_cambio_turno(db, turno)
 
 
 def reprogramar_turno(
@@ -188,16 +247,21 @@ def reprogramar_turno(
             detail="La nueva fecha y hora deben ser futuras.",
         )
 
+    bloquear_agenda_profesional(
+        db,
+        turno.profesional_id,
+    )
+
     validar_turno_dentro_disponibilidad(
         db,
-        turno.prestacion.profesional_id,
+        turno.profesional_id,
         datos.fecha_hora,
         turno.prestacion.duracion_minutos,
     )
 
     conflicto = buscar_conflicto_horario(
         db,
-        turno.prestacion.profesional_id,
+        turno.profesional_id,
         datos.fecha_hora,
         turno.prestacion.duracion_minutos,
         turno_id_excluido=turno.id,
@@ -206,15 +270,18 @@ def reprogramar_turno(
     if conflicto is not None:
         raise HTTPException(
             status_code=409,
-            detail="El profesional ya tiene un turno en ese horario.",
+            detail=MENSAJE_HORARIO_NO_DISPONIBLE,
         )
 
     turno.fecha_hora = datos.fecha_hora
+    turno.fecha_fin = (
+        datos.fecha_hora
+        + timedelta(
+            minutes=turno.prestacion.duracion_minutos,
+        )
+    )
 
-    db.commit()
-    db.refresh(turno)
-
-    return turno
+    return _confirmar_cambio_turno(db, turno)
 
 
 def obtener_turnos_de_paciente(

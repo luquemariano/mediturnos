@@ -117,14 +117,10 @@ def buscar_turnos_del_dia(
 
     consulta = (
         db.query(Turno)
-        .join(
-            Prestacion,
-            Turno.prestacion_id == Prestacion.id,
-        )
         .filter(
-            Prestacion.profesional_id == profesional_id,
-            Turno.fecha_hora >= inicio_dia,
+            Turno.profesional_id == profesional_id,
             Turno.fecha_hora < fin_dia,
+            Turno.fecha_fin > inicio_dia,
             Turno.estado != "cancelado",
         )
     )

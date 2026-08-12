@@ -234,11 +234,8 @@ def obtener_horarios_libres(
                 inicio_turno = desde_base_utc(
                     turno.fecha_hora,
                 )
-                fin_turno = (
-                    inicio_turno
-                    + timedelta(
-                        minutes=turno.prestacion.duracion_minutos,
-                    )
+                fin_turno = desde_base_utc(
+                    turno.fecha_fin,
                 )
 
                 if (
