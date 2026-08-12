@@ -49,19 +49,7 @@ def _confirmar_cambio_turno(
         db.commit()
     except IntegrityError as error:
         db.rollback()
-        sqlstate = getattr(error.orig, "sqlstate", None)
-        diagnostico = getattr(error.orig, "diag", None)
-        constraint_name = getattr(
-            diagnostico,
-            "constraint_name",
-            None,
-        )
-
-        if (
-            sqlstate == SQLSTATE_CONFLICTO_EXCLUSION
-            and constraint_name
-            == CONSTRAINT_AGENDA_SIN_SOLAPAMIENTOS
-        ):
+        if es_conflicto_agenda(error):
             raise HTTPException(
                 status_code=409,
                 detail=MENSAJE_HORARIO_NO_DISPONIBLE,
@@ -72,6 +60,22 @@ def _confirmar_cambio_turno(
     db.refresh(turno)
 
     return turno
+
+
+def es_conflicto_agenda(error: IntegrityError) -> bool:
+    sqlstate = getattr(error.orig, "sqlstate", None)
+    diagnostico = getattr(error.orig, "diag", None)
+    constraint_name = getattr(
+        diagnostico,
+        "constraint_name",
+        None,
+    )
+
+    return (
+        sqlstate == SQLSTATE_CONFLICTO_EXCLUSION
+        and constraint_name
+        == CONSTRAINT_AGENDA_SIN_SOLAPAMIENTOS
+    )
 
 
 def crear_turno(
