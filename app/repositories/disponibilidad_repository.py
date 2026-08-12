@@ -88,6 +88,17 @@ def buscar_prestacion(
     )
 
 
+def buscar_turno_por_id(
+    db: Session,
+    turno_id: int,
+) -> Turno | None:
+    return (
+        db.query(Turno)
+        .filter(Turno.id == turno_id)
+        .first()
+    )
+
+
 def buscar_turnos_del_dia(
     db: Session,
     profesional_id: int,

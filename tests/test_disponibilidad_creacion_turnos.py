@@ -17,6 +17,7 @@ from app.core.datetime_utils import (
 )
 from app.schemas.turno import TurnoCrear, TurnoReprogramar
 from app.services.turno_service import crear_turno, reprogramar_turno
+from app.services.disponibilidad_service import obtener_horarios_libres
 from tests.conftest import SessionTest
 
 
@@ -130,6 +131,102 @@ def test_permite_inicio_exacto_de_disponibilidad(
     assert utc_a_zona_negocio(
         desde_base_utc(turno.fecha_hora),
     ).time() == time(9, 0)
+
+
+def test_horarios_libres_excluye_el_propio_turno(
+    escenario_disponibilidad,
+):
+    turno = crear_en_horario(
+        escenario_disponibilidad,
+        time(9, 0),
+    )
+
+    horarios_sin_exclusion = obtener_horarios_libres(
+        escenario_disponibilidad["db"],
+        escenario_disponibilidad["prestacion_id"],
+        escenario_disponibilidad["fecha"],
+    )
+    horarios_con_exclusion = obtener_horarios_libres(
+        escenario_disponibilidad["db"],
+        escenario_disponibilidad["prestacion_id"],
+        escenario_disponibilidad["fecha"],
+        turno.id,
+    )
+
+    horas_sin_exclusion = {
+        utc_a_zona_negocio(item["fecha_hora"]).time()
+        for item in horarios_sin_exclusion
+    }
+    horas_con_exclusion = {
+        utc_a_zona_negocio(item["fecha_hora"]).time()
+        for item in horarios_con_exclusion
+    }
+
+    assert time(9, 0) not in horas_sin_exclusion
+    assert time(9, 0) in horas_con_exclusion
+
+
+def test_rechaza_exclusion_con_prestacion_incorrecta(
+    escenario_disponibilidad,
+):
+    turno = crear_en_horario(
+        escenario_disponibilidad,
+        time(9, 0),
+    )
+    db = escenario_disponibilidad["db"]
+    prestacion_original = db.get(
+        Prestacion,
+        escenario_disponibilidad["prestacion_id"],
+    )
+    otra_prestacion = Prestacion(
+        nombre="Otra consulta",
+        duracion_minutos=30,
+        precio=Decimal("15000.00"),
+        modalidad="presencial",
+        profesional_id=prestacion_original.profesional_id,
+        especialidad_id=prestacion_original.especialidad_id,
+    )
+    db.add(otra_prestacion)
+    db.commit()
+
+    with pytest.raises(HTTPException) as error:
+        obtener_horarios_libres(
+            db,
+            otra_prestacion.id,
+            escenario_disponibilidad["fecha"],
+            turno.id,
+        )
+
+    assert error.value.status_code == 400
+    assert error.value.detail == (
+        "El turno no corresponde a la prestación solicitada."
+    )
+
+
+@pytest.mark.parametrize("estado", ["cancelado", "finalizado"])
+def test_rechaza_exclusion_de_turno_no_reprogramable(
+    escenario_disponibilidad,
+    estado,
+):
+    turno = crear_en_horario(
+        escenario_disponibilidad,
+        time(9, 0),
+    )
+    turno.estado = estado
+    escenario_disponibilidad["db"].commit()
+
+    with pytest.raises(HTTPException) as error:
+        obtener_horarios_libres(
+            escenario_disponibilidad["db"],
+            escenario_disponibilidad["prestacion_id"],
+            escenario_disponibilidad["fecha"],
+            turno.id,
+        )
+
+    assert error.value.status_code == 400
+    assert error.value.detail == (
+        "No se puede excluir un turno cancelado o finalizado."
+    )
 
 
 def test_permite_fin_exacto_de_disponibilidad(

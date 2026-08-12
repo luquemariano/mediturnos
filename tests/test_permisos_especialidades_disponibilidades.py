@@ -332,7 +332,7 @@ def test_horarios_libres_permite_consulta_autenticada(
     monkeypatch.setattr(
         disponibilidades,
         "obtener_horarios_libres",
-        lambda db, prestacion_id, fecha: [],
+        lambda db, prestacion_id, fecha, turno_id_excluido=None: [],
     )
     fecha = (date.today() + timedelta(days=1)).isoformat()
 
@@ -345,6 +345,93 @@ def test_horarios_libres_permite_consulta_autenticada(
     )
 
     assert respuesta.status_code == 200
+
+
+@pytest.mark.parametrize(
+    "rol",
+    ["administrador", "recepcionista"],
+)
+def test_personal_autorizado_excluye_turno_en_horarios_libres(
+    client,
+    usuarios,
+    monkeypatch,
+    rol,
+):
+    autenticar_como(usuarios[rol])
+    parametros_recibidos = {}
+
+    def horarios(
+        db,
+        prestacion_id,
+        fecha,
+        turno_id_excluido=None,
+    ):
+        parametros_recibidos["turno_id_excluido"] = (
+            turno_id_excluido
+        )
+        return []
+
+    monkeypatch.setattr(
+        disponibilidades,
+        "obtener_horarios_libres",
+        horarios,
+    )
+
+    respuesta = client.get(
+        "/disponibilidades/horarios-libres/",
+        params={
+            "prestacion_id": 1,
+            "fecha": "2030-01-01",
+            "turno_id_excluido": 25,
+        },
+    )
+
+    assert respuesta.status_code == 200
+    assert parametros_recibidos["turno_id_excluido"] == 25
+
+
+@pytest.mark.parametrize("rol", ["profesional", "paciente"])
+def test_roles_no_autorizados_no_pueden_excluir_turno(
+    client,
+    usuarios,
+    rol,
+):
+    autenticar_como(usuarios[rol])
+
+    respuesta = client.get(
+        "/disponibilidades/horarios-libres/",
+        params={
+            "prestacion_id": 1,
+            "fecha": "2030-01-01",
+            "turno_id_excluido": 25,
+        },
+    )
+
+    assert respuesta.status_code == 403
+    assert respuesta.json() == {
+        "detail": "Permisos insuficientes."
+    }
+
+
+def test_exclusion_de_turno_inexistente_devuelve_404(
+    client,
+    usuarios,
+):
+    autenticar_como(usuarios["administrador"])
+
+    respuesta = client.get(
+        "/disponibilidades/horarios-libres/",
+        params={
+            "prestacion_id": 1,
+            "fecha": "2030-01-01",
+            "turno_id_excluido": 999999,
+        },
+    )
+
+    assert respuesta.status_code == 404
+    assert respuesta.json() == {
+        "detail": "Turno no encontrado."
+    }
 
 
 @pytest.mark.parametrize(

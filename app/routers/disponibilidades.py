@@ -131,6 +131,7 @@ def listar_disponibilidad_profesional(
 def listar_horarios_libres(
     prestacion_id: int,
     fecha: date,
+    turno_id_excluido: int | None = None,
     db: Session = Depends(obtener_db),
     usuario_actual: Usuario = Depends(
         requiere_roles(
@@ -141,8 +142,21 @@ def listar_horarios_libres(
         )
     ),
 ):
+    if (
+        turno_id_excluido is not None
+        and usuario_actual.rol not in {
+            "administrador",
+            "recepcionista",
+        }
+    ):
+        raise HTTPException(
+            status_code=403,
+            detail="Permisos insuficientes.",
+        )
+
     return obtener_horarios_libres(
         db,
         prestacion_id,
         fecha,
+        turno_id_excluido,
     )

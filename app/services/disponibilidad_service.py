@@ -7,6 +7,7 @@ from app.repositories.disponibilidad_repository import (
     buscar_por_profesional,
     buscar_prestacion,
     buscar_profesional,
+    buscar_turno_por_id,
     buscar_todas,
     buscar_turnos_del_dia,
     guardar_disponibilidad,
@@ -131,6 +132,20 @@ def obtener_horarios_libres(
     fecha: date,
     turno_id_excluido: int | None = None,
 ) -> list[dict]:
+    turno_excluido = None
+
+    if turno_id_excluido is not None:
+        turno_excluido = buscar_turno_por_id(
+            db,
+            turno_id_excluido,
+        )
+
+        if turno_excluido is None:
+            raise HTTPException(
+                status_code=404,
+                detail="Turno no encontrado.",
+            )
+
     prestacion = buscar_prestacion(
         db,
         prestacion_id,
@@ -183,6 +198,28 @@ def obtener_horarios_libres(
             fecha,
             disponibilidad.hora_inicio,
         )
+
+    if turno_excluido is not None:
+        if turno_excluido.prestacion_id != prestacion_id:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "El turno no corresponde a la prestación "
+                    "solicitada."
+                ),
+            )
+
+        if turno_excluido.estado in {
+            "cancelado",
+            "finalizado",
+        }:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "No se puede excluir un turno cancelado "
+                    "o finalizado."
+                ),
+            )
 
         fin_disponibilidad = fecha_hora_civil_a_utc(
             fecha,
