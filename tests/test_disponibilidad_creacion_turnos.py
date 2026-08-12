@@ -71,6 +71,8 @@ def escenario_disponibilidad():
         "fecha": fecha,
         "paciente_id": paciente.id,
         "prestacion_id": prestacion.id,
+        "profesional_id": profesional.id,
+        "especialidad_id": especialidad.id,
     }
 
     db.close()
@@ -120,6 +122,20 @@ def reprogramar_en_horario(
     )
 
 
+def obtener_horas_libres(escenario, turno_id_excluido=None):
+    horarios = obtener_horarios_libres(
+        escenario["db"],
+        escenario["prestacion_id"],
+        escenario["fecha"],
+        turno_id_excluido,
+    )
+
+    return [
+        utc_a_zona_negocio(item["fecha_hora"]).time()
+        for item in horarios
+    ]
+
+
 def test_permite_inicio_exacto_de_disponibilidad(
     escenario_disponibilidad,
 ):
@@ -133,6 +149,134 @@ def test_permite_inicio_exacto_de_disponibilidad(
     ).time() == time(9, 0)
 
 
+def test_disponibilidad_sin_turnos_genera_horarios_libres(
+    escenario_disponibilidad,
+):
+    horas = obtener_horas_libres(
+        escenario_disponibilidad,
+    )
+
+    assert horas
+    assert horas == [
+        time(9, 0),
+        time(9, 30),
+        time(10, 0),
+        time(10, 30),
+        time(11, 0),
+        time(11, 30),
+    ]
+
+
+def test_horarios_libres_conservan_zona_de_negocio(
+    escenario_disponibilidad,
+):
+    horarios = obtener_horarios_libres(
+        escenario_disponibilidad["db"],
+        escenario_disponibilidad["prestacion_id"],
+        escenario_disponibilidad["fecha"],
+    )
+
+    assert horarios
+    assert utc_a_zona_negocio(
+        horarios[0]["fecha_hora"]
+    ).time() == time(9, 0)
+
+
+def test_multiples_disponibilidades_generan_todos_los_slots(
+    escenario_disponibilidad,
+):
+    escenario_disponibilidad["db"].add(
+        Disponibilidad(
+            profesional_id=(
+                escenario_disponibilidad["profesional_id"]
+            ),
+            dia_semana=escenario_disponibilidad[
+                "fecha"
+            ].weekday(),
+            hora_inicio=time(14, 0),
+            hora_fin=time(15, 0),
+            activa=True,
+        )
+    )
+    escenario_disponibilidad["db"].commit()
+
+    horas = obtener_horas_libres(
+        escenario_disponibilidad,
+    )
+
+    assert horas == [
+        time(9, 0),
+        time(9, 30),
+        time(10, 0),
+        time(10, 30),
+        time(11, 0),
+        time(11, 30),
+        time(14, 0),
+        time(14, 30),
+    ]
+
+
+def test_turno_elimina_solo_slots_solapados(
+    escenario_disponibilidad,
+):
+    db = escenario_disponibilidad["db"]
+    prestacion_larga = Prestacion(
+        nombre="Consulta larga",
+        duracion_minutos=60,
+        precio=Decimal("20000.00"),
+        modalidad="presencial",
+        profesional_id=escenario_disponibilidad[
+            "profesional_id"
+        ],
+        especialidad_id=escenario_disponibilidad[
+            "especialidad_id"
+        ],
+    )
+    db.add(prestacion_larga)
+    db.flush()
+    db.add(
+        Turno(
+            paciente_id=escenario_disponibilidad[
+                "paciente_id"
+            ],
+            prestacion_id=prestacion_larga.id,
+            fecha_hora=fecha_hora_civil_a_utc(
+                escenario_disponibilidad["fecha"],
+                time(9, 30),
+            ),
+        )
+    )
+    db.commit()
+
+    horas = obtener_horas_libres(
+        escenario_disponibilidad,
+    )
+
+    assert horas == [
+        time(9, 0),
+        time(10, 30),
+        time(11, 0),
+        time(11, 30),
+    ]
+
+
+def test_slots_adyacentes_a_turno_permanecen_disponibles(
+    escenario_disponibilidad,
+):
+    crear_en_horario(
+        escenario_disponibilidad,
+        time(10, 0),
+    )
+
+    horas = obtener_horas_libres(
+        escenario_disponibilidad,
+    )
+
+    assert time(9, 30) in horas
+    assert time(10, 0) not in horas
+    assert time(10, 30) in horas
+
+
 def test_horarios_libres_excluye_el_propio_turno(
     escenario_disponibilidad,
 ):
@@ -141,29 +285,37 @@ def test_horarios_libres_excluye_el_propio_turno(
         time(9, 0),
     )
 
-    horarios_sin_exclusion = obtener_horarios_libres(
-        escenario_disponibilidad["db"],
-        escenario_disponibilidad["prestacion_id"],
-        escenario_disponibilidad["fecha"],
+    horas_sin_exclusion = obtener_horas_libres(
+        escenario_disponibilidad,
     )
-    horarios_con_exclusion = obtener_horarios_libres(
-        escenario_disponibilidad["db"],
-        escenario_disponibilidad["prestacion_id"],
-        escenario_disponibilidad["fecha"],
+    horas_con_exclusion = obtener_horas_libres(
+        escenario_disponibilidad,
         turno.id,
     )
 
-    horas_sin_exclusion = {
-        utc_a_zona_negocio(item["fecha_hora"]).time()
-        for item in horarios_sin_exclusion
-    }
-    horas_con_exclusion = {
-        utc_a_zona_negocio(item["fecha_hora"]).time()
-        for item in horarios_con_exclusion
-    }
-
+    assert horas_sin_exclusion
+    assert horas_con_exclusion
     assert time(9, 0) not in horas_sin_exclusion
     assert time(9, 0) in horas_con_exclusion
+    assert len(horas_sin_exclusion) == 5
+    assert len(horas_con_exclusion) == 6
+
+
+def test_sin_exclusion_el_turno_continua_ocupando_horario(
+    escenario_disponibilidad,
+):
+    crear_en_horario(
+        escenario_disponibilidad,
+        time(9, 0),
+    )
+
+    horas = obtener_horas_libres(
+        escenario_disponibilidad,
+    )
+
+    assert horas
+    assert time(9, 0) not in horas
+    assert time(9, 30) in horas
 
 
 def test_rechaza_exclusion_con_prestacion_incorrecta(

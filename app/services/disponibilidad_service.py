@@ -180,25 +180,6 @@ def obtener_horarios_libres(
     if not disponibilidades:
         return []
 
-    turnos_ocupados = buscar_turnos_del_dia(
-        db,
-        prestacion.profesional_id,
-        fecha,
-        turno_id_excluido,
-    )
-
-    duracion = timedelta(
-        minutes=prestacion.duracion_minutos,
-    )
-
-    horarios_libres = []
-
-    for disponibilidad in disponibilidades:
-        horario_actual = fecha_hora_civil_a_utc(
-            fecha,
-            disponibilidad.hora_inicio,
-        )
-
     if turno_excluido is not None:
         if turno_excluido.prestacion_id != prestacion_id:
             raise HTTPException(
@@ -221,6 +202,24 @@ def obtener_horarios_libres(
                 ),
             )
 
+    turnos_ocupados = buscar_turnos_del_dia(
+        db,
+        prestacion.profesional_id,
+        fecha,
+        turno_id_excluido,
+    )
+
+    duracion = timedelta(
+        minutes=prestacion.duracion_minutos,
+    )
+
+    horarios_libres = []
+
+    for disponibilidad in disponibilidades:
+        horario_actual = fecha_hora_civil_a_utc(
+            fecha,
+            disponibilidad.hora_inicio,
+        )
         fin_disponibilidad = fecha_hora_civil_a_utc(
             fecha,
             disponibilidad.hora_fin,
