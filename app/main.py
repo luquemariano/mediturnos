@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 
+from app.core.config import settings
 from app.routers.disponibilidades import router as disponibilidades_router
 from app.routers.especialidades import router as especialidades_router
 from app.routers.pacientes import router as pacientes_router
@@ -20,13 +21,18 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-    ],
+    allow_origins=settings.cors_allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=[
+        "GET",
+        "POST",
+        "PATCH",
+        "OPTIONS",
+    ],
+    allow_headers=[
+        "Authorization",
+        "Content-Type",
+    ],
 )
 
 app.include_router(especialidades_router)

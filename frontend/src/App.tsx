@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import axios from "axios";
 
@@ -15,6 +15,11 @@ import {
   obtenerUsuarioActual,
 } from "./services/authService";
 import type { UsuarioActual } from "./types/auth";
+import {
+  EVENTO_SESION_NO_AUTORIZADA,
+  habilitarNotificacionDeSesion,
+} from "./api/manejoSesion";
+import { restaurarSesion } from "./utils/sesion";
 
 
 type Vista =
@@ -43,8 +48,46 @@ function App() {
   const [usuario, setUsuario] =
     useState<UsuarioActual | null>(null);
 
+  const [validandoSesion, setValidandoSesion] =
+    useState(true);
+
   const [vista, setVista] =
     useState<Vista>("dashboard");
+
+
+  useEffect(() => {
+    let activo = true;
+
+    function cerrarSesionPor401() {
+      setUsuario(null);
+      setVista("dashboard");
+      setMensaje(
+        "La sesión venció o no es válida. Iniciá sesión nuevamente.",
+      );
+    }
+
+    window.addEventListener(
+      EVENTO_SESION_NO_AUTORIZADA,
+      cerrarSesionPor401,
+    );
+
+    void restaurarSesion(obtenerUsuarioActual).then(
+      (usuarioRestaurado) => {
+        if (activo) {
+          setUsuario(usuarioRestaurado);
+          setValidandoSesion(false);
+        }
+      },
+    );
+
+    return () => {
+      activo = false;
+      window.removeEventListener(
+        EVENTO_SESION_NO_AUTORIZADA,
+        cerrarSesionPor401,
+      );
+    };
+  }, []);
 
 
   async function manejarInicioSesion(
@@ -66,6 +109,7 @@ function App() {
         "access_token",
         respuesta.access_token,
       );
+      habilitarNotificacionDeSesion();
 
       const usuarioActual =
         await obtenerUsuarioActual();
@@ -73,6 +117,8 @@ function App() {
       setUsuario(usuarioActual);
       setVista("dashboard");
     } catch (error) {
+      localStorage.removeItem("access_token");
+
       if (axios.isAxiosError(error)) {
         const detalle =
           error.response?.data?.detail;
@@ -90,6 +136,15 @@ function App() {
     } finally {
       setCargando(false);
     }
+  }
+
+
+  if (validandoSesion) {
+    return (
+      <main className="pagina-login">
+        <p>Validando sesión...</p>
+      </main>
+    );
   }
 
 
