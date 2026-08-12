@@ -1,3 +1,32 @@
+import pytest
+
+from app.core.dependencies import obtener_usuario_actual
+from app.main import app
+from app.models.usuario import Usuario
+
+
+@pytest.fixture(autouse=True)
+def autenticar_administrador():
+    administrador = Usuario(
+        id=1,
+        nombre="Administrador",
+        email="admin@example.com",
+        password_hash="hash",
+        rol="administrador",
+        activo=True,
+    )
+    app.dependency_overrides[
+        obtener_usuario_actual
+    ] = lambda: administrador
+
+    yield
+
+    app.dependency_overrides.pop(
+        obtener_usuario_actual,
+        None,
+    )
+
+
 def test_prestacion_inexistente_devuelve_404(client):
     respuesta = client.get("/prestaciones/999999")
 
@@ -29,7 +58,12 @@ def test_crear_prestacion_correctamente(client):
             "matricula": "MP-TEST-001",
             "telefono": "3515551234",
             "email": "ana.test@mediturnos.com",
-            "especialidad_ids": [especialidad_id],
+            "especialidades": [
+                {
+                    "especialidad_id": especialidad_id,
+                    "duracion_turno_minutos": 30,
+                }
+            ],
         },
     )
 
