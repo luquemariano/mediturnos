@@ -4,6 +4,7 @@ import axios from "axios";
 
 import "./App.css";
 import Dashboard from "./components/Dashboard";
+import Disponibilidades from "./components/Disponibilidades";
 import Especialidades from "./components/Especialidades";
 import Pacientes from "./components/Pacientes";
 import Prestaciones from "./components/Prestaciones";
@@ -22,7 +23,8 @@ type Vista =
   | "especialidades"
   | "prestaciones"
   | "profesionales"
-  | "turnos";
+  | "turnos"
+  | "disponibilidades";
 
 
 function App() {
@@ -124,6 +126,17 @@ function App() {
       );
     }
 
+    if (
+      vista === "disponibilidades"
+      && ["administrador", "recepcionista"].includes(usuario.rol)
+    ) {
+      return (
+        <Disponibilidades
+          onVolver={() => setVista("dashboard")}
+        />
+      );
+    }
+
     if (vista === "profesionales") {
       return (
         <Profesionales
@@ -176,6 +189,9 @@ function App() {
         }
         onAbrirTurnos={() =>
           setVista("turnos")
+        }
+        onAbrirDisponibilidades={() =>
+          setVista("disponibilidades")
         }
         onCerrarSesion={cerrarSesion}
       />

@@ -1,0 +1,31 @@
+.disponibilidades-contenido { margin-top: 24px; padding: 30px; border: 1px solid #e4e7ec; border-radius: 20px; background: #fff; box-shadow: 0 12px 35px rgba(16, 24, 40, .07); }
+.disponibilidades-cabecera { margin-bottom: 24px; }
+.disponibilidades-cabecera h2 { color: #172033; font-size: 30px; }
+.disponibilidades-cabecera > p:last-child { margin-top: 7px; color: #667085; }
+.disponibilidades-etiqueta { margin-bottom: 7px; color: #2563eb; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .12em; }
+.disponibilidades-formulario { margin-bottom: 24px; padding: 22px; border: 1px solid #dbe7ff; border-radius: 14px; background: #f8faff; }
+.disponibilidades-formulario h3 { color: #172033; font-size: 18px; }
+.disponibilidades-campos { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr auto; align-items: end; gap: 14px; }
+.disponibilidades-campos label { display: grid; gap: 7px; color: #344054; font-size: 13px; font-weight: 700; }
+.disponibilidades-campos select, .disponibilidades-campos input, .disponibilidades-herramientas select { width: 100%; min-height: 43px; padding: 10px 12px; border: 1px solid #d0d5dd; border-radius: 9px; background: #fff; color: #101828; font: inherit; }
+.disponibilidades-campos button { min-height: 43px; padding: 10px 16px; white-space: nowrap; }
+.disponibilidades-herramientas { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
+.disponibilidades-herramientas label { color: #344054; font-size: 14px; font-weight: 700; }
+.disponibilidades-herramientas select { max-width: 330px; }
+.disponibilidades-exito, .disponibilidades-error { margin-bottom: 18px; padding: 12px 14px; border-radius: 9px; font-size: 14px; }
+.disponibilidades-exito { border: 1px solid #abefc6; background: #ecfdf3; color: #067647; }
+.disponibilidades-error { border: 1px solid #fecdca; background: #fef3f2; color: #b42318; }
+.disponibilidades-estado { display: grid; place-items: center; gap: 12px; min-height: 220px; color: #667085; text-align: center; }
+.disponibilidades-carga { width: 32px; height: 32px; border: 4px solid #dbe7ff; border-top-color: #2563eb; border-radius: 50%; animation: girar-disponibilidades .8s linear infinite; }
+@keyframes girar-disponibilidades { to { transform: rotate(360deg); } }
+.tabla-disponibilidades-contenedor { overflow-x: auto; border: 1px solid #eaecf0; border-radius: 14px; }
+.tabla-disponibilidades { width: 100%; min-width: 760px; border-collapse: collapse; }
+.tabla-disponibilidades th, .tabla-disponibilidades td { padding: 16px 18px; border-bottom: 1px solid #eaecf0; color: #344054; font-size: 14px; text-align: left; }
+.tabla-disponibilidades th { background: #f9fafb; color: #667085; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; }
+.tabla-disponibilidades tbody tr:last-child td { border-bottom: 0; }
+.tabla-disponibilidades tbody tr:hover { background: #f8faff; }
+.disponibilidad-activa, .disponibilidad-inactiva { display: inline-flex; padding: 5px 9px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+.disponibilidad-activa { background: #ecfdf3; color: #067647; }
+.disponibilidad-inactiva { background: #fef3f2; color: #b42318; }
+@media (max-width: 980px) { .disponibilidades-campos { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px) { .disponibilidades-contenido { padding: 21px; } .disponibilidades-campos { grid-template-columns: 1fr; } .disponibilidades-herramientas { align-items: stretch; flex-direction: column; } .disponibilidades-herramientas select { max-width: none; } }

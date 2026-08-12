@@ -6,6 +6,7 @@ type DashboardProps = {
   onAbrirEspecialidades: () => void;
   onAbrirPrestaciones: () => void;
   onAbrirTurnos: () => void;
+  onAbrirDisponibilidades: () => void;
   onCerrarSesion: () => void;
 };
 
@@ -40,6 +41,7 @@ function Dashboard({
   onAbrirEspecialidades,
   onAbrirPrestaciones,
   onAbrirTurnos,
+  onAbrirDisponibilidades,
   onCerrarSesion,
 }: DashboardProps) {
   const modulos: Modulo[] = [
@@ -82,6 +84,15 @@ function Dashboard({
       icono: "📅",
       accion: onAbrirTurnos,
     },
+    ...(["administrador", "recepcionista"].includes(rol)
+      ? [{
+        titulo: "Disponibilidades",
+        descripcion:
+          "Configurar días y horarios de atención profesional.",
+        icono: "◷",
+        accion: onAbrirDisponibilidades,
+      }]
+      : []),
     {
       titulo: "Pagos",
       descripcion:
