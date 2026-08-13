@@ -13,3 +13,9 @@ export interface DisponibilidadCrear {
   hora_inicio: string;
   hora_fin: string;
 }
+
+export interface DisponibilidadActualizar {
+  dia_semana: number;
+  hora_inicio: string;
+  hora_fin: string;
+}

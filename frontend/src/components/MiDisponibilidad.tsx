@@ -5,7 +5,7 @@ import axios from "axios";
 import "./MiDisponibilidad.css";
 import Icono from "./Icono";
 import ProfesionalShell from "./ProfesionalShell";
-import { crearDisponibilidad, obtenerDisponibilidadesProfesional } from "../services/disponibilidadService";
+import { actualizarMiDisponibilidad, crearDisponibilidad, eliminarMiDisponibilidad, obtenerDisponibilidadesProfesional } from "../services/disponibilidadService";
 import { obtenerMiPerfilProfesional } from "../services/profesionalService";
 import type { Disponibilidad } from "../types/disponibilidad";
 import { etiquetaPeriodo, periodoDesdeHora } from "../utils/periodoDia";
@@ -65,6 +65,14 @@ export default function MiDisponibilidad({
   const [errorCarga, setErrorCarga] = useState("");
   const [errorFormulario, setErrorFormulario] = useState("");
   const [exito, setExito] = useState("");
+  const [franjaActiva, setFranjaActiva] = useState<number | null>(null);
+  const [gestion, setGestion] = useState<{ modo: "editar" | "eliminar"; franja: Disponibilidad } | null>(null);
+  const [diaGestion, setDiaGestion] = useState("0");
+  const [inicioGestion, setInicioGestion] = useState("");
+  const [finGestion, setFinGestion] = useState("");
+  const [guardandoGestion, setGuardandoGestion] = useState(false);
+  const [errorGestion, setErrorGestion] = useState("");
+  const [exitoGestion, setExitoGestion] = useState("");
   const selectorDia = useRef<HTMLSelectElement>(null);
   const inputInicio = useRef<HTMLInputElement>(null);
   const inputFin = useRef<HTMLInputElement>(null);
@@ -137,6 +145,69 @@ export default function MiDisponibilidad({
     }
   }
 
+  function abrirGestion(modo: "editar" | "eliminar", franja: Disponibilidad) {
+    setGestion({ modo, franja });
+    setDiaGestion(String(franja.dia_semana));
+    setInicioGestion(franja.hora_inicio.slice(0, 5));
+    setFinGestion(franja.hora_fin.slice(0, 5));
+    setErrorGestion("");
+    setExitoGestion("");
+  }
+
+  function cerrarGestion() {
+    if (!guardandoGestion) {
+      setGestion(null);
+      setErrorGestion("");
+    }
+  }
+
+  async function guardarEdicion(evento: FormEvent<HTMLFormElement>) {
+    evento.preventDefault();
+    if (!gestion || gestion.modo !== "editar" || guardandoGestion) return;
+    setErrorGestion("");
+    if (!inicioGestion || !finGestion) {
+      setErrorGestion("Completá las horas de inicio y finalización.");
+      return;
+    }
+    if (finGestion <= inicioGestion) {
+      setErrorGestion("La hora de finalización debe ser posterior a la de inicio.");
+      return;
+    }
+    setGuardandoGestion(true);
+    try {
+      const actualizada = await actualizarMiDisponibilidad(gestion.franja.id, {
+        dia_semana: Number(diaGestion),
+        hora_inicio: inicioGestion,
+        hora_fin: finGestion,
+      });
+      setItems((actuales) => ordenar(actuales.map((item) => item.id === actualizada.id ? actualizada : item)));
+      setGestion(null);
+      setFranjaActiva(null);
+      setExitoGestion("Horario actualizado correctamente.");
+    } catch (error) {
+      setErrorGestion(detalleError(error, "No pudimos actualizar el horario."));
+    } finally {
+      setGuardandoGestion(false);
+    }
+  }
+
+  async function confirmarEliminacion() {
+    if (!gestion || gestion.modo !== "eliminar" || guardandoGestion) return;
+    setGuardandoGestion(true);
+    setErrorGestion("");
+    try {
+      await eliminarMiDisponibilidad(gestion.franja.id);
+      setItems((actuales) => actuales.filter((item) => item.id !== gestion.franja.id));
+      setGestion(null);
+      setFranjaActiva(null);
+      setExitoGestion("Horario eliminado correctamente.");
+    } catch (error) {
+      setErrorGestion(detalleError(error, "No pudimos eliminar el horario."));
+    } finally {
+      setGuardandoGestion(false);
+    }
+  }
+
   const formulario = <aside className={`mi-disp-formulario-panel${items.length === 0 ? " es-primera" : ""}`} aria-labelledby="mi-disp-formulario-titulo">
     <span>Nuevo horario habitual</span>
     <h2 id="mi-disp-formulario-titulo">{items.length === 0 ? "Configurá tu primera franja de atención." : "Agregar una franja"}</h2>
@@ -177,6 +248,7 @@ export default function MiDisponibilidad({
         <div><h1>Mi disponibilidad</h1><p>Definí los días y horarios en que atendés.</p></div>
         {!cargando && !errorCarga && <p><strong>{diasConfigurados}</strong> día{diasConfigurados === 1 ? "" : "s"} configurado{diasConfigurados === 1 ? "" : "s"}</p>}
       </header>
+      {exitoGestion && <p className="mi-disp-feedback exito mi-disp-feedback-global" role="status">{exitoGestion}</p>}
 
       {cargando ? <SkeletonDisponibilidad /> : <div className="mi-disp-layout">
         <section className="mi-disp-semana" aria-labelledby="mi-disp-semana-titulo">
@@ -188,9 +260,14 @@ export default function MiDisponibilidad({
               return <li key={nombreDia} className={franjas.length === 0 ? "sin-franjas" : undefined}>
                 <h3>{nombreDia}</h3>
                 <div className="mi-disp-franjas">
-                  {franjas.length === 0 ? <p>Sin disponibilidad</p> : franjas.map((franja) => <div key={franja.id} className="mi-disp-franja">
+                  {franjas.length === 0 ? <p>Sin disponibilidad</p> : franjas.map((franja) => <div key={franja.id} className={`mi-disp-franja${franjaActiva === franja.id ? " esta-activa" : ""}`}>
                     <i aria-hidden="true" /><small>{etiquetaPeriodo(periodoDesdeHora(franja.hora_inicio))}</small>
                     <strong>{franja.hora_inicio.slice(0, 5)}–{franja.hora_fin.slice(0, 5)}</strong>
+                    <button type="button" className="mi-disp-gestionar" aria-expanded={franjaActiva === franja.id} aria-controls={`acciones-franja-${franja.id}`} onClick={() => setFranjaActiva((actual) => actual === franja.id ? null : franja.id)}>Gestionar horario</button>
+                    <div id={`acciones-franja-${franja.id}`} className="mi-disp-acciones">
+                      <button type="button" onClick={() => abrirGestion("editar", franja)}>Editar</button>
+                      <button type="button" className="eliminar" onClick={() => abrirGestion("eliminar", franja)}>Eliminar</button>
+                    </div>
                   </div>)}
                 </div>
                 <button type="button" onClick={() => abrirFormulario(indice)}>{franjas.length === 0 ? "Agregar franja" : "Agregar otra franja"}</button>
@@ -201,6 +278,40 @@ export default function MiDisponibilidad({
 
         <button type="button" className="mi-disp-abrir-movil" aria-expanded={formularioAbierto} onClick={() => formularioAbierto ? setFormularioAbierto(false) : abrirFormulario()}>{formularioAbierto ? "Cerrar formulario" : "Agregar franja"}</button>
         <div className={`mi-disp-formulario-contenedor${formularioAbierto ? " esta-abierto" : ""}`}>{formulario}</div>
+      </div>}
+      {gestion && <div className="mi-disp-modal-fondo" role="presentation" onMouseDown={(evento) => { if (evento.target === evento.currentTarget) cerrarGestion(); }}>
+        <section className="mi-disp-modal" role="dialog" aria-modal="true" aria-labelledby="mi-disp-gestion-titulo">
+          {gestion.modo === "editar" ? <>
+            <span>Editar horario habitual</span>
+            <h2 id="mi-disp-gestion-titulo">Actualizar una franja</h2>
+            <form onSubmit={guardarEdicion} noValidate>
+              <label htmlFor="mi-disp-editar-dia">Día
+                <select id="mi-disp-editar-dia" value={diaGestion} disabled={guardandoGestion} onChange={(evento) => setDiaGestion(evento.target.value)}>
+                  {DIAS.map((nombreDia, indice) => <option value={indice} key={nombreDia}>{nombreDia}</option>)}
+                </select>
+              </label>
+              <div className="mi-disp-horas">
+                <label htmlFor="mi-disp-editar-inicio">Desde<input id="mi-disp-editar-inicio" type="time" value={inicioGestion} disabled={guardandoGestion} required onChange={(evento) => setInicioGestion(evento.target.value)} /></label>
+                <label htmlFor="mi-disp-editar-fin">Hasta<input id="mi-disp-editar-fin" type="time" value={finGestion} disabled={guardandoGestion} required onChange={(evento) => setFinGestion(evento.target.value)} /></label>
+              </div>
+              {errorGestion && <p className="mi-disp-feedback error" role="alert">{errorGestion}</p>}
+              <div className="mi-disp-modal-acciones">
+                <button type="button" onClick={cerrarGestion} disabled={guardandoGestion}>Cancelar</button>
+                <button type="submit" disabled={guardandoGestion}>{guardandoGestion ? "Guardando…" : "Guardar cambios"}</button>
+              </div>
+            </form>
+          </> : <>
+            <span>Disponibilidad habitual</span>
+            <h2 id="mi-disp-gestion-titulo">Eliminar horario habitual</h2>
+            <p className="mi-disp-modal-franja"><strong>{DIAS[gestion.franja.dia_semana]}</strong><br />{gestion.franja.hora_inicio.slice(0, 5)}–{gestion.franja.hora_fin.slice(0, 5)}</p>
+            <p>Este horario dejará de estar disponible para nuevas reservas. Los turnos ya creados no serán cancelados.</p>
+            {errorGestion && <p className="mi-disp-feedback error" role="alert">{errorGestion}</p>}
+            <div className="mi-disp-modal-acciones">
+              <button type="button" onClick={cerrarGestion} disabled={guardandoGestion}>Volver</button>
+              <button type="button" className="eliminar" onClick={() => void confirmarEliminacion()} disabled={guardandoGestion}>{guardandoGestion ? "Eliminando…" : "Eliminar horario"}</button>
+            </div>
+          </>}
+        </section>
       </div>}
     </div>
   </ProfesionalShell>;

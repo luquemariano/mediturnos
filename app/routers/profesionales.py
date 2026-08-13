@@ -19,6 +19,10 @@ from app.schemas.turno import (
     TurnoReprogramar,
     TurnoRespuesta,
 )
+from app.schemas.disponibilidad import (
+    DisponibilidadActualizar,
+    DisponibilidadRespuesta,
+)
 from app.services.paciente_service import obtener_pacientes_activos
 from app.services.profesional_service import (
     EspecialidadesConPrestacionesError,
@@ -35,6 +39,10 @@ from app.services.turno_service import (
     crear_turno_profesional,
     obtener_agenda_de_profesional,
     reprogramar_turno_profesional,
+)
+from app.services.disponibilidad_service import (
+    actualizar_disponibilidad_profesional,
+    desactivar_disponibilidad_profesional,
 )
 
 
@@ -175,6 +183,43 @@ def crear_turno_en_mi_agenda(
 
     profesional = obtener_mi_profesional(db, usuario_actual.id)
     return crear_turno_profesional(db, profesional.id, datos)
+
+
+@router.patch(
+    "/me/disponibilidades/{disponibilidad_id}",
+    response_model=DisponibilidadRespuesta,
+    summary="Actualizar una disponibilidad habitual propia",
+)
+def actualizar_mi_disponibilidad(
+    disponibilidad_id: int,
+    datos: DisponibilidadActualizar,
+    db: Session = Depends(obtener_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual),
+):
+    if usuario_actual.rol != "profesional":
+        raise HTTPException(status_code=403, detail="El usuario autenticado no es un profesional.")
+    profesional = obtener_mi_profesional(db, usuario_actual.id)
+    return actualizar_disponibilidad_profesional(
+        db, disponibilidad_id, profesional.id, datos,
+    )
+
+
+@router.delete(
+    "/me/disponibilidades/{disponibilidad_id}",
+    response_model=DisponibilidadRespuesta,
+    summary="Eliminar una disponibilidad habitual propia",
+)
+def eliminar_mi_disponibilidad(
+    disponibilidad_id: int,
+    db: Session = Depends(obtener_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual),
+):
+    if usuario_actual.rol != "profesional":
+        raise HTTPException(status_code=403, detail="El usuario autenticado no es un profesional.")
+    profesional = obtener_mi_profesional(db, usuario_actual.id)
+    return desactivar_disponibilidad_profesional(
+        db, disponibilidad_id, profesional.id,
+    )
 
 
 @router.patch(

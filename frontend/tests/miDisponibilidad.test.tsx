@@ -8,7 +8,9 @@ import * as profesionalService from "../src/services/profesionalService";
 import type { Disponibilidad } from "../src/types/disponibilidad";
 
 vi.mock("../src/services/disponibilidadService", () => ({
+  actualizarMiDisponibilidad: vi.fn(),
   crearDisponibilidad: vi.fn(),
+  eliminarMiDisponibilidad: vi.fn(),
   obtenerDisponibilidadesProfesional: vi.fn(),
 }));
 vi.mock("../src/services/profesionalService", () => ({
@@ -181,5 +183,86 @@ describe("mi disponibilidad profesional Signature", () => {
     fireEvent.click(screen.getByRole("button", { name: "Reintentar" }));
     await waitFor(() => expect(profesionalService.obtenerMiPerfilProfesional).toHaveBeenCalledTimes(2));
     expect(await screen.findByRole("heading", { name: "Tu semana" })).toBeInTheDocument();
+  });
+
+  it("abre la edición con datos precargados y permite cancelarla", async () => {
+    preparar([franja({ dia_semana: 3, hora_inicio: "14:00:00", hora_fin: "19:00:00" })]);
+    renderizar();
+    await screen.findByText((texto) => texto.startsWith("14:00") && texto.endsWith("19:00"));
+    fireEvent.click(screen.getByRole("button", { name: "Gestionar horario" }));
+    fireEvent.click(screen.getByRole("button", { name: "Editar" }));
+    const dialogo = screen.getByRole("dialog", { name: "Actualizar una franja" });
+    expect(within(dialogo).getByLabelText("Día")).toHaveValue("3");
+    expect(within(dialogo).getByLabelText("Desde")).toHaveValue("14:00");
+    expect(within(dialogo).getByLabelText("Hasta")).toHaveValue("19:00");
+    fireEvent.click(within(dialogo).getByRole("button", { name: "Cancelar" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("guarda, reordena y bloquea doble submit durante la edición", async () => {
+    preparar([
+      franja({ id: 1, dia_semana: 3, hora_inicio: "14:00:00", hora_fin: "19:00:00" }),
+      franja({ id: 2, dia_semana: 0, hora_inicio: "14:00:00", hora_fin: "18:00:00" }),
+    ]);
+    let resolver!: (valor: Disponibilidad) => void;
+    vi.mocked(disponibilidadService.actualizarMiDisponibilidad).mockReturnValue(new Promise((resolve) => { resolver = resolve; }));
+    renderizar();
+    await screen.findByText((texto) => texto.startsWith("14:00") && texto.endsWith("19:00"));
+    fireEvent.click(screen.getAllByRole("button", { name: "Gestionar horario" })[0]);
+    fireEvent.click(screen.getAllByRole("button", { name: "Editar" })[0]);
+    const dialogo = screen.getByRole("dialog");
+    fireEvent.change(within(dialogo).getByLabelText("Día"), { target: { value: "0" } });
+    fireEvent.change(within(dialogo).getByLabelText("Desde"), { target: { value: "08:00" } });
+    fireEvent.change(within(dialogo).getByLabelText("Hasta"), { target: { value: "12:00" } });
+    fireEvent.click(within(dialogo).getByRole("button", { name: "Guardar cambios" }));
+    expect(within(dialogo).getByRole("button", { name: "Guardando…" })).toBeDisabled();
+    fireEvent.submit(within(dialogo).getByRole("button", { name: "Guardando…" }).closest("form")!);
+    expect(disponibilidadService.actualizarMiDisponibilidad).toHaveBeenCalledTimes(1);
+    resolver(franja({ id: 1, hora_inicio: "08:00:00", hora_fin: "12:00:00" }));
+    expect(await screen.findByRole("status")).toHaveTextContent("Horario actualizado correctamente");
+    const lunes = screen.getByRole("heading", { name: "Lunes" }).closest("li")!;
+    const horarios = within(lunes).getAllByText((texto) => texto.startsWith("08:00") || texto.startsWith("14:00"));
+    expect(horarios.map((item) => item.textContent?.slice(0, 5))).toEqual(["08:00", "14:00"]);
+  });
+
+  it("conserva el formulario y muestra el detalle 409 al editar", async () => {
+    preparar([franja()]);
+    vi.mocked(disponibilidadService.actualizarMiDisponibilidad).mockRejectedValue(new axios.AxiosError(
+      "Conflict", "ERR_BAD_RESPONSE", undefined, undefined,
+      { status: 409, statusText: "Conflict", headers: {}, config: { headers: {} }, data: { detail: "La disponibilidad se solapa con otro horario activo del profesional para el mismo día." } },
+    ));
+    renderizar();
+    await screen.findByText((texto) => texto.startsWith("08:00") && texto.endsWith("12:00"));
+    fireEvent.click(screen.getByRole("button", { name: "Gestionar horario" }));
+    fireEvent.click(screen.getByRole("button", { name: "Editar" }));
+    fireEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("se solapa");
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+  });
+
+  it("confirma la eliminación, advierte por turnos y deja el día vacío", async () => {
+    preparar([franja()]);
+    vi.mocked(disponibilidadService.eliminarMiDisponibilidad).mockResolvedValue(franja({ activa: false }));
+    renderizar();
+    await screen.findByText((texto) => texto.startsWith("08:00") && texto.endsWith("12:00"));
+    fireEvent.click(screen.getByRole("button", { name: "Gestionar horario" }));
+    fireEvent.click(screen.getByRole("button", { name: "Eliminar" }));
+    const dialogo = screen.getByRole("dialog", { name: "Eliminar horario habitual" });
+    expect(dialogo).toHaveTextContent("Los turnos ya creados no serán cancelados");
+    fireEvent.click(within(dialogo).getByRole("button", { name: "Eliminar horario" }));
+    expect(await screen.findByRole("status")).toHaveTextContent("Horario eliminado correctamente");
+    expect(screen.getByRole("heading", { name: "Lunes" }).closest("li")).toHaveTextContent("Sin disponibilidad");
+  });
+
+  it("mantiene la confirmación abierta si falla la eliminación", async () => {
+    preparar([franja()]);
+    vi.mocked(disponibilidadService.eliminarMiDisponibilidad).mockRejectedValue(new Error("red"));
+    renderizar();
+    await screen.findByText((texto) => texto.startsWith("08:00") && texto.endsWith("12:00"));
+    fireEvent.click(screen.getByRole("button", { name: "Gestionar horario" }));
+    fireEvent.click(screen.getByRole("button", { name: "Eliminar" }));
+    fireEvent.click(screen.getByRole("button", { name: "Eliminar horario" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("No pudimos eliminar el horario");
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
 });

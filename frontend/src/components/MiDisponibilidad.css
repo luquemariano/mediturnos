@@ -21,10 +21,32 @@
 .mi-disp-semana li > button { justify-self: end; font-size: 12px; }
 .mi-disp-franjas { display: grid; gap: 5px; }
 .mi-disp-franjas > p { color: var(--prof-text-secondary); font-size: 13px; }
-.mi-disp-franja { min-height: 30px; display: grid; grid-template-columns: 3px 58px minmax(0, 1fr); align-items: center; gap: 10px; }
+.mi-disp-franja { min-height: 36px; display: grid; grid-template-columns: 3px 58px minmax(0, 1fr) auto; align-items: center; gap: 10px; }
 .mi-disp-franja i { align-self: stretch; border-radius: 2px; background: var(--prof-primary); }
 .mi-disp-franja small { color: var(--prof-text-secondary); font-size: 11px; font-weight: 700; text-transform: uppercase; }
 .mi-disp-franja strong { color: var(--prof-primary-dark); font-family: Manrope, sans-serif; font-size: 16px; font-variant-numeric: tabular-nums; font-weight: 600; letter-spacing: -.015em; }
+.mi-disp-gestionar { min-height: 32px; padding: 0 8px; border: 0; background: transparent; color: var(--prof-primary); font-size: 12px; font-weight: 700; cursor: pointer; }
+.mi-disp-acciones { display: flex; grid-column: 4; gap: 12px; max-height: 0; overflow: hidden; opacity: 0; transition: opacity .15s ease; }
+.mi-disp-franja:hover .mi-disp-acciones, .mi-disp-franja:focus-within .mi-disp-acciones, .mi-disp-franja.esta-activa .mi-disp-acciones { max-height: 44px; opacity: 1; }
+.mi-disp-acciones button { min-height: 32px; padding: 0; border: 0; background: transparent; color: var(--prof-primary); font-size: 12px; font-weight: 700; cursor: pointer; }
+.mi-disp-acciones button.eliminar { color: var(--prof-danger); }
+.mi-disp-feedback-global { margin: -13px 0 16px; }
+
+.mi-disp-modal-fondo { position: fixed; z-index: 40; inset: 0; display: grid; place-items: center; padding: 20px; background: rgba(21,62,59,.36); }
+.mi-disp-modal { width: min(460px, 100%); padding: 26px; border: 1px solid rgba(168,102,67,.22); border-radius: 10px; background: var(--prof-surface-warm); }
+.mi-disp-modal > span { color: var(--prof-text-secondary); font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.mi-disp-modal h2 { margin-top: 2px; font-family: Manrope, sans-serif; font-size: 22px; font-weight: 600; letter-spacing: -.02em; }
+.mi-disp-modal > p { margin-top: 14px; color: var(--prof-text-secondary); line-height: 1.5; }
+.mi-disp-modal .mi-disp-modal-franja { padding: 13px 0; border-block: 1px solid rgba(101,113,109,.18); color: var(--prof-primary-dark); font-family: Manrope, sans-serif; font-variant-numeric: tabular-nums; }
+.mi-disp-modal form { display: grid; gap: 15px; margin-top: 20px; }
+.mi-disp-modal label { display: grid; gap: 6px; color: var(--prof-text); font-size: 13px; font-weight: 700; }
+.mi-disp-modal select, .mi-disp-modal input { width: 100%; min-height: 44px; padding: 8px 11px; border: 1px solid var(--prof-border); border-radius: 7px; outline: 0; background: var(--prof-surface); color: var(--prof-text); font: inherit; font-variant-numeric: tabular-nums; }
+.mi-disp-modal select:focus, .mi-disp-modal input:focus { border-color: var(--prof-primary); box-shadow: 0 0 0 3px rgba(23,111,106,.12); }
+.mi-disp-modal-acciones { display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px; }
+.mi-disp-modal-acciones button { min-height: 42px; padding: 0 15px; border: 1px solid var(--prof-border); border-radius: 7px; background: var(--prof-surface); color: var(--prof-primary-dark); font-weight: 700; cursor: pointer; }
+.mi-disp-modal-acciones button[type="submit"] { border-color: var(--prof-primary); background: var(--prof-primary); color: #fff; }
+.mi-disp-modal-acciones button.eliminar { border-color: var(--prof-danger); background: var(--prof-danger); color: #fff; }
+.mi-disp-modal-acciones button:disabled { cursor: wait; opacity: .6; }
 
 .mi-disp-formulario-panel { padding: 22px; border: 1px solid rgba(168,102,67,.18); border-radius: 10px; background: var(--prof-surface-warm); }
 .mi-disp-formulario-panel.es-primera { border-color: rgba(168,102,67,.35); }
@@ -75,12 +97,18 @@
   .mi-disp-semana li { min-height: 78px; grid-template-columns: 88px minmax(0, 1fr); gap: 10px; padding: 10px 16px; }
   .mi-disp-semana li.sin-franjas { min-height: 68px; }
   .mi-disp-semana li > button { grid-column: 2; justify-self: start; min-height: 44px; display: flex; align-items: center; }
-  .mi-disp-franja { grid-template-columns: 3px 54px minmax(0, 1fr); gap: 8px; }
+  .mi-disp-franja { grid-template-columns: 3px 54px minmax(0, 1fr) auto; gap: 8px; }
   .mi-disp-franja strong { font-size: 15px; }
+  .mi-disp-gestionar { min-height: 44px; font-size: 0; }
+  .mi-disp-gestionar::after { content: "Gestionar"; font-size: 12px; }
+  .mi-disp-acciones { grid-column: 2 / -1; display: none; max-height: none; opacity: 1; }
+  .mi-disp-franja.esta-activa .mi-disp-acciones { display: flex; }
+  .mi-disp-acciones button { min-height: 44px; }
   .mi-disp-abrir-movil { min-height: 48px; display: block; border: 0; border-radius: 7px; background: var(--prof-primary); color: #fff; font-weight: 700; cursor: pointer; }
   .mi-disp-formulario-contenedor { display: none; }
   .mi-disp-formulario-contenedor.esta-abierto { display: block; }
   .mi-disp-formulario-panel { padding: 20px; }
+  .mi-disp-modal { padding: 22px 20px; }
   .mi-disp-skeleton-formulario { display: none; }
 }
 

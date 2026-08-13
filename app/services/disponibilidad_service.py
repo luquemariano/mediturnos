@@ -5,6 +5,7 @@ from app.models.disponibilidad import Disponibilidad
 from app.repositories.disponibilidad_repository import (
     buscar_por_dia,
     buscar_por_profesional,
+    buscar_disponibilidad_de_profesional,
     buscar_prestacion,
     buscar_profesional,
     buscar_turno_por_id,
@@ -12,7 +13,10 @@ from app.repositories.disponibilidad_repository import (
     buscar_turnos_del_dia,
     guardar_disponibilidad,
 )
-from app.schemas.disponibilidad import DisponibilidadCrear
+from app.schemas.disponibilidad import (
+    DisponibilidadActualizar,
+    DisponibilidadCrear,
+)
 from datetime import date, datetime, timedelta
 
 from app.core.datetime_utils import (
@@ -22,6 +26,35 @@ from app.core.datetime_utils import (
     fecha_actual_negocio,
     fecha_hora_civil_a_utc,
 )
+
+
+def _validar_sin_solapamiento(
+    db: Session,
+    profesional_id: int,
+    dia_semana: int,
+    hora_inicio,
+    hora_fin,
+    disponibilidad_id_excluida: int | None = None,
+) -> None:
+    disponibilidades_del_dia = buscar_por_dia(
+        db,
+        profesional_id,
+        dia_semana,
+    )
+    if any(
+        (disponibilidad_id_excluida is None
+         or getattr(disponibilidad, "id", None) != disponibilidad_id_excluida)
+        and hora_inicio < disponibilidad.hora_fin
+        and hora_fin > disponibilidad.hora_inicio
+        for disponibilidad in disponibilidades_del_dia
+    ):
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "La disponibilidad se solapa con otro horario "
+                "activo del profesional para el mismo día."
+            ),
+        )
 
 
 def crear_disponibilidad(
@@ -45,24 +78,13 @@ def crear_disponibilidad(
             detail="El profesional está inactivo.",
         )
 
-    disponibilidades_del_dia = buscar_por_dia(
+    _validar_sin_solapamiento(
         db,
         datos.profesional_id,
         datos.dia_semana,
+        datos.hora_inicio,
+        datos.hora_fin,
     )
-
-    if any(
-        datos.hora_inicio < disponibilidad.hora_fin
-        and datos.hora_fin > disponibilidad.hora_inicio
-        for disponibilidad in disponibilidades_del_dia
-    ):
-        raise HTTPException(
-            status_code=409,
-            detail=(
-                "La disponibilidad se solapa con otro horario "
-                "activo del profesional para el mismo día."
-            ),
-        )
 
     disponibilidad = guardar_disponibilidad(
         db,
@@ -72,6 +94,51 @@ def crear_disponibilidad(
     db.commit()
     db.refresh(disponibilidad)
 
+    return disponibilidad
+
+
+def actualizar_disponibilidad_profesional(
+    db: Session,
+    disponibilidad_id: int,
+    profesional_id: int,
+    datos: DisponibilidadActualizar,
+) -> Disponibilidad:
+    disponibilidad = buscar_disponibilidad_de_profesional(
+        db, disponibilidad_id, profesional_id,
+    )
+    if disponibilidad is None:
+        raise HTTPException(status_code=404, detail="Disponibilidad no encontrada.")
+
+    _validar_sin_solapamiento(
+        db,
+        profesional_id,
+        datos.dia_semana,
+        datos.hora_inicio,
+        datos.hora_fin,
+        disponibilidad_id_excluida=disponibilidad.id,
+    )
+    disponibilidad.dia_semana = datos.dia_semana
+    disponibilidad.hora_inicio = datos.hora_inicio
+    disponibilidad.hora_fin = datos.hora_fin
+    db.commit()
+    db.refresh(disponibilidad)
+    return disponibilidad
+
+
+def desactivar_disponibilidad_profesional(
+    db: Session,
+    disponibilidad_id: int,
+    profesional_id: int,
+) -> Disponibilidad:
+    disponibilidad = buscar_disponibilidad_de_profesional(
+        db, disponibilidad_id, profesional_id,
+    )
+    if disponibilidad is None:
+        raise HTTPException(status_code=404, detail="Disponibilidad no encontrada.")
+
+    disponibilidad.activa = False
+    db.commit()
+    db.refresh(disponibilidad)
     return disponibilidad
 
 

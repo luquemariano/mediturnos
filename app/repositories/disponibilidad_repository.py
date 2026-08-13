@@ -61,6 +61,22 @@ def buscar_por_profesional(
     )
 
 
+def buscar_disponibilidad_de_profesional(
+    db: Session,
+    disponibilidad_id: int,
+    profesional_id: int,
+) -> Disponibilidad | None:
+    return (
+        db.query(Disponibilidad)
+        .filter(
+            Disponibilidad.id == disponibilidad_id,
+            Disponibilidad.profesional_id == profesional_id,
+            Disponibilidad.activa.is_(True),
+        )
+        .first()
+    )
+
+
 def buscar_por_dia(
     db: Session,
     profesional_id: int,
