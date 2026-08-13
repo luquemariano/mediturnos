@@ -21,3 +21,9 @@ export interface PacienteCrear {
   obra_social: string | null;
   numero_afiliado: string | null;
 }
+
+export interface PacienteSeleccion {
+  id: number;
+  nombre: string;
+  apellido: string;
+}

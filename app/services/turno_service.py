@@ -129,6 +129,7 @@ def es_conflicto_agenda(error: IntegrityError) -> bool:
 def crear_turno(
     db: Session,
     datos: TurnoCrear,
+    profesional_id_esperado: int | None = None,
 ) -> Turno:
     paciente = buscar_paciente_por_id(
         db,
@@ -162,6 +163,20 @@ def crear_turno(
         raise HTTPException(
             status_code=400,
             detail="La prestación está inactiva.",
+        )
+
+    if profesional_id_esperado is not None and (
+        prestacion.profesional_id != profesional_id_esperado
+    ):
+        raise HTTPException(
+            status_code=403,
+            detail="La prestación no pertenece al profesional autenticado.",
+        )
+
+    if not prestacion.profesional.activo:
+        raise HTTPException(
+            status_code=400,
+            detail="El profesional está inactivo.",
         )
 
     if datos.fecha_hora <= ahora_utc():
@@ -206,6 +221,18 @@ def crear_turno(
     )
 
     return _confirmar_cambio_turno(db, turno)
+
+
+def crear_turno_profesional(
+    db: Session,
+    profesional_id: int,
+    datos: TurnoCrear,
+) -> Turno:
+    return crear_turno(
+        db,
+        datos,
+        profesional_id_esperado=profesional_id,
+    )
 
 
 def crear_turno_propio(

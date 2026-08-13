@@ -5,6 +5,12 @@
 .agenda-prof-cabecera div > p, .agenda-prof-cabecera > p { margin-top: 6px; color: var(--prof-text-secondary); font-size: 14px; }
 .agenda-prof-cabecera > p { margin: 0 0 2px; }
 .agenda-prof-cabecera > p strong { color: var(--prof-text); font-weight: 700; }
+.agenda-prof-cabecera-acciones { display: flex; align-items: center; gap: 18px; }
+.agenda-prof-cabecera-acciones > p { color: var(--prof-text-secondary); font-size: 14px; }
+.agenda-prof-cabecera-acciones > p strong { color: var(--prof-text); }
+.agenda-prof-cabecera-acciones > button { min-height: 40px; padding: 0 14px; border: 0; border-radius: 7px; background: var(--prof-primary); color: #fff; font-weight: 700; cursor: pointer; }
+.agenda-prof-cabecera-acciones > button:hover { background: var(--prof-primary-hover); }
+.agenda-prof-exito { margin-bottom: 14px; padding: 9px 12px; border-left: 3px solid var(--prof-success); background: rgba(40,122,90,.06); color: var(--prof-success); font-size: 13px; }
 
 .agenda-prof-navegacion { min-height: 54px; display: grid; grid-template-columns: 40px minmax(220px, auto) 40px 58px; align-items: center; justify-content: start; gap: 4px; margin-bottom: 18px; padding: 6px 8px; border-block: 1px solid rgba(101,113,109,.18); }
 .agenda-prof-navegacion button { min-width: 40px; min-height: 40px; display: grid; place-items: center; border: 0; border-radius: 7px; background: transparent; color: var(--prof-primary); cursor: pointer; }
@@ -80,6 +86,9 @@ section.agenda-prof-estado button { min-height: 40px; display: inline-flex; alig
   .agenda-prof-cabecera { align-items: start; margin-bottom: 18px; }
   .agenda-prof-cabecera h1 { font-size: 25px; }
   .agenda-prof-cabecera > p { display: none; }
+  .agenda-prof-cabecera-acciones { align-items: flex-end; flex-direction: column-reverse; gap: 6px; }
+  .agenda-prof-cabecera-acciones > p { display: none; }
+  .agenda-prof-cabecera-acciones > button { min-height: 44px; }
   .agenda-prof-navegacion { position: sticky; z-index: 20; top: 58px; grid-template-columns: 40px minmax(0, 1fr) 40px 54px; margin-inline: -16px; margin-bottom: 12px; padding-inline: 12px; background: var(--prof-background); }
   .agenda-prof-navegacion strong { overflow: hidden; padding-inline: 2px; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
   .agenda-prof-grupos { overflow: visible; margin-inline: -16px; border-inline: 0; border-radius: 0; }

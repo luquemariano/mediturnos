@@ -73,6 +73,13 @@ export async function crearTurno(
   return respuesta.data;
 }
 
+export async function crearMiTurnoProfesional(
+  datos: TurnoCrear,
+): Promise<Turno> {
+  const respuesta = await api.post<Turno>("/profesionales/me/turnos", datos);
+  return respuesta.data;
+}
+
 export async function obtenerHorariosLibres(
   prestacionId: number,
   fecha: string,

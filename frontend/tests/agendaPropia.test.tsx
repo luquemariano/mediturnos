@@ -2,6 +2,9 @@ import { fireEvent, render, screen, waitFor, within } from "@testing-library/rea
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import AgendaPropia from "../src/components/AgendaPropia";
+import * as pacienteService from "../src/services/pacienteService";
+import * as prestacionService from "../src/services/prestacionService";
+import * as profesionalService from "../src/services/profesionalService";
 import * as servicio from "../src/services/turnoService";
 import type { Turno } from "../src/types/turno";
 
@@ -11,7 +14,12 @@ vi.mock("../src/services/turnoService", () => ({
   cancelarMiTurno: vi.fn(),
   finalizarMiTurno: vi.fn(),
   marcarAusenteMiTurno: vi.fn(),
+  crearMiTurnoProfesional: vi.fn(),
+  obtenerHorariosLibres: vi.fn(),
 }));
+vi.mock("../src/services/pacienteService", () => ({ obtenerPacientesParaProfesional: vi.fn() }));
+vi.mock("../src/services/prestacionService", () => ({ obtenerPrestaciones: vi.fn() }));
+vi.mock("../src/services/profesionalService", () => ({ obtenerMiPerfilProfesional: vi.fn() }));
 
 function turno(datos: Partial<Turno> = {}): Turno {
   return {
@@ -72,6 +80,7 @@ describe("agenda propia profesional Signature", () => {
     expect(servicio.obtenerMisTurnosPaciente).not.toHaveBeenCalled();
     expect(screen.getByRole("navigation", { name: "Navegación profesional" })).toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: "Mi agenda" })[0]).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("button", { name: "+ Nuevo turno" })).toBeInTheDocument();
     fireEvent.click(screen.getAllByRole("button", { name: "Inicio" })[0]);
     fireEvent.click(screen.getAllByRole("button", { name: "Mi disponibilidad" })[0]);
     fireEvent.click(screen.getAllByRole("button", { name: "Mi perfil" })[0]);
@@ -154,6 +163,26 @@ describe("agenda propia profesional Signature", () => {
     expect(screen.getByText("Ana López")).toBeInTheDocument();
   });
 
+  it("incorpora el turno creado y muestra feedback sin recargar la agenda", async () => {
+    vi.mocked(servicio.obtenerMiAgendaProfesional).mockResolvedValue([]);
+    vi.mocked(pacienteService.obtenerPacientesParaProfesional).mockResolvedValue([{ id: 10, nombre: "Ana", apellido: "López" }]);
+    vi.mocked(profesionalService.obtenerMiPerfilProfesional).mockResolvedValue({ id: 7, nombre: "Sofía", apellido: "Ramírez", matricula: "MP", telefono: null, email: null, activo: true, especialidades: [] });
+    vi.mocked(prestacionService.obtenerPrestaciones).mockResolvedValue([{ id: 20, nombre: "Consulta clínica", descripcion: null, duracion_minutos: 50, precio: 100, modalidad: "presencial", activa: true, profesional_id: 7, especialidad_id: 1 }]);
+    vi.mocked(servicio.obtenerHorariosLibres).mockResolvedValue([{ fecha_hora: "2026-08-14T12:00:00Z" }]);
+    vi.mocked(servicio.crearMiTurnoProfesional).mockResolvedValue(turno({ id: 8, fecha_hora: "2026-08-14T12:00:00Z" }));
+    renderProfesional();
+    fireEvent.click(await screen.findByRole("button", { name: "+ Nuevo turno" }));
+    await screen.findByRole("option", { name: "López, Ana" });
+    fireEvent.change(screen.getByLabelText("Paciente"), { target: { value: "10" } });
+    fireEvent.change(screen.getByLabelText("Prestación"), { target: { value: "20" } });
+    fireEvent.change(screen.getByLabelText("Fecha"), { target: { value: "2026-08-14" } });
+    fireEvent.click(await screen.findByRole("radio", { name: "09:00" }));
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar turno" }));
+    expect(await screen.findByRole("status")).toHaveTextContent("Turno creado correctamente");
+    expect(screen.getByText("Ana López")).toBeInTheDocument();
+    expect(servicio.obtenerMiAgendaProfesional).toHaveBeenCalledTimes(1);
+  });
+
   it("representa loading, error con retry y empty state", async () => {
     let rechazar!: (motivo: unknown) => void;
     vi.mocked(servicio.obtenerMiAgendaProfesional).mockReturnValueOnce(new Promise((_, reject) => { rechazar = reject; }));
@@ -178,4 +207,5 @@ it("conserva la variante paciente y su endpoint propio", async () => {
   expect(screen.getByRole("heading", { name: "Mis turnos" })).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Cancelar turno" })).toBeInTheDocument();
   expect(screen.queryByRole("navigation", { name: "Navegación profesional" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "+ Nuevo turno" })).not.toBeInTheDocument();
 });

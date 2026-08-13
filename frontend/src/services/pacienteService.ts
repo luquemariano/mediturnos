@@ -2,6 +2,7 @@ import api from "../api/api";
 import type {
   Paciente,
   PacienteCrear,
+  PacienteSeleccion,
 } from "../types/paciente";
 
 export async function obtenerPacientes():
@@ -26,5 +27,10 @@ export async function crearPaciente(
 
 export async function obtenerMiPerfilPaciente(): Promise<Paciente> {
   const respuesta = await api.get<Paciente>("/pacientes/me");
+  return respuesta.data;
+}
+
+export async function obtenerPacientesParaProfesional(): Promise<PacienteSeleccion[]> {
+  const respuesta = await api.get<PacienteSeleccion[]>("/profesionales/me/pacientes");
   return respuesta.data;
 }

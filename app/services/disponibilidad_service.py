@@ -182,6 +182,12 @@ def obtener_horarios_libres(
             detail="La prestación está inactiva.",
         )
 
+    if not prestacion.profesional.activo:
+        raise HTTPException(
+            status_code=400,
+            detail="El profesional está inactivo.",
+        )
+
     if fecha < fecha_actual_negocio():
         raise HTTPException(
             status_code=400,

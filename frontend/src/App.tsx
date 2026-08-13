@@ -213,7 +213,13 @@ function App() {
       vista === "disponibilidades"
     ) {
       if (usuario.rol === "profesional") {
-        return <MiDisponibilidad onVolver={() => setVista("dashboard")} />;
+        return <MiDisponibilidad
+          nombre={usuario.nombre}
+          onVolver={() => setVista("dashboard")}
+          onAbrirAgenda={() => setVista("turnos")}
+          onAbrirPerfil={() => setVista("perfil")}
+          onCerrarSesion={cerrarSesion}
+        />;
       }
       if (["administrador", "recepcionista"].includes(usuario.rol)) return (
         <Disponibilidades
@@ -222,8 +228,20 @@ function App() {
       );
     }
 
-    if (vista === "perfil" && ["profesional", "paciente"].includes(usuario.rol)) {
-      return <PerfilPropio tipo={usuario.rol as "profesional" | "paciente"} onVolver={() => setVista("dashboard")} />;
+    if (vista === "perfil" && usuario.rol === "profesional") {
+      return <PerfilPropio
+        tipo="profesional"
+        nombre={usuario.nombre}
+        onVolver={() => setVista("dashboard")}
+        onAbrirAgenda={() => setVista("turnos")}
+        onAbrirDisponibilidad={() => setVista("disponibilidades")}
+        onAbrirPerfil={() => setVista("perfil")}
+        onCerrarSesion={cerrarSesion}
+      />;
+    }
+
+    if (vista === "perfil" && usuario.rol === "paciente") {
+      return <PerfilPropio tipo="paciente" onVolver={() => setVista("dashboard")} />;
     }
 
     if (vista === "profesionales") {

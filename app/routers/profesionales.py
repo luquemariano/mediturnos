@@ -8,12 +8,14 @@ from app.core.dependencies import (
 )
 from app.database.connection import obtener_db
 from app.models.usuario import Usuario
+from app.schemas.paciente import PacienteSeleccionRespuesta
 from app.schemas.profesional import (
     ProfesionalActualizar,
     ProfesionalCrear,
     ProfesionalRespuesta,
 )
-from app.schemas.turno import TurnoRespuesta
+from app.schemas.turno import TurnoCrearProfesional, TurnoRespuesta
+from app.services.paciente_service import obtener_pacientes_activos
 from app.services.profesional_service import (
     EspecialidadesConPrestacionesError,
     EspecialidadesDuplicadasError,
@@ -24,7 +26,10 @@ from app.services.profesional_service import (
     obtener_profesional_por_id,
     obtener_profesionales,
 )
-from app.services.turno_service import obtener_agenda_de_profesional
+from app.services.turno_service import (
+    crear_turno_profesional,
+    obtener_agenda_de_profesional,
+)
 
 
 router = APIRouter(
@@ -124,6 +129,46 @@ def ver_mi_agenda(
         profesional.id,
         estado,
     )
+
+
+@router.get(
+    "/me/pacientes",
+    response_model=list[PacienteSeleccionRespuesta],
+    summary="Listar pacientes activos para mi agenda",
+)
+def listar_pacientes_para_mi_agenda(
+    db: Session = Depends(obtener_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual),
+):
+    if usuario_actual.rol != "profesional":
+        raise HTTPException(
+            status_code=403,
+            detail="El usuario autenticado no es un profesional.",
+        )
+
+    obtener_mi_profesional(db, usuario_actual.id)
+    return obtener_pacientes_activos(db)
+
+
+@router.post(
+    "/me/turnos",
+    response_model=TurnoRespuesta,
+    status_code=201,
+    summary="Crear un turno en mi agenda profesional",
+)
+def crear_turno_en_mi_agenda(
+    datos: TurnoCrearProfesional,
+    db: Session = Depends(obtener_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual),
+):
+    if usuario_actual.rol != "profesional":
+        raise HTTPException(
+            status_code=403,
+            detail="El usuario autenticado no es un profesional.",
+        )
+
+    profesional = obtener_mi_profesional(db, usuario_actual.id)
+    return crear_turno_profesional(db, profesional.id, datos)
 @router.get(
     "/",
     response_model=list[ProfesionalRespuesta],

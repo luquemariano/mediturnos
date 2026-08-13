@@ -21,6 +21,10 @@ class TurnoCrear(BaseModel):
         return a_utc(valor)
 
 
+class TurnoCrearProfesional(TurnoCrear):
+    model_config = ConfigDict(extra="forbid")
+
+
 class TurnoCrearPropio(BaseModel):
     prestacion_id: int = Field(gt=0)
     fecha_hora: datetime

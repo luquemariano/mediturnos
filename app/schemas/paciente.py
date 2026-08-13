@@ -27,3 +27,11 @@ class PacienteRespuesta(BaseModel):
     activo: bool
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class PacienteSeleccionRespuesta(BaseModel):
+    id: int
+    nombre: str
+    apellido: str
+
+    model_config = ConfigDict(from_attributes=True)

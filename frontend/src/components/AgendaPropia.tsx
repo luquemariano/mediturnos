@@ -4,6 +4,7 @@ import axios from "axios";
 import "./AgendaPropia.css";
 import Icono from "./Icono";
 import ProfesionalShell from "./ProfesionalShell";
+import NuevoTurnoProfesional from "./NuevoTurnoProfesional";
 import type { Turno } from "../types/turno";
 import {
   cancelarMiTurno,
@@ -122,6 +123,8 @@ export default function AgendaPropia({
   const [turnoExpandido, setTurnoExpandido] = useState<number | null>(null);
   const [fechaActiva, setFechaActiva] = useState<string | null>(null);
   const [ahora] = useState(() => new Date());
+  const [mostrarNuevoTurno, setMostrarNuevoTurno] = useState(false);
+  const [mensajeExito, setMensajeExito] = useState("");
 
   const cargar = useCallback(async () => {
     setCargando(true);
@@ -208,8 +211,13 @@ export default function AgendaPropia({
     <div className="agenda-prof-contenido">
       <header className="agenda-prof-cabecera">
         <div><h1>Mi agenda</h1><p>Consultá y gestioná tus próximos turnos.</p></div>
-        {!cargando && !errorCarga && <p><strong>{turnos.length}</strong> turno{turnos.length === 1 ? "" : "s"} en agenda</p>}
+        <div className="agenda-prof-cabecera-acciones">
+          {!cargando && !errorCarga && <p><strong>{turnos.length}</strong> turno{turnos.length === 1 ? "" : "s"} en agenda</p>}
+          <button type="button" onClick={() => { setMensajeExito(""); setMostrarNuevoTurno(true); }}>+ Nuevo turno</button>
+        </div>
       </header>
+
+      {mensajeExito && <p className="agenda-prof-exito" role="status">{mensajeExito}</p>}
 
       {cargando ? <AgendaSkeleton /> : errorCarga ? <section className="agenda-prof-estado" role="alert">
         <h2>No pudimos cargar tu agenda.</h2><p>{errorCarga}</p>
@@ -277,5 +285,10 @@ export default function AgendaPropia({
         </div>
       </>}
     </div>
+    {mostrarNuevoTurno && <NuevoTurnoProfesional onCerrar={() => setMostrarNuevoTurno(false)} onCreado={(turno) => {
+      setTurnos((actuales) => [...actuales, turno]);
+      setMostrarNuevoTurno(false);
+      setMensajeExito("Turno creado correctamente.");
+    }} />}
   </ProfesionalShell>;
 }

@@ -30,6 +30,15 @@ def buscar_todos(db: Session) -> list[Paciente]:
     return db.query(Paciente).all()
 
 
+def buscar_activos(db: Session) -> list[Paciente]:
+    return (
+        db.query(Paciente)
+        .filter(Paciente.activo.is_(True))
+        .order_by(Paciente.apellido, Paciente.nombre, Paciente.id)
+        .all()
+    )
+
+
 def buscar_por_id(
     db: Session,
     paciente_id: int,

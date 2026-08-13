@@ -1,0 +1,94 @@
+.mi-disp-contenido { width: min(1120px, 100%); margin: 0 auto; padding: 34px clamp(40px, 4vw, 48px) 56px; }
+.mi-disp-cabecera { display: flex; align-items: end; justify-content: space-between; gap: 24px; margin-bottom: 25px; }
+.mi-disp-cabecera h1 { font-family: Manrope, sans-serif; font-size: 31px; font-weight: 600; letter-spacing: -.025em; line-height: 1.15; }
+.mi-disp-cabecera div > p, .mi-disp-cabecera > p { margin-top: 6px; color: var(--prof-text-secondary); font-size: 14px; }
+.mi-disp-cabecera > p { margin: 0 0 2px; }
+.mi-disp-cabecera > p strong { color: var(--prof-text); }
+.mi-disp-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, 34%); align-items: start; gap: 26px; }
+
+.mi-disp-semana { overflow: hidden; border: 1px solid rgba(101,113,109,.2); border-radius: 10px; background: var(--prof-surface); }
+.mi-disp-semana > header { min-height: 62px; display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 11px 18px; border-bottom: 1px solid rgba(101,113,109,.16); }
+.mi-disp-semana > header span, .mi-disp-formulario-panel > span { color: var(--prof-text-secondary); font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.mi-disp-semana > header h2, .mi-disp-formulario-panel h2 { font-family: Manrope, sans-serif; font-size: 20px; font-weight: 600; letter-spacing: -.015em; }
+.mi-disp-semana > header p { margin-top: 2px; color: var(--prof-text-secondary); font-size: 13px; line-height: 1.35; }
+.mi-disp-semana > header button, .mi-disp-semana li > button { padding: 0; border: 0; background: transparent; color: var(--prof-primary); font-weight: 700; cursor: pointer; }
+.mi-disp-semana > header button:hover, .mi-disp-semana li > button:hover { color: var(--prof-primary-hover); }
+.mi-disp-semana ol { margin: 0; padding: 0; list-style: none; }
+.mi-disp-semana li { min-height: 70px; display: grid; grid-template-columns: 104px minmax(0, 1fr) 124px; align-items: center; gap: 16px; padding: 10px 18px; border-bottom: 1px solid rgba(101,113,109,.11); }
+.mi-disp-semana li:last-child { border-bottom: 0; }
+.mi-disp-semana li.sin-franjas { min-height: 56px; }
+.mi-disp-semana li h3 { font-family: Manrope, sans-serif; font-size: 14px; font-weight: 600; }
+.mi-disp-semana li > button { justify-self: end; font-size: 12px; }
+.mi-disp-franjas { display: grid; gap: 5px; }
+.mi-disp-franjas > p { color: var(--prof-text-secondary); font-size: 13px; }
+.mi-disp-franja { min-height: 30px; display: grid; grid-template-columns: 3px 58px minmax(0, 1fr); align-items: center; gap: 10px; }
+.mi-disp-franja i { align-self: stretch; border-radius: 2px; background: var(--prof-primary); }
+.mi-disp-franja small { color: var(--prof-text-secondary); font-size: 11px; font-weight: 700; text-transform: uppercase; }
+.mi-disp-franja strong { color: var(--prof-primary-dark); font-family: Manrope, sans-serif; font-size: 16px; font-variant-numeric: tabular-nums; font-weight: 600; letter-spacing: -.015em; }
+
+.mi-disp-formulario-panel { padding: 22px; border: 1px solid rgba(168,102,67,.18); border-radius: 10px; background: var(--prof-surface-warm); }
+.mi-disp-formulario-panel.es-primera { border-color: rgba(168,102,67,.35); }
+.mi-disp-formulario-panel > p { margin-top: 5px; color: var(--prof-text-secondary); font-size: 13px; }
+.mi-disp-formulario-panel form { display: grid; gap: 15px; margin-top: 22px; }
+.mi-disp-formulario-panel label { display: grid; gap: 6px; color: var(--prof-text); font-size: 13px; font-weight: 700; }
+.mi-disp-formulario-panel select, .mi-disp-formulario-panel input { width: 100%; min-height: 44px; padding: 8px 11px; border: 1px solid var(--prof-border); border-radius: 7px; outline: 0; background: var(--prof-surface); color: var(--prof-text); font: inherit; font-variant-numeric: tabular-nums; }
+.mi-disp-formulario-panel select:focus, .mi-disp-formulario-panel input:focus { border-color: var(--prof-primary); box-shadow: 0 0 0 3px rgba(23,111,106,.12); }
+.mi-disp-formulario-panel select:disabled, .mi-disp-formulario-panel input:disabled { cursor: wait; opacity: .65; }
+.mi-disp-horas { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.mi-disp-formulario-panel form > button { min-height: 44px; border: 0; border-radius: 7px; background: var(--prof-primary); color: #fff; font-weight: 700; cursor: pointer; }
+.mi-disp-formulario-panel form > button:hover { background: var(--prof-primary-hover); }
+.mi-disp-formulario-panel form > button:disabled { cursor: wait; opacity: .55; }
+.mi-disp-feedback { margin-top: 1px; padding: 9px 10px; border-left: 3px solid; background: rgba(255,255,255,.38); font-size: 13px; line-height: 1.35; }
+.mi-disp-feedback.error { border-color: var(--prof-danger); color: var(--prof-danger); }
+.mi-disp-feedback.exito { border-color: var(--prof-success); color: var(--prof-success); }
+.mi-disp-error-carga { min-height: 420px; display: grid; place-items: center; align-content: center; padding: 36px; text-align: center; }
+.mi-disp-error-carga h3 { font-family: Manrope, sans-serif; font-size: 19px; }
+.mi-disp-error-carga p { max-width: 440px; margin-top: 5px; color: var(--prof-text-secondary); }
+.mi-disp-error-carga button { min-height: 40px; display: inline-flex; align-items: center; gap: 7px; margin-top: 16px; padding: 0 14px; border: 1px solid var(--prof-border); border-radius: 7px; background: var(--prof-surface); color: var(--prof-primary-dark); font-weight: 700; cursor: pointer; }
+.mi-disp-error-carga svg { width: 16px; height: 16px; }
+.mi-disp-abrir-movil { display: none; }
+
+.mi-disp-skeleton { display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, 34%); gap: 26px; }
+.mi-disp-skeleton-semana, .mi-disp-skeleton-formulario { border-radius: 10px; background: var(--prof-surface); }
+.mi-disp-skeleton-semana { overflow: hidden; border: 1px solid var(--prof-border); }
+.mi-disp-skeleton-semana span { display: block; height: 58px; margin: 9px 18px; border-radius: 5px; background: #e8e6df; animation: mi-disp-pulso 1.4s ease-in-out infinite; }
+.mi-disp-skeleton-semana span.con-franja { height: 72px; }
+.mi-disp-skeleton-formulario { height: 330px; display: grid; align-content: start; gap: 18px; padding: 22px; background: #e9e4dc; animation: mi-disp-pulso 1.4s ease-in-out infinite; }
+.mi-disp-skeleton-formulario span { width: 70%; height: 26px; border-radius: 5px; background: rgba(255,255,255,.55); }
+.mi-disp-skeleton-formulario i { height: 44px; border-radius: 5px; background: rgba(255,255,255,.55); }
+@keyframes mi-disp-pulso { 50% { opacity: .55; } }
+
+@media (max-width: 900px) {
+  .mi-disp-layout, .mi-disp-skeleton { grid-template-columns: 1fr; }
+  .mi-disp-formulario-contenedor { grid-row: 2; }
+}
+
+@media (max-width: 720px) {
+  .mi-disp-contenido { padding: 22px 16px 30px; }
+  .mi-disp-cabecera { align-items: start; margin-bottom: 18px; }
+  .mi-disp-cabecera h1 { font-size: 25px; }
+  .mi-disp-cabecera > p { display: none; }
+  .mi-disp-layout { gap: 14px; }
+  .mi-disp-semana { margin-inline: -16px; border-inline: 0; border-radius: 0; }
+  .mi-disp-semana > header { padding-inline: 16px; }
+  .mi-disp-semana > header button { display: none; }
+  .mi-disp-semana li { min-height: 78px; grid-template-columns: 88px minmax(0, 1fr); gap: 10px; padding: 10px 16px; }
+  .mi-disp-semana li.sin-franjas { min-height: 68px; }
+  .mi-disp-semana li > button { grid-column: 2; justify-self: start; min-height: 44px; display: flex; align-items: center; }
+  .mi-disp-franja { grid-template-columns: 3px 54px minmax(0, 1fr); gap: 8px; }
+  .mi-disp-franja strong { font-size: 15px; }
+  .mi-disp-abrir-movil { min-height: 48px; display: block; border: 0; border-radius: 7px; background: var(--prof-primary); color: #fff; font-weight: 700; cursor: pointer; }
+  .mi-disp-formulario-contenedor { display: none; }
+  .mi-disp-formulario-contenedor.esta-abierto { display: block; }
+  .mi-disp-formulario-panel { padding: 20px; }
+  .mi-disp-skeleton-formulario { display: none; }
+}
+
+@media (max-width: 430px) {
+  .mi-disp-semana li { grid-template-columns: 76px minmax(0, 1fr); padding-inline: 12px; }
+  .mi-disp-horas { grid-template-columns: 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mi-disp-contenido * { animation: none !important; transition: none !important; }
+}

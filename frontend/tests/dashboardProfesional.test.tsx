@@ -61,6 +61,7 @@ function prepararDatos(turnos: Turno[] = jornada) {
   vi.mocked(disponibilidadService.obtenerDisponibilidadesProfesional).mockResolvedValue([
     { id: 1, profesional_id: 7, dia_semana: 2, hora_inicio: "08:00:00", hora_fin: "12:00:00", activa: true },
     { id: 2, profesional_id: 7, dia_semana: 2, hora_inicio: "14:00:00", hora_fin: "19:00:00", activa: true },
+    { id: 3, profesional_id: 7, dia_semana: 2, hora_inicio: "20:00:00", hora_fin: "22:00:00", activa: true },
   ]);
   vi.mocked(turnoService.obtenerMiAgendaProfesional).mockResolvedValue(turnos);
 }
@@ -103,16 +104,37 @@ describe("dashboard profesional Signature", () => {
     expect(screen.getByLabelText("Resumen de la jornada")).toHaveTextContent("3 resueltos");
   });
 
-  it("divide la agenda real en mañana y tarde", async () => {
+  it("muestra en agenda sólo períodos con turnos y conserva toda la disponibilidad en Tu jornada", async () => {
     prepararDatos();
     renderizar();
     const agenda = await screen.findByRole("region", { name: "Agenda de hoy" });
     expect(within(agenda).getByRole("heading", { name: "Mañana" })).toBeInTheDocument();
     expect(within(agenda).getByRole("heading", { name: "Tarde" })).toBeInTheDocument();
+    expect(within(agenda).queryByRole("heading", { name: "Noche" })).not.toBeInTheDocument();
     expect(within(agenda).getByText("08:00–12:00")).toBeInTheDocument();
     expect(within(agenda).getByText("14:00–19:00")).toBeInTheDocument();
+    expect(within(agenda).queryByText("20:00–22:00")).not.toBeInTheDocument();
+    expect(within(agenda).queryByText("No hay turnos en esta franja.")).not.toBeInTheDocument();
     expect(within(agenda).getByText("Juan Pérez")).toBeInTheDocument();
     expect(within(agenda).getByText("Diego Ferreyra")).toBeInTheDocument();
+    const jornadaPanel = screen.getByRole("complementary", { name: "Tu jornada" });
+    expect(within(jornadaPanel).getByText("Mañana")).toBeInTheDocument();
+    expect(within(jornadaPanel).getByText("Tarde")).toBeInTheDocument();
+    expect(within(jornadaPanel).getByText("Noche")).toBeInTheDocument();
+    expect(within(jornadaPanel).getByText("20:00–22:00")).toBeInTheDocument();
+  });
+
+  it("conserva múltiples franjas del mismo período", async () => {
+    prepararDatos();
+    vi.mocked(disponibilidadService.obtenerDisponibilidadesProfesional).mockResolvedValue([
+      { id: 1, profesional_id: 7, dia_semana: 2, hora_inicio: "08:00:00", hora_fin: "10:00:00", activa: true },
+      { id: 2, profesional_id: 7, dia_semana: 2, hora_inicio: "10:30:00", hora_fin: "12:00:00", activa: true },
+      { id: 3, profesional_id: 7, dia_semana: 2, hora_inicio: "14:00:00", hora_fin: "19:00:00", activa: true },
+      { id: 4, profesional_id: 7, dia_semana: 2, hora_inicio: "20:00:00", hora_fin: "22:00:00", activa: true },
+    ]);
+    renderizar();
+    const jornadaPanel = await screen.findByRole("complementary", { name: "Tu jornada" });
+    expect(within(jornadaPanel).getByText("08:00–10:00 · 10:30–12:00")).toBeInTheDocument();
   });
 
   it("destaca el próximo turno con datos y rango reales", async () => {

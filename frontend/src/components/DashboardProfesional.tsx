@@ -20,6 +20,12 @@ import {
   formatearHoraTurno,
   ZONA_HORARIA_NEGOCIO,
 } from "../utils/fechaTurno";
+import {
+  etiquetaPeriodo,
+  minutosDesdeHora,
+  periodoDesdeMinutos,
+  type PeriodoDia,
+} from "../utils/periodoDia";
 
 type DashboardProfesionalProps = {
   nombre: string;
@@ -28,8 +34,6 @@ type DashboardProfesionalProps = {
   onAbrirPerfil: () => void;
   onCerrarSesion: () => void;
 };
-
-type Periodo = "manana" | "tarde";
 
 const ESTADOS_TERMINALES = ["cancelado", "finalizado", "ausente"];
 
@@ -76,13 +80,8 @@ function horaMinutosNegocio(fecha: Date): number {
   return Number(valores.hour) * 60 + Number(valores.minute);
 }
 
-function minutosHora(valor: string): number {
-  const [hora, minuto] = valor.split(":").map(Number);
-  return hora * 60 + minuto;
-}
-
-function periodoTurno(turno: Turno): Periodo {
-  return horaMinutosNegocio(new Date(turno.fecha_hora)) < 13 * 60 ? "manana" : "tarde";
+function periodoTurno(turno: Turno): PeriodoDia {
+  return periodoDesdeMinutos(horaMinutosNegocio(new Date(turno.fecha_hora)));
 }
 
 function etiquetaEstado(estado: Turno["estado"]): string {
@@ -100,11 +99,10 @@ function horarioTurno(turno: Turno): string {
   return turno.fecha_fin ? `${inicio}–${formatearHoraTurno(turno.fecha_fin)}` : inicio;
 }
 
-function rangoPeriodo(items: Disponibilidad[], periodo: Periodo): string {
-  const franjas = items.filter((item) => {
-    const inicio = minutosHora(item.hora_inicio);
-    return periodo === "manana" ? inicio < 13 * 60 : inicio >= 13 * 60;
-  });
+function rangoPeriodo(items: Disponibilidad[], periodo: PeriodoDia): string {
+  const franjas = items.filter((item) =>
+    periodoDesdeMinutos(minutosDesdeHora(item.hora_inicio)) === periodo
+  );
   if (franjas.length === 0) return "Sin disponibilidad";
   return franjas.map((item) =>
     `${item.hora_inicio.slice(0, 5)}–${item.hora_fin.slice(0, 5)}`
@@ -114,7 +112,7 @@ function rangoPeriodo(items: Disponibilidad[], periodo: Periodo): string {
 function dentroDeDisponibilidad(ahora: Date, items: Disponibilidad[]): boolean {
   const minutos = horaMinutosNegocio(ahora);
   return items.some((item) =>
-    minutos >= minutosHora(item.hora_inicio) && minutos < minutosHora(item.hora_fin)
+    minutos >= minutosDesdeHora(item.hora_inicio) && minutos < minutosDesdeHora(item.hora_fin)
   );
 }
 
@@ -195,6 +193,7 @@ export default function DashboardProfesional({
   const disponibilidadHoy = disponibilidades.filter((item) => item.dia_semana === diaSemanaNegocio(ahora));
   const turnosManana = turnosHoy.filter((turno) => periodoTurno(turno) === "manana");
   const turnosTarde = turnosHoy.filter((turno) => periodoTurno(turno) === "tarde");
+  const turnosNoche = turnosHoy.filter((turno) => periodoTurno(turno) === "noche");
   const resumen = {
     confirmados: turnosHoy.filter((turno) => turno.estado === "confirmado").length,
     pendientes: turnosHoy.filter((turno) => turno.estado === "reservado").length,
@@ -283,27 +282,28 @@ export default function DashboardProfesional({
     </li>;
   }
 
-  function renderPeriodo(periodo: Periodo, items: Turno[]) {
+  function renderPeriodo(periodo: PeriodoDia, items: Turno[]) {
+    if (items.length === 0) return null;
+
     const posicionAhora = indicadorAhora(items);
     const ahoraPertenece = mostrarAhora && disponibilidadHoy.some((item) => {
-      const inicio = minutosHora(item.hora_inicio);
-      const esPeriodo = periodo === "manana" ? inicio < 13 * 60 : inicio >= 13 * 60;
+      const inicio = minutosDesdeHora(item.hora_inicio);
+      const esPeriodo = periodoDesdeMinutos(inicio) === periodo;
       const minutos = horaMinutosNegocio(ahora);
-      return esPeriodo && minutos >= inicio && minutos < minutosHora(item.hora_fin);
+      return esPeriodo && minutos >= inicio && minutos < minutosDesdeHora(item.hora_fin);
     });
 
     return <section className="prof-periodo" aria-labelledby={`periodo-${periodo}`}>
       <header>
-        <h3 id={`periodo-${periodo}`}><span />{periodo === "manana" ? "Mañana" : "Tarde"}</h3>
+        <h3 id={`periodo-${periodo}`}><span />{etiquetaPeriodo(periodo)}</h3>
         <p>{rangoPeriodo(disponibilidadHoy, periodo)}</p>
       </header>
       <ol>
-        {items.length === 0 && <li className="prof-periodo-vacio">No hay turnos en esta franja.</li>}
         {items.map((turno, indice) => <Fragment key={turno.id}>
           {ahoraPertenece && posicionAhora === indice && <li className="prof-ahora" role="status"><span>Ahora</span><i /></li>}
           {renderTurno(turno)}
         </Fragment>)}
-        {ahoraPertenece && (posicionAhora === -1 || items.length === 0) && <li className="prof-ahora" role="status"><span>Ahora</span><i /></li>}
+        {ahoraPertenece && posicionAhora === -1 && <li className="prof-ahora" role="status"><span>Ahora</span><i /></li>}
       </ol>
     </section>;
   }
@@ -343,7 +343,7 @@ export default function DashboardProfesional({
               <header><div><h2 id="agenda-hoy-titulo">Agenda de hoy</h2><p>{turnosHoy.length === 1 ? "1 turno programado" : `${turnosHoy.length} turnos programados`}</p></div><button type="button" onClick={onAbrirAgenda}>Ver toda</button></header>
               {errorAgenda ? <div className="prof-error" role="alert"><div><strong>No pudimos cargar tu agenda</strong><p>{errorAgenda}</p><button type="button" onClick={() => void cargarAgenda()}><Icono nombre="recargar" />Reintentar</button></div></div>
               : turnosHoy.length === 0 ? <div className="prof-vacio"><h3>Tu agenda está libre hoy</h3><p>No tenés turnos programados para esta jornada.</p><button type="button" onClick={onAbrirDisponibilidad}>Revisar disponibilidad</button></div>
-              : <>{renderPeriodo("manana", turnosManana)}{renderPeriodo("tarde", turnosTarde)}</>}
+              : <>{renderPeriodo("manana", turnosManana)}{renderPeriodo("tarde", turnosTarde)}{renderPeriodo("noche", turnosNoche)}</>}
               {errorAccion && <p className="prof-error-accion" role="alert">{errorAccion}</p>}
             </section>
 
@@ -355,6 +355,7 @@ export default function DashboardProfesional({
               : <div className="prof-franjas">
                 <div><small>Mañana</small><strong>{rangoPeriodo(disponibilidadHoy, "manana")}</strong></div>
                 <div><small>Tarde</small><strong>{rangoPeriodo(disponibilidadHoy, "tarde")}</strong></div>
+                <div><small>Noche</small><strong>{rangoPeriodo(disponibilidadHoy, "noche")}</strong></div>
               </div>}
               <div className="prof-jornada-resumen"><strong>{turnosHoy.length} turnos programados</strong><p>{resumen.confirmados} confirmados · {resumen.pendientes} pendiente{resumen.pendientes === 1 ? "" : "s"}</p></div>
               <button type="button" onClick={onAbrirDisponibilidad}>Configurar horarios</button>

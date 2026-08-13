@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.models.paciente import Paciente
 from app.repositories.paciente_repository import (
+    buscar_activos,
     buscar_paciente_por_usuario_id,
     buscar_por_id,
     buscar_todos,
@@ -36,6 +37,12 @@ def obtener_pacientes(
     db: Session,
 ) -> list[Paciente]:
     return buscar_todos(db)
+
+
+def obtener_pacientes_activos(
+    db: Session,
+) -> list[Paciente]:
+    return buscar_activos(db)
 
 
 def obtener_paciente_por_id(

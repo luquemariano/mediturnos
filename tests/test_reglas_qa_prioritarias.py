@@ -95,6 +95,7 @@ def test_horarios_libres_se_deduplican_ante_datos_historicos(monkeypatch):
         activa=True,
         profesional_id=1,
         duracion_minutos=60,
+        profesional=SimpleNamespace(activo=True),
     )
     horario = SimpleNamespace(hora_inicio=time(8), hora_fin=time(10))
     monkeypatch.setattr(disponibilidad_service, "buscar_prestacion", lambda db, prestacion_id: prestacion)
