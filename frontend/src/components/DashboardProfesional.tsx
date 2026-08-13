@@ -16,6 +16,7 @@ import {
 } from "../services/turnoService";
 import {
   claveFechaNegocio,
+  etiquetaFechaProximoTurno,
   fechaActualNegocio,
   formatearHoraTurno,
   ZONA_HORARIA_NEGOCIO,
@@ -332,7 +333,7 @@ export default function DashboardProfesional({
           <section className="prof-proximo" aria-labelledby="proximo-titulo">
             {errorAgenda ? <p className="prof-texto-error">No pudimos consultar el próximo turno.</p>
             : proximoTurno ? <>
-              <div className="prof-proximo-hora"><span>Próximo</span><time dateTime={proximoTurno.fecha_hora}>{formatearHoraTurno(proximoTurno.fecha_hora)}</time></div>
+              <div className="prof-proximo-hora"><span>Próximo</span><span className="prof-proximo-fecha">{etiquetaFechaProximoTurno(proximoTurno.fecha_hora, ahora)}</span><time dateTime={proximoTurno.fecha_hora}>{formatearHoraTurno(proximoTurno.fecha_hora)}</time></div>
               <div className="prof-proximo-persona"><h2 id="proximo-titulo">{proximoTurno.paciente_nombre}</h2><p>{proximoTurno.prestacion_nombre}</p><small>{horarioTurno(proximoTurno)}</small></div>
               <div className={`prof-proximo-estado estado-${proximoTurno.estado}`}><span className="prof-estado"><i aria-hidden="true" />{etiquetaEstado(proximoTurno.estado)}</span><button type="button" onClick={onAbrirAgenda}>Ir a la agenda</button></div>
             </> : <div className="prof-proximo-vacio"><span>Próximo</span><h2 id="proximo-titulo">No hay más turnos próximos</h2><p>Tu agenda no tiene reservas futuras activas.</p></div>}

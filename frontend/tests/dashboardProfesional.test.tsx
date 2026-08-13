@@ -141,6 +141,7 @@ describe("dashboard profesional Signature", () => {
     prepararDatos();
     renderizar();
     const proximo = await screen.findByRole("region", { name: "Silvina Pérez" });
+    expect(within(proximo).getByText("HOY")).toBeInTheDocument();
     expect(within(proximo).getByText("09:00")).toBeInTheDocument();
     expect(within(proximo).getByText("Consulta psiquiátrica")).toBeInTheDocument();
     expect(within(proximo).getByText("09:00–09:50")).toBeInTheDocument();
