@@ -14,7 +14,11 @@ from app.schemas.profesional import (
     ProfesionalCrear,
     ProfesionalRespuesta,
 )
-from app.schemas.turno import TurnoCrearProfesional, TurnoRespuesta
+from app.schemas.turno import (
+    TurnoCrearProfesional,
+    TurnoReprogramar,
+    TurnoRespuesta,
+)
 from app.services.paciente_service import obtener_pacientes_activos
 from app.services.profesional_service import (
     EspecialidadesConPrestacionesError,
@@ -27,8 +31,10 @@ from app.services.profesional_service import (
     obtener_profesionales,
 )
 from app.services.turno_service import (
+    cancelar_turno_profesional,
     crear_turno_profesional,
     obtener_agenda_de_profesional,
+    reprogramar_turno_profesional,
 )
 
 
@@ -169,6 +175,56 @@ def crear_turno_en_mi_agenda(
 
     profesional = obtener_mi_profesional(db, usuario_actual.id)
     return crear_turno_profesional(db, profesional.id, datos)
+
+
+@router.patch(
+    "/me/agenda/{turno_id}/cancelar",
+    response_model=TurnoRespuesta,
+    summary="Cancelar un turno de mi agenda",
+)
+def cancelar_turno_de_mi_agenda(
+    turno_id: int,
+    db: Session = Depends(obtener_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual),
+):
+    if usuario_actual.rol != "profesional":
+        raise HTTPException(
+            status_code=403,
+            detail="El usuario autenticado no es un profesional.",
+        )
+
+    profesional = obtener_mi_profesional(db, usuario_actual.id)
+    return cancelar_turno_profesional(
+        db,
+        turno_id,
+        profesional.id,
+    )
+
+
+@router.patch(
+    "/me/agenda/{turno_id}/reprogramar",
+    response_model=TurnoRespuesta,
+    summary="Reprogramar un turno de mi agenda",
+)
+def reprogramar_turno_de_mi_agenda(
+    turno_id: int,
+    datos: TurnoReprogramar,
+    db: Session = Depends(obtener_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual),
+):
+    if usuario_actual.rol != "profesional":
+        raise HTTPException(
+            status_code=403,
+            detail="El usuario autenticado no es un profesional.",
+        )
+
+    profesional = obtener_mi_profesional(db, usuario_actual.id)
+    return reprogramar_turno_profesional(
+        db,
+        turno_id,
+        profesional.id,
+        datos,
+    )
 @router.get(
     "/",
     response_model=list[ProfesionalRespuesta],

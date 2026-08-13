@@ -218,3 +218,40 @@ def test_endpoint_profesional_rechaza_profesional_id_y_otros_roles(
     autenticar_como(usuarios["administrador"])
     assert client.post("/profesionales/me/turnos", json=payload).status_code == 403
     assert client.get("/profesionales/me/pacientes").status_code == 403
+
+
+def test_endpoints_gestion_agenda_profesional_resuelven_ownership(
+    client,
+    usuarios,
+    monkeypatch,
+):
+    autenticar_como(usuarios["profesional"])
+    monkeypatch.setattr(profesionales, "obtener_mi_profesional", lambda *args: SimpleNamespace(id=10))
+    cancelado = {}
+    reprogramado = {}
+
+    def cancelar(db, turno_id, profesional_id):
+        cancelado.update(turno_id=turno_id, profesional_id=profesional_id)
+        return {
+            "id": turno_id, "paciente_id": 2, "paciente_nombre": "Ana López",
+            "prestacion_id": 3, "prestacion_nombre": "Consulta", "profesional_nombre": "Sofía Ramírez",
+            "especialidad_nombre": "Clínica", "fecha_hora": datetime.fromisoformat("2030-01-01T12:00:00+00:00"),
+            "estado": "cancelado", "observaciones": None,
+        }
+
+    def reprogramar(db, turno_id, profesional_id, datos):
+        reprogramado.update(turno_id=turno_id, profesional_id=profesional_id, fecha=datos.fecha_hora)
+        return {
+            "id": turno_id, "paciente_id": 2, "paciente_nombre": "Ana López",
+            "prestacion_id": 3, "prestacion_nombre": "Consulta", "profesional_nombre": "Sofía Ramírez",
+            "especialidad_nombre": "Clínica", "fecha_hora": datos.fecha_hora,
+            "estado": "confirmado", "observaciones": None,
+        }
+
+    monkeypatch.setattr(profesionales, "cancelar_turno_profesional", cancelar)
+    monkeypatch.setattr(profesionales, "reprogramar_turno_profesional", reprogramar)
+    assert client.patch("/profesionales/me/agenda/7/cancelar").status_code == 200
+    assert client.patch("/profesionales/me/agenda/7/reprogramar", json={"fecha_hora": "2030-01-02T09:00:00-03:00"}).status_code == 200
+    assert cancelado == {"turno_id": 7, "profesional_id": 10}
+    assert reprogramado["turno_id"] == 7
+    assert reprogramado["profesional_id"] == 10

@@ -1,0 +1,28 @@
+.gestion-turno-fondo { position: fixed; z-index: 110; inset: 0; display: grid; place-items: center; padding: 24px; background: rgba(21,62,59,.42); }
+.gestion-turno { width: min(590px, 100%); max-height: calc(100vh - 48px); overflow-y: auto; border: 1px solid rgba(101,113,109,.24); border-radius: 10px; background: var(--prof-surface); color: var(--prof-text); }
+.gestion-turno > header { min-height: 76px; display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 16px 22px; border-bottom: 1px solid rgba(101,113,109,.16); background: var(--prof-surface-warm); }
+.gestion-turno > header span { color: var(--prof-text-secondary); font-size: 11px; font-weight: 700; letter-spacing: .08em; }
+.gestion-turno h2 { margin: 2px 0 0; font-family: Manrope, sans-serif; font-size: 23px; letter-spacing: -.02em; }
+.gestion-turno > header button { width: 44px; height: 44px; border: 0; background: transparent; color: var(--prof-text-secondary); font-size: 25px; cursor: pointer; }
+.gestion-turno-cuerpo { display: grid; gap: 20px; padding: 22px; }
+.gestion-turno dl { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 28px; margin: 0; }
+.gestion-turno dt { color: var(--prof-text-secondary); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
+.gestion-turno dd { margin: 3px 0 0; font-size: 16px; font-weight: 600; }
+.gestion-turno-aviso { margin: 0; padding: 13px 15px; border-left: 3px solid var(--prof-warning); background: rgba(169,110,36,.06); color: var(--prof-text-secondary); font-size: 14px; line-height: 1.45; }
+.gestion-turno-reprogramar { display: grid; gap: 18px; padding-top: 18px; border-top: 1px solid var(--prof-border); }
+.gestion-turno-reprogramar > label, .gestion-turno fieldset { display: grid; gap: 7px; color: var(--prof-text); font-size: 13px; font-weight: 700; }
+.gestion-turno input[type="date"] { min-height: 44px; padding: 8px 11px; border: 1px solid var(--prof-border); border-radius: 7px; background: var(--prof-surface); color: var(--prof-text); font: inherit; }
+.gestion-turno fieldset { min-width: 0; padding: 0; border: 0; }
+.gestion-turno fieldset > p { margin: 2px 0; color: var(--prof-text-secondary); font-weight: 400; }
+.gestion-turno-horarios { display: flex; flex-wrap: wrap; gap: 7px; }
+.gestion-turno-horarios label { min-width: 72px; min-height: 42px; display: grid; place-items: center; padding: 0 12px; border: 1px solid var(--prof-border); border-radius: 7px; font-variant-numeric: tabular-nums; cursor: pointer; }
+.gestion-turno-horarios label.seleccionado { border-color: var(--prof-primary); background: var(--prof-primary-soft); }
+.gestion-turno-horarios input { position: absolute; opacity: 0; }
+.gestion-turno-error { margin: 0; padding: 10px 12px; border-left: 3px solid var(--prof-danger); background: rgba(169,78,73,.06); color: var(--prof-danger); font-size: 13px; }
+.gestion-turno > footer { display: flex; justify-content: flex-end; gap: 9px; padding: 16px 22px 20px; border-top: 1px solid rgba(101,113,109,.16); }
+.gestion-turno > footer button { min-height: 44px; padding: 0 17px; border: 1px solid var(--prof-border); border-radius: 7px; background: transparent; color: var(--prof-primary-dark); font-weight: 700; cursor: pointer; }
+.gestion-turno > footer button:last-child { border-color: var(--prof-primary); background: var(--prof-primary); color: #fff; }
+.gestion-turno > footer button.es-peligro { border-color: var(--prof-danger); background: var(--prof-danger); }
+.gestion-turno button:disabled, .gestion-turno input:disabled { cursor: wait; opacity: .58; }
+.gestion-turno input:focus-visible, .gestion-turno button:focus-visible, .gestion-turno-horarios label:focus-within { outline: 3px solid rgba(168,102,67,.28); outline-offset: 2px; }
+@media (max-width: 620px) { .gestion-turno-fondo { align-items: end; padding: 0; } .gestion-turno { max-height: calc(100dvh - 58px); border-inline: 0; border-bottom: 0; border-radius: 12px 12px 0 0; } .gestion-turno dl { grid-template-columns: 1fr; gap: 12px; } .gestion-turno > footer button { flex: 1; } }

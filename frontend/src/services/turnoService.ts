@@ -73,6 +73,24 @@ export async function crearTurno(
   return respuesta.data;
 }
 
+export async function cancelarMiTurnoProfesional(turnoId: number): Promise<Turno> {
+  const respuesta = await api.patch<Turno>(
+    `/profesionales/me/agenda/${turnoId}/cancelar`,
+  );
+  return respuesta.data;
+}
+
+export async function reprogramarMiTurnoProfesional(
+  turnoId: number,
+  fechaHora: string,
+): Promise<Turno> {
+  const respuesta = await api.patch<Turno>(
+    `/profesionales/me/agenda/${turnoId}/reprogramar`,
+    { fecha_hora: fechaHora },
+  );
+  return respuesta.data;
+}
+
 export async function crearMiTurnoProfesional(
   datos: TurnoCrear,
 ): Promise<Turno> {

@@ -16,6 +16,7 @@ from app.services.disponibilidad_service import (
     obtener_horarios_libres,
 )
 from app.services.profesional_service import obtener_mi_profesional
+from app.repositories.turno_repository import buscar_turno_de_profesional
 from datetime import date
 
 router = APIRouter(
@@ -142,17 +143,25 @@ def listar_horarios_libres(
         )
     ),
 ):
-    if (
-        turno_id_excluido is not None
-        and usuario_actual.rol not in {
-            "administrador",
-            "recepcionista",
-        }
-    ):
-        raise HTTPException(
-            status_code=403,
-            detail="Permisos insuficientes.",
+    if turno_id_excluido is not None and usuario_actual.rol == "profesional":
+        profesional = obtener_mi_profesional(db, usuario_actual.id)
+        turno = buscar_turno_de_profesional(
+            db,
+            turno_id_excluido,
+            profesional.id,
         )
+        if turno is None:
+            raise HTTPException(status_code=404, detail="Turno no encontrado.")
+        if turno.prestacion_id != prestacion_id:
+            raise HTTPException(
+                status_code=400,
+                detail="La prestación no coincide con el turno a reprogramar.",
+            )
+    elif (
+        turno_id_excluido is not None
+        and usuario_actual.rol not in {"administrador", "recepcionista"}
+    ):
+        raise HTTPException(status_code=403, detail="Permisos insuficientes.")
 
     return obtener_horarios_libres(
         db,

@@ -307,11 +307,21 @@ def reprogramar_turno(
     db: Session,
     turno_id: int,
     datos: TurnoReprogramar,
+    profesional_id_esperado: int | None = None,
 ) -> Turno:
-    turno = obtener_turno(
-        db,
-        turno_id,
-    )
+    if profesional_id_esperado is None:
+        turno = obtener_turno(db, turno_id)
+    else:
+        turno = buscar_turno_de_profesional(
+            db,
+            turno_id,
+            profesional_id_esperado,
+        )
+        if turno is None:
+            raise HTTPException(
+                status_code=404,
+                detail="Turno no encontrado.",
+            )
 
     if turno.estado in {"cancelado", "finalizado", "ausente"}:
         raise HTTPException(
@@ -363,6 +373,20 @@ def reprogramar_turno(
     )
 
     return _confirmar_cambio_turno(db, turno)
+
+
+def reprogramar_turno_profesional(
+    db: Session,
+    turno_id: int,
+    profesional_id: int,
+    datos: TurnoReprogramar,
+) -> Turno:
+    return reprogramar_turno(
+        db,
+        turno_id,
+        datos,
+        profesional_id_esperado=profesional_id,
+    )
 
 
 def obtener_turnos_de_paciente(
@@ -464,6 +488,27 @@ def marcar_ausente_turno_profesional(
     db.refresh(turno)
 
     return turno
+
+
+def cancelar_turno_profesional(
+    db: Session,
+    turno_id: int,
+    profesional_id: int,
+) -> Turno:
+    turno = buscar_turno_de_profesional(
+        db,
+        turno_id,
+        profesional_id,
+    )
+
+    if turno is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Turno no encontrado.",
+        )
+
+    aplicar_transicion_estado(turno, "cancelado")
+    return _confirmar_cambio_turno(db, turno)
 
 def cancelar_turno_paciente(
     db: Session,

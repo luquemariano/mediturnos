@@ -390,13 +390,11 @@ def test_personal_autorizado_excluye_turno_en_horarios_libres(
     assert parametros_recibidos["turno_id_excluido"] == 25
 
 
-@pytest.mark.parametrize("rol", ["profesional", "paciente"])
-def test_roles_no_autorizados_no_pueden_excluir_turno(
+def test_paciente_no_puede_excluir_turno(
     client,
     usuarios,
-    rol,
 ):
-    autenticar_como(usuarios[rol])
+    autenticar_como(usuarios["paciente"])
 
     respuesta = client.get(
         "/disponibilidades/horarios-libres/",
@@ -411,6 +409,57 @@ def test_roles_no_autorizados_no_pueden_excluir_turno(
     assert respuesta.json() == {
         "detail": "Permisos insuficientes."
     }
+
+
+def test_profesional_solo_excluye_un_turno_propio_de_la_misma_prestacion(
+    client,
+    usuarios,
+    monkeypatch,
+):
+    autenticar_como(usuarios["profesional"])
+    monkeypatch.setattr(
+        disponibilidades,
+        "obtener_mi_profesional",
+        lambda *args: SimpleNamespace(id=10),
+    )
+    monkeypatch.setattr(
+        disponibilidades,
+        "buscar_turno_de_profesional",
+        lambda db, turno_id, profesional_id: SimpleNamespace(prestacion_id=1),
+    )
+    recibido = {}
+    monkeypatch.setattr(
+        disponibilidades,
+        "obtener_horarios_libres",
+        lambda db, prestacion_id, fecha, turno_id_excluido: recibido.update(
+            turno_id_excluido=turno_id_excluido,
+        ) or [],
+    )
+
+    respuesta = client.get(
+        "/disponibilidades/horarios-libres/",
+        params={"prestacion_id": 1, "fecha": "2030-01-01", "turno_id_excluido": 25},
+    )
+
+    assert respuesta.status_code == 200
+    assert recibido["turno_id_excluido"] == 25
+
+
+def test_profesional_no_puede_excluir_turno_ajeno(
+    client,
+    usuarios,
+    monkeypatch,
+):
+    autenticar_como(usuarios["profesional"])
+    monkeypatch.setattr(disponibilidades, "obtener_mi_profesional", lambda *args: SimpleNamespace(id=10))
+    monkeypatch.setattr(disponibilidades, "buscar_turno_de_profesional", lambda *args: None)
+
+    respuesta = client.get(
+        "/disponibilidades/horarios-libres/",
+        params={"prestacion_id": 1, "fecha": "2030-01-01", "turno_id_excluido": 25},
+    )
+
+    assert respuesta.status_code == 404
 
 
 def test_exclusion_de_turno_inexistente_devuelve_404(

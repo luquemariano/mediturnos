@@ -12,10 +12,12 @@ vi.mock("../src/services/turnoService", () => ({
   obtenerMiAgendaProfesional: vi.fn(),
   obtenerMisTurnosPaciente: vi.fn(),
   cancelarMiTurno: vi.fn(),
+  cancelarMiTurnoProfesional: vi.fn(),
   finalizarMiTurno: vi.fn(),
   marcarAusenteMiTurno: vi.fn(),
   crearMiTurnoProfesional: vi.fn(),
   obtenerHorariosLibres: vi.fn(),
+  reprogramarMiTurnoProfesional: vi.fn(),
 }));
 vi.mock("../src/services/pacienteService", () => ({ obtenerPacientesParaProfesional: vi.fn() }));
 vi.mock("../src/services/prestacionService", () => ({ obtenerPrestaciones: vi.fn() }));
@@ -161,6 +163,66 @@ describe("agenda propia profesional Signature", () => {
     fireEvent.click(within(fila).getByRole("button", { name: "Marcar ausente" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("No pudimos actualizar el turno");
     expect(screen.getByText("Ana López")).toBeInTheDocument();
+  });
+
+  it("confirma y cancela un turno profesional sin recargar la agenda", async () => {
+    vi.mocked(servicio.obtenerMiAgendaProfesional).mockResolvedValue([turno()]);
+    vi.mocked(servicio.cancelarMiTurnoProfesional).mockResolvedValue(turno({ estado: "cancelado" }));
+    renderProfesional();
+    const fila = await screen.findByLabelText(/Ana López/);
+    fireEvent.click(within(fila).getByRole("button", { name: "Cancelar" }));
+    const dialogo = screen.getByRole("dialog", { name: "Cancelar turno" });
+    expect(within(dialogo).getByText("Ana López")).toBeInTheDocument();
+    expect(within(dialogo).getByText("Consulta clínica")).toBeInTheDocument();
+    fireEvent.click(within(dialogo).getByRole("button", { name: "Cancelar turno" }));
+    expect(await screen.findByText("Turno cancelado correctamente.")).toHaveAttribute("role", "status");
+    expect(screen.getByLabelText(/Ana López, Cancelado/)).toBeInTheDocument();
+    expect(servicio.obtenerMiAgendaProfesional).toHaveBeenCalledTimes(1);
+  });
+
+  it("bloquea doble cancelación y muestra el error dentro de la confirmación", async () => {
+    vi.mocked(servicio.obtenerMiAgendaProfesional).mockResolvedValue([turno()]);
+    let rechazar!: (motivo: unknown) => void;
+    vi.mocked(servicio.cancelarMiTurnoProfesional).mockReturnValue(new Promise((_, reject) => { rechazar = reject; }));
+    renderProfesional();
+    fireEvent.click(within(await screen.findByLabelText(/Ana López/)).getByRole("button", { name: "Cancelar" }));
+    const confirmar = within(screen.getByRole("dialog")).getByRole("button", { name: "Cancelar turno" });
+    fireEvent.click(confirmar);
+    fireEvent.click(confirmar);
+    expect(servicio.cancelarMiTurnoProfesional).toHaveBeenCalledTimes(1);
+    expect(within(screen.getByRole("dialog")).getByRole("button", { name: "Cancelando…" })).toBeDisabled();
+    rechazar(new Error("red"));
+    expect(await within(screen.getByRole("dialog")).findByRole("alert")).toHaveTextContent("No pudimos cancelar el turno");
+  });
+
+  it("reprograma usando slots que excluyen el turno actual", async () => {
+    vi.mocked(servicio.obtenerMiAgendaProfesional).mockResolvedValue([turno()]);
+    vi.mocked(servicio.obtenerHorariosLibres).mockResolvedValue([{ fecha_hora: "2026-08-15T15:00:00Z" }]);
+    vi.mocked(servicio.reprogramarMiTurnoProfesional).mockResolvedValue(turno({ fecha_hora: "2026-08-15T15:00:00Z", fecha_fin: "2026-08-15T15:50:00Z" }));
+    renderProfesional();
+    fireEvent.click(within(await screen.findByLabelText(/Ana López/)).getByRole("button", { name: "Reprogramar" }));
+    const dialogo = screen.getByRole("dialog", { name: "Reprogramar turno" });
+    fireEvent.change(within(dialogo).getByLabelText("Nueva fecha"), { target: { value: "2026-08-15" } });
+    expect(servicio.obtenerHorariosLibres).toHaveBeenCalledWith(20, "2026-08-15", 1);
+    fireEvent.click(await within(dialogo).findByRole("radio", { name: "12:00" }));
+    fireEvent.click(within(dialogo).getByRole("button", { name: "Confirmar cambio" }));
+    expect(await screen.findByText("Turno reprogramado correctamente.")).toHaveAttribute("role", "status");
+    expect(servicio.reprogramarMiTurnoProfesional).toHaveBeenCalledWith(1, "2026-08-15T15:00:00Z");
+  });
+
+  it("muestra fecha sin slots y conserva un conflicto 409", async () => {
+    vi.mocked(servicio.obtenerMiAgendaProfesional).mockResolvedValue([turno()]);
+    vi.mocked(servicio.obtenerHorariosLibres).mockResolvedValueOnce([]).mockResolvedValueOnce([{ fecha_hora: "2026-08-15T15:00:00Z" }]).mockResolvedValueOnce([]);
+    vi.mocked(servicio.reprogramarMiTurnoProfesional).mockRejectedValue({ isAxiosError: true, response: { status: 409, data: { detail: "El horario ya no está disponible." } } });
+    renderProfesional();
+    fireEvent.click(within(await screen.findByLabelText(/Ana López/)).getByRole("button", { name: "Reprogramar" }));
+    const dialogo = screen.getByRole("dialog");
+    fireEvent.change(within(dialogo).getByLabelText("Nueva fecha"), { target: { value: "2026-08-14" } });
+    expect(await within(dialogo).findByText("No hay horarios disponibles para esta fecha.")).toBeInTheDocument();
+    fireEvent.change(within(dialogo).getByLabelText("Nueva fecha"), { target: { value: "2026-08-15" } });
+    fireEvent.click(await within(dialogo).findByRole("radio", { name: "12:00" }));
+    fireEvent.click(within(dialogo).getByRole("button", { name: "Confirmar cambio" }));
+    expect(await within(dialogo).findByRole("alert")).toHaveTextContent("El horario ya no está disponible");
   });
 
   it("incorpora el turno creado y muestra feedback sin recargar la agenda", async () => {

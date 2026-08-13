@@ -2,12 +2,14 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import axios from "axios";
 
 import "./AgendaPropia.css";
+import GestionTurnoProfesional from "./GestionTurnoProfesional";
 import Icono from "./Icono";
 import ProfesionalShell from "./ProfesionalShell";
 import NuevoTurnoProfesional from "./NuevoTurnoProfesional";
 import type { Turno } from "../types/turno";
 import {
   cancelarMiTurno,
+  cancelarMiTurnoProfesional,
   finalizarMiTurno,
   marcarAusenteMiTurno,
   obtenerMiAgendaProfesional,
@@ -125,6 +127,8 @@ export default function AgendaPropia({
   const [ahora] = useState(() => new Date());
   const [mostrarNuevoTurno, setMostrarNuevoTurno] = useState(false);
   const [mensajeExito, setMensajeExito] = useState("");
+  const [gestionTurno, setGestionTurno] = useState<{ modo: "cancelar" | "reprogramar"; turno: Turno } | null>(null);
+  const [errorGestion, setErrorGestion] = useState("");
 
   const cargar = useCallback(async () => {
     setCargando(true);
@@ -172,6 +176,28 @@ export default function AgendaPropia({
       setTurnoExpandido(null);
     } catch (motivo) {
       setErrorAccion({ id: turno.id, mensaje: detalleError(motivo, "No pudimos actualizar el turno.") });
+    } finally {
+      setTurnosActualizando((actuales) => {
+        const siguientes = new Set(actuales);
+        siguientes.delete(turno.id);
+        return siguientes;
+      });
+    }
+  }
+
+  async function cancelarComoProfesional() {
+    if (!gestionTurno || turnosActualizando.has(gestionTurno.turno.id)) return;
+    const turno = gestionTurno.turno;
+    setErrorGestion("");
+    setTurnosActualizando((actuales) => new Set(actuales).add(turno.id));
+    try {
+      const actualizado = await cancelarMiTurnoProfesional(turno.id);
+      setTurnos((actuales) => actuales.map((item) => item.id === actualizado.id ? actualizado : item));
+      setGestionTurno(null);
+      setTurnoExpandido(null);
+      setMensajeExito("Turno cancelado correctamente.");
+    } catch (motivo) {
+      setErrorGestion(detalleError(motivo, "No pudimos cancelar el turno."));
     } finally {
       setTurnosActualizando((actuales) => {
         const siguientes = new Set(actuales);
@@ -273,6 +299,8 @@ export default function AgendaPropia({
                       {!terminal && <div className="agenda-prof-acciones">
                         <button type="button" disabled={actualizando} onClick={(evento) => { evento.stopPropagation(); void actualizar(turno, "finalizar"); }}><Icono nombre="check" />{actualizando ? "Actualizando…" : "Finalizar"}</button>
                         <button type="button" disabled={actualizando} onClick={(evento) => { evento.stopPropagation(); void actualizar(turno, "ausente"); }}>Marcar ausente</button>
+                        <button type="button" disabled={actualizando} onClick={(evento) => { evento.stopPropagation(); setErrorGestion(""); setGestionTurno({ modo: "reprogramar", turno }); }}>Reprogramar</button>
+                        <button type="button" className="agenda-prof-accion-cancelar" disabled={actualizando} onClick={(evento) => { evento.stopPropagation(); setErrorGestion(""); setGestionTurno({ modo: "cancelar", turno }); }}>Cancelar</button>
                         {actualizando && <span className="sr-only" role="status">Actualizando turno de {turno.paciente_nombre}</span>}
                       </div>}
                     </div>
@@ -290,5 +318,19 @@ export default function AgendaPropia({
       setMostrarNuevoTurno(false);
       setMensajeExito("Turno creado correctamente.");
     }} />}
+    {gestionTurno && <GestionTurnoProfesional
+      modo={gestionTurno.modo}
+      turno={gestionTurno.turno}
+      guardando={turnosActualizando.has(gestionTurno.turno.id)}
+      errorExterno={errorGestion}
+      onCerrar={() => { if (!turnosActualizando.has(gestionTurno.turno.id)) setGestionTurno(null); }}
+      onCancelar={cancelarComoProfesional}
+      onReprogramado={(actualizado) => {
+        setTurnos((actuales) => actuales.map((item) => item.id === actualizado.id ? actualizado : item));
+        setGestionTurno(null);
+        setTurnoExpandido(null);
+        setMensajeExito("Turno reprogramado correctamente.");
+      }}
+    />}
   </ProfesionalShell>;
 }

@@ -44,11 +44,12 @@
 .agenda-prof-estado { display: inline-flex; align-items: center; gap: 7px; color: var(--prof-success); font-size: 12px; font-weight: 700; white-space: nowrap; }
 .agenda-prof-estado i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
 .agenda-prof-acciones { grid-column: 1 / -1; display: flex; justify-content: flex-end; gap: 8px; max-height: 0; overflow: hidden; opacity: 0; transition: max-height .15s ease, opacity .15s ease, margin .15s ease; }
-.agenda-prof-turno.esta-expandido .agenda-prof-acciones, .agenda-prof-turno article:hover .agenda-prof-acciones, .agenda-prof-turno article:focus-within .agenda-prof-acciones { max-height: 44px; margin-top: 4px; opacity: 1; }
+.agenda-prof-turno.esta-expandido .agenda-prof-acciones, .agenda-prof-turno article:hover .agenda-prof-acciones, .agenda-prof-turno article:focus-within .agenda-prof-acciones { max-height: 88px; margin-top: 4px; opacity: 1; }
 .agenda-prof-acciones button { min-height: 36px; padding: 0 13px; border: 0; border-radius: 7px; background: transparent; color: var(--prof-primary); font-size: 13px; font-weight: 700; cursor: pointer; }
 .agenda-prof-acciones button:first-child { display: inline-flex; align-items: center; gap: 6px; background: var(--prof-primary); color: #fff; }
 .agenda-prof-acciones button:first-child:hover { background: var(--prof-primary-hover); }
 .agenda-prof-acciones button:disabled { cursor: wait; opacity: .55; }
+.agenda-prof-acciones .agenda-prof-accion-cancelar { color: var(--prof-danger); }
 .agenda-prof-acciones svg { width: 15px; height: 15px; }
 .agenda-prof-turno.es-proximo article { background: rgba(229,240,237,.72); box-shadow: inset 4px 0 0 var(--prof-primary); }
 .agenda-prof-turno.es-proximo .agenda-prof-marca { background: var(--prof-primary); }
@@ -107,7 +108,7 @@ section.agenda-prof-estado button { min-height: 40px; display: inline-flex; alig
   .agenda-prof-acciones button { min-height: 44px; }
   .agenda-prof-acciones button:first-child { flex: 1; justify-content: center; }
   .agenda-prof-turno article:hover .agenda-prof-acciones { max-height: 0; margin-top: 0; opacity: 0; }
-  .agenda-prof-turno.esta-expandido .agenda-prof-acciones, .agenda-prof-turno article:focus-within .agenda-prof-acciones { max-height: 50px; margin-top: 6px; opacity: 1; }
+  .agenda-prof-turno.esta-expandido .agenda-prof-acciones, .agenda-prof-turno article:focus-within .agenda-prof-acciones { max-height: 104px; margin-top: 6px; opacity: 1; }
   .agenda-prof-error-accion { padding-left: 106px; }
 }
 
