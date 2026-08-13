@@ -6,10 +6,12 @@ from app.core.datetime_utils import (
 )
 from decimal import Decimal
 
+from pydantic import EmailStr, TypeAdapter, ValidationError
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.database.connection import SessionLocal
+from app.models.disponibilidad import Disponibilidad
 from app.models.especialidad import Especialidad
 from app.models.paciente import Paciente
 from app.models.pago import Pago
@@ -25,6 +27,11 @@ from app.core.security import generar_hash_password
 
 MARCA_TURNO_DEMO = "[DEMO_MEDI_TURNOS]"
 NOMBRE_ADMIN_DEMO = "Administrador Demo"
+NOMBRE_PROFESIONAL_DEMO = "Profesional Demo"
+MATRICULA_PROFESIONAL_DEMO = "MP-DEMO-PSIQ-001"
+EMAIL_ADMIN_DEMO_LEGACY = "admin.demo@mediturnos.local"
+EMAIL_PROFESIONAL_DEMO_LEGACY = "profesional.demo@mediturnos.local"
+ADAPTADOR_EMAIL = TypeAdapter(EmailStr)
 
 
 class ConfiguracionSeedInvalidaError(RuntimeError):
@@ -32,6 +39,10 @@ class ConfiguracionSeedInvalidaError(RuntimeError):
 
 
 class CuentaAdminNoDemoError(RuntimeError):
+    pass
+
+
+class CuentaProfesionalNoDemoError(RuntimeError):
     pass
 
 
@@ -51,11 +62,26 @@ def validar_ejecucion_seed() -> None:
             "DEMO_SEED_ENABLED=true para ejecutarlo."
         )
 
-    if not (settings.demo_admin_email or "").strip():
+    validar_email_demo(settings.demo_admin_email, "DEMO_ADMIN_EMAIL")
+    validar_email_demo(
+        settings.demo_professional_email,
+        "DEMO_PROFESSIONAL_EMAIL",
+    )
+
+
+def validar_email_demo(email: str | None, nombre_variable: str) -> str:
+    email_normalizado = (email or "").strip()
+    if not email_normalizado:
         raise ConfiguracionSeedInvalidaError(
-            "DEMO_ADMIN_EMAIL es obligatorio para ejecutar "
-            "el seed demo."
+            f"{nombre_variable} es obligatorio para ejecutar el seed demo."
         )
+
+    try:
+        return str(ADAPTADOR_EMAIL.validate_python(email_normalizado))
+    except ValidationError as error:
+        raise ConfiguracionSeedInvalidaError(
+            f"{nombre_variable} debe ser un email válido."
+        ) from error
 
 
 def obtener_password_demo() -> str | None:
@@ -67,17 +93,45 @@ def obtener_password_demo() -> str | None:
     return password if password else None
 
 
+def obtener_password_profesional_demo() -> str | None:
+    if settings.demo_professional_password is None:
+        return None
+
+    password = settings.demo_professional_password.get_secret_value()
+
+    return password if password else None
+
+
 
 
 def obtener_o_crear_admin_demo(
     db: Session,
 ) -> Usuario:
-    email = (settings.demo_admin_email or "").strip()
+    email = validar_email_demo(settings.demo_admin_email, "DEMO_ADMIN_EMAIL")
     usuario = (
         db.query(Usuario)
         .filter(Usuario.email == email)
         .first()
     )
+
+    if usuario is None and settings.app_env in ("development", "demo"):
+        usuario_legacy = (
+            db.query(Usuario)
+            .filter(Usuario.email == EMAIL_ADMIN_DEMO_LEGACY)
+            .first()
+        )
+        if usuario_legacy is not None:
+            if (
+                usuario_legacy.nombre != NOMBRE_ADMIN_DEMO
+                or usuario_legacy.rol != "administrador"
+            ):
+                raise CuentaAdminNoDemoError(
+                    "La cuenta con el email demo anterior no puede "
+                    "identificarse inequívocamente como el "
+                    "administrador demo."
+                )
+            usuario_legacy.email = email
+            usuario = usuario_legacy
 
     if usuario is not None:
         if (
@@ -122,6 +176,92 @@ def obtener_o_crear_admin_demo(
     )
 
     db.add(usuario)
+    db.flush()
+
+    return usuario
+
+
+def obtener_o_crear_usuario_profesional_demo(
+    db: Session,
+    profesional: Profesional,
+) -> Usuario:
+    email = validar_email_demo(
+        settings.demo_professional_email,
+        "DEMO_PROFESSIONAL_EMAIL",
+    )
+    usuario = db.query(Usuario).filter(Usuario.email == email).first()
+
+    if usuario is None and settings.app_env in ("development", "demo"):
+        usuario_legacy = (
+            db.query(Usuario)
+            .filter(
+                Usuario.email == EMAIL_PROFESIONAL_DEMO_LEGACY,
+                Usuario.id == profesional.usuario_id,
+            )
+            .first()
+        )
+        if usuario_legacy is not None:
+            if (
+                usuario_legacy.nombre != NOMBRE_PROFESIONAL_DEMO
+                or usuario_legacy.rol != "profesional"
+            ):
+                raise CuentaProfesionalNoDemoError(
+                    "La cuenta con el email demo anterior no puede "
+                    "identificarse inequívocamente como el profesional demo."
+                )
+            usuario_legacy.email = email
+            usuario = usuario_legacy
+
+    if profesional.usuario_id is not None and (
+        usuario is None or profesional.usuario_id != usuario.id
+    ):
+        raise CuentaProfesionalNoDemoError(
+            "El perfil profesional demo ya está vinculado a otra "
+            "cuenta. No se modificó ningún usuario."
+        )
+
+    if usuario is not None:
+        if (
+            usuario.nombre != NOMBRE_PROFESIONAL_DEMO
+            or usuario.rol != "profesional"
+            or usuario.profesional is None
+            or usuario.profesional.id != profesional.id
+        ):
+            raise CuentaProfesionalNoDemoError(
+                "La cuenta configurada en DEMO_PROFESSIONAL_EMAIL "
+                "ya existe, pero no puede identificarse "
+                "inequívocamente como el profesional demo."
+            )
+
+        if settings.demo_professional_reset_password:
+            password = obtener_password_profesional_demo()
+            if password is None:
+                raise ConfiguracionSeedInvalidaError(
+                    "DEMO_PROFESSIONAL_PASSWORD es obligatorio "
+                    "cuando DEMO_PROFESSIONAL_RESET_PASSWORD=true."
+                )
+            usuario.password_hash = generar_hash_password(password)
+
+        usuario.activo = True
+        return usuario
+
+    password = obtener_password_profesional_demo()
+    if password is None:
+        raise ConfiguracionSeedInvalidaError(
+            "DEMO_PROFESSIONAL_PASSWORD es obligatorio para crear "
+            "el profesional demo."
+        )
+
+    usuario = Usuario(
+        nombre=NOMBRE_PROFESIONAL_DEMO,
+        email=email,
+        password_hash=generar_hash_password(password),
+        rol="profesional",
+        activo=True,
+    )
+    db.add(usuario)
+    db.flush()
+    profesional.usuario = usuario
     db.flush()
 
     return usuario
@@ -197,6 +337,41 @@ def obtener_o_crear_profesional(
     db.flush()
 
     return profesional
+
+
+def obtener_o_crear_disponibilidad_demo(
+    db: Session,
+    profesional: Profesional,
+    dia_semana: int,
+    hora_inicio: time,
+    hora_fin: time,
+) -> Disponibilidad:
+    disponibilidad = (
+        db.query(Disponibilidad)
+        .filter(
+            Disponibilidad.profesional_id == profesional.id,
+            Disponibilidad.dia_semana == dia_semana,
+            Disponibilidad.hora_inicio == hora_inicio,
+            Disponibilidad.hora_fin == hora_fin,
+        )
+        .first()
+    )
+
+    if disponibilidad is not None:
+        disponibilidad.activa = True
+        return disponibilidad
+
+    disponibilidad = Disponibilidad(
+        profesional_id=profesional.id,
+        dia_semana=dia_semana,
+        hora_inicio=hora_inicio,
+        hora_fin=hora_fin,
+        activa=True,
+    )
+    db.add(disponibilidad)
+    db.flush()
+
+    return disponibilidad
 
 
 def vincular_profesional_especialidad(
@@ -496,9 +671,16 @@ def _cargar_datos_demo(
         db=db,
         nombre="Sofía",
         apellido="Ramírez",
-        matricula="MP-DEMO-PSIQ-001",
+        matricula=MATRICULA_PROFESIONAL_DEMO,
         telefono="3515551105",
         email="sofia.ramirez@mediturnos.demo",
+    )
+
+    print("Cargando usuario profesional demo...")
+
+    obtener_o_crear_usuario_profesional_demo(
+        db=db,
+        profesional=sofia_ramirez,
     )
 
     print(
@@ -627,7 +809,7 @@ def _cargar_datos_demo(
         especialidad=pediatria,
     )
 
-    obtener_o_crear_prestacion(
+    consulta_psiquiatrica = obtener_o_crear_prestacion(
         db=db,
         nombre="Consulta psiquiátrica",
         descripcion=(
@@ -639,6 +821,24 @@ def _cargar_datos_demo(
         modalidad="presencial",
         profesional=sofia_ramirez,
         especialidad=psiquiatria,
+    )
+
+    print("Cargando disponibilidad del profesional demo...")
+
+    dia_demo_principal = fecha_actual_negocio().weekday()
+    obtener_o_crear_disponibilidad_demo(
+        db,
+        sofia_ramirez,
+        dia_demo_principal,
+        time(8, 0),
+        time(12, 0),
+    )
+    obtener_o_crear_disponibilidad_demo(
+        db,
+        sofia_ramirez,
+        dia_demo_principal,
+        time(14, 0),
+        time(19, 0),
     )
 
     print("Cargando pacientes demo...")
@@ -738,6 +938,48 @@ def _cargar_datos_demo(
     eliminar_turnos_demo(db)
 
     turnos_demo = [
+        (
+            juan_perez,
+            consulta_psiquiatrica,
+            construir_fecha(0, 8, 0),
+            "finalizado",
+            "Seguimiento clínico completado.",
+        ),
+        (
+            silvina_perez,
+            consulta_psiquiatrica,
+            construir_fecha(0, 9, 0),
+            "confirmado",
+            "Consulta de seguimiento.",
+        ),
+        (
+            ana_lopez,
+            consulta_psiquiatrica,
+            construir_fecha(0, 10, 0),
+            "ausente",
+            "El paciente no se presentó.",
+        ),
+        (
+            roberto_sanchez,
+            consulta_psiquiatrica,
+            construir_fecha(0, 14, 0),
+            "confirmado",
+            "Control de tratamiento.",
+        ),
+        (
+            mariana_torres,
+            consulta_psiquiatrica,
+            construir_fecha(0, 15, 0),
+            "reservado",
+            "Primera entrevista.",
+        ),
+        (
+            diego_ferreyra,
+            consulta_psiquiatrica,
+            construir_fecha(0, 16, 0),
+            "cancelado",
+            "Cancelación informada por el paciente.",
+        ),
         (
             juan_perez,
             consulta_clinica,
@@ -871,11 +1113,12 @@ def imprimir_resumen_seed() -> None:
     print("Profesionales: 5")
     print("Prestaciones: 7")
     print("Pacientes demo disponibles: 8")
-    print("Turnos demo recreados: 15")
+    print("Turnos demo recreados: 21")
     print("")
     print("Credenciales de acceso demo")
     print("---------------------------")
-    print(f"Email: {settings.demo_admin_email}")
+    print(f"Administrador: {settings.demo_admin_email}")
+    print(f"Profesional: {settings.demo_professional_email}")
 
 
 def cargar_datos_demo(

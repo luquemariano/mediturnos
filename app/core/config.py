@@ -71,6 +71,9 @@ class Settings(BaseSettings):
     demo_admin_email: str | None = None
     demo_admin_password: SecretStr | None = None
     demo_admin_reset_password: bool = False
+    demo_professional_email: str | None = None
+    demo_professional_password: SecretStr | None = None
+    demo_professional_reset_password: bool = False
 
     @field_validator("cors_allowed_origins")
     @classmethod

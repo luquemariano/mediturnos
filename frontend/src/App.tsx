@@ -13,6 +13,7 @@ import Turnos from "./components/Turnos";
 import AgendaPropia from "./components/AgendaPropia";
 import MiDisponibilidad from "./components/MiDisponibilidad";
 import PerfilPropio from "./components/PerfilPropio";
+import DashboardProfesional from "./components/DashboardProfesional";
 import {
   iniciarSesion,
   obtenerUsuarioActual,
@@ -165,6 +166,18 @@ function App() {
 
 
   if (usuario) {
+    if (vista === "dashboard" && usuario.rol === "profesional") {
+      return (
+        <DashboardProfesional
+          nombre={usuario.nombre}
+          onAbrirAgenda={() => setVista("turnos")}
+          onAbrirDisponibilidad={() => setVista("disponibilidades")}
+          onAbrirPerfil={() => setVista("perfil")}
+          onCerrarSesion={cerrarSesion}
+        />
+      );
+    }
+
     if (vista === "pacientes") {
       return (
         <Pacientes

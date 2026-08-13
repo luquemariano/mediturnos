@@ -178,14 +178,20 @@ explícitamente estas variables en `.env`:
 ```dotenv
 APP_ENV=demo
 DEMO_SEED_ENABLED=true
-DEMO_ADMIN_EMAIL=tu_admin_demo@ejemplo.com
+DEMO_ADMIN_EMAIL=admin.demo@mediturnos.com.ar
 DEMO_ADMIN_PASSWORD=elegir_una_contraseña_segura
 DEMO_ADMIN_RESET_PASSWORD=false
+DEMO_PROFESSIONAL_EMAIL=profesional.demo@mediturnos.com.ar
+DEMO_PROFESSIONAL_PASSWORD=elegir_otra_contraseña_segura
+DEMO_PROFESSIONAL_RESET_PASSWORD=false
 ```
 
 `APP_ENV=production` bloquea siempre la ejecución. Si el administrador demo
 ya existe, su contraseña sólo se reemplaza cuando
 `DEMO_ADMIN_RESET_PASSWORD=true`.
+La cuenta profesional queda vinculada al perfil demo con matrícula
+`MP-DEMO-PSIQ-001`. Su contraseña tampoco se reemplaza salvo que
+`DEMO_PROFESSIONAL_RESET_PASSWORD=true`.
 
 ```bash
 docker compose --env-file .env exec api python -m app.scripts.seed
@@ -193,7 +199,7 @@ docker compose --env-file .env exec api python -m app.scripts.seed
 
 El script crea o actualiza:
 
-- 1 administrador demo.
+- 1 administrador demo y 1 usuario profesional demo.
 - 4 especialidades.
 - 5 profesionales.
 - 7 prestaciones.
