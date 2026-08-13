@@ -21,11 +21,11 @@ vi.mock("../src/services/turnoService", () => ({
 
 const perfil = {
   id: 7,
-  nombre: "Mariana",
-  apellido: "López",
-  matricula: "MP-100",
+  nombre: "Sofía",
+  apellido: "Ramírez",
+  matricula: "MP-DEMO-PSIQ-001",
   telefono: null,
-  email: "mariana@example.com",
+  email: "sofia@example.com",
   activo: true,
   especialidades: [],
 };
@@ -34,71 +34,144 @@ function turno(datos: Partial<Turno> = {}): Turno {
   return {
     id: 1,
     paciente_id: 4,
-    paciente_nombre: "Lucía Fernández",
+    paciente_nombre: "Juan Pérez",
     prestacion_id: 5,
-    prestacion_nombre: "Consulta psicológica",
-    profesional_nombre: "Mariana López",
-    especialidad_nombre: "Psicología",
-    fecha_hora: "2026-08-12T13:30:00Z",
-    estado: "confirmado",
+    prestacion_nombre: "Consulta psiquiátrica",
+    profesional_nombre: "Sofía Ramírez",
+    especialidad_nombre: "Psiquiatría",
+    fecha_hora: "2026-08-12T11:00:00Z",
+    fecha_fin: "2026-08-12T11:50:00Z",
+    estado: "finalizado",
     observaciones: null,
     ...datos,
   };
 }
 
-function prepararDatos(turnos: Turno[] = [turno()]) {
+const jornada: Turno[] = [
+  turno(),
+  turno({ id: 2, paciente_nombre: "Silvina Pérez", fecha_hora: "2026-08-12T12:00:00Z", fecha_fin: "2026-08-12T12:50:00Z", estado: "confirmado" }),
+  turno({ id: 3, paciente_nombre: "Ana López", fecha_hora: "2026-08-12T13:00:00Z", fecha_fin: "2026-08-12T13:50:00Z", estado: "ausente", observaciones: "El paciente no se presentó." }),
+  turno({ id: 4, paciente_nombre: "Roberto Sánchez", fecha_hora: "2026-08-12T17:00:00Z", fecha_fin: "2026-08-12T17:50:00Z", estado: "confirmado" }),
+  turno({ id: 5, paciente_nombre: "Mariana Torres", fecha_hora: "2026-08-12T18:00:00Z", fecha_fin: "2026-08-12T18:50:00Z", estado: "reservado" }),
+  turno({ id: 6, paciente_nombre: "Diego Ferreyra", fecha_hora: "2026-08-12T19:00:00Z", fecha_fin: "2026-08-12T19:50:00Z", estado: "cancelado", observaciones: "Cancelación informada por el paciente." }),
+];
+
+function prepararDatos(turnos: Turno[] = jornada) {
   vi.mocked(profesionalService.obtenerMiPerfilProfesional).mockResolvedValue(perfil);
   vi.mocked(disponibilidadService.obtenerDisponibilidadesProfesional).mockResolvedValue([
-    { id: 1, profesional_id: 7, dia_semana: 2, hora_inicio: "09:00:00", hora_fin: "13:00:00", activa: true },
+    { id: 1, profesional_id: 7, dia_semana: 2, hora_inicio: "08:00:00", hora_fin: "12:00:00", activa: true },
+    { id: 2, profesional_id: 7, dia_semana: 2, hora_inicio: "14:00:00", hora_fin: "19:00:00", activa: true },
   ]);
   vi.mocked(turnoService.obtenerMiAgendaProfesional).mockResolvedValue(turnos);
 }
 
 function renderizar() {
-  const acciones = {
-    agenda: vi.fn(),
-    disponibilidad: vi.fn(),
-    perfil: vi.fn(),
-    salir: vi.fn(),
-  };
-  render(<DashboardProfesional nombre="Mariana" onAbrirAgenda={acciones.agenda} onAbrirDisponibilidad={acciones.disponibilidad} onAbrirPerfil={acciones.perfil} onCerrarSesion={acciones.salir} />);
+  const acciones = { agenda: vi.fn(), disponibilidad: vi.fn(), perfil: vi.fn(), salir: vi.fn() };
+  render(<DashboardProfesional nombre="Sofía" onAbrirAgenda={acciones.agenda} onAbrirDisponibilidad={acciones.disponibilidad} onAbrirPerfil={acciones.perfil} onCerrarSesion={acciones.salir} />);
   return acciones;
 }
 
 beforeEach(() => {
   vi.useFakeTimers({ shouldAdvanceTime: true });
-  vi.setSystemTime(new Date("2026-08-12T12:00:00Z"));
+  vi.setSystemTime(new Date("2026-08-12T11:30:00Z"));
   vi.clearAllMocks();
 });
 
 afterEach(() => vi.useRealTimers());
 
-describe("dashboard profesional", () => {
-  it("renderiza navegación, jornada y disponibilidad con datos propios", async () => {
+describe("dashboard profesional Signature", () => {
+  it("renderiza navegación, saludo y resumen textual de la jornada", async () => {
     prepararDatos();
     renderizar();
-    expect(await screen.findByRole("heading", { name: /Buen día, Mariana/ })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Buen día, Sofía" })).toBeInTheDocument();
     expect(screen.getByRole("navigation", { name: "Navegación profesional" })).toBeInTheDocument();
-    expect(await screen.findByText(/Hoy atendés de 09:00 a 13:00/)).toBeInTheDocument();
-    expect(profesionalService.obtenerMiPerfilProfesional).toHaveBeenCalledOnce();
-    expect(turnoService.obtenerMiAgendaProfesional).toHaveBeenCalledOnce();
+    expect(screen.getByLabelText("Resumen de la jornada")).toHaveTextContent("6 turnos");
+    expect(screen.getByLabelText("Resumen de la jornada")).toHaveTextContent("2 confirmados");
+    expect(screen.getByLabelText("Resumen de la jornada")).toHaveTextContent("1 pendiente");
+    expect(screen.getByLabelText("Resumen de la jornada")).toHaveTextContent("3 resueltos");
   });
 
-  it("muestra agenda cargada y destaca el próximo turno real", async () => {
-    prepararDatos([turno(), turno({ id: 2, paciente_nombre: "Carlos Ruiz", fecha_hora: "2026-08-12T15:00:00Z", estado: "reservado" })]);
+  it("divide la agenda real en mañana y tarde", async () => {
+    prepararDatos();
     renderizar();
     const agenda = await screen.findByRole("region", { name: "Agenda de hoy" });
-    expect(within(agenda).getByText("Lucía Fernández")).toBeInTheDocument();
-    expect(within(agenda).getByText("Carlos Ruiz")).toBeInTheDocument();
-    expect(screen.getByText("Tenés 2 turnos programados para hoy.")).toBeInTheDocument();
-    expect(screen.getAllByText("Lucía Fernández").length).toBeGreaterThan(1);
+    expect(within(agenda).getByRole("heading", { name: "Mañana" })).toBeInTheDocument();
+    expect(within(agenda).getByRole("heading", { name: "Tarde" })).toBeInTheDocument();
+    expect(within(agenda).getByText("08:00–12:00")).toBeInTheDocument();
+    expect(within(agenda).getByText("14:00–19:00")).toBeInTheDocument();
+    expect(within(agenda).getByText("Juan Pérez")).toBeInTheDocument();
+    expect(within(agenda).getByText("Diego Ferreyra")).toBeInTheDocument();
   });
 
-  it("muestra un estado vacío cuando no hay turnos", async () => {
-    prepararDatos([]);
+  it("destaca el próximo turno con datos y rango reales", async () => {
+    prepararDatos();
     renderizar();
+    const proximo = await screen.findByRole("region", { name: "Silvina Pérez" });
+    expect(within(proximo).getByText("09:00")).toBeInTheDocument();
+    expect(within(proximo).getByText("Consulta psiquiátrica")).toBeInTheDocument();
+    expect(within(proximo).getByText("09:00–09:50")).toBeInTheDocument();
+    expect(within(proximo).getByText("Confirmado")).toBeInTheDocument();
+  });
+
+  it("muestra estados terminales sin acciones", async () => {
+    prepararDatos();
+    renderizar();
+    const agenda = await screen.findByRole("region", { name: "Agenda de hoy" });
+    for (const nombre of ["Juan Pérez", "Ana López", "Diego Ferreyra"]) {
+      const fila = within(agenda).getByLabelText(new RegExp(nombre));
+      expect(within(fila).queryByRole("button", { name: "Finalizar" })).not.toBeInTheDocument();
+      expect(within(fila).queryByRole("button", { name: "Marcar ausente" })).not.toBeInTheDocument();
+    }
+    expect(within(agenda).getByLabelText(/Juan Pérez, Finalizado/)).toBeInTheDocument();
+    expect(within(agenda).getByText("Ausente")).toBeInTheDocument();
+    expect(within(agenda).getByText("Cancelado")).toBeInTheDocument();
+  });
+
+  it("expande una sola fila activa por toque o teclado", async () => {
+    prepararDatos();
+    renderizar();
+    const agenda = await screen.findByRole("region", { name: "Agenda de hoy" });
+    const roberto = within(agenda).getByLabelText(/Roberto Sánchez/);
+    const mariana = within(agenda).getByLabelText(/Mariana Torres/);
+    expect(roberto).toHaveAttribute("aria-expanded", "false");
+    fireEvent.click(roberto);
+    expect(roberto).toHaveAttribute("aria-expanded", "true");
+    fireEvent.keyDown(mariana, { key: "Enter" });
+    expect(roberto).toHaveAttribute("aria-expanded", "false");
+    expect(mariana).toHaveAttribute("aria-expanded", "true");
+  });
+
+  it("mantiene las acciones permitidas para el próximo turno", async () => {
+    prepararDatos();
+    vi.mocked(turnoService.finalizarMiTurno).mockResolvedValue({ ...jornada[1], estado: "finalizado" });
+    renderizar();
+    const agenda = await screen.findByRole("region", { name: "Agenda de hoy" });
+    const fila = within(agenda).getByLabelText(/Silvina Pérez/);
+    fireEvent.click(within(fila).getByRole("button", { name: /Finalizar/ }));
+    await waitFor(() => expect(turnoService.finalizarMiTurno).toHaveBeenCalledWith(2));
+    expect(within(agenda).getByLabelText(/Silvina Pérez, Finalizado/)).toBeInTheDocument();
+  });
+
+  it("muestra el indicador Ahora sólo dentro de disponibilidad", async () => {
+    prepararDatos();
+    const { unmount } = renderizarConResultado();
+    expect(await screen.findByRole("status")).toHaveTextContent("Ahora");
+    unmount();
+
+    vi.setSystemTime(new Date("2026-08-12T01:00:00Z"));
+    prepararDatos();
+    renderizar();
+    await screen.findByRole("heading", { name: "Agenda de hoy" });
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  });
+
+  it("conserva estado vacío y navegación móvil estructural", async () => {
+    prepararDatos([]);
+    const acciones = renderizar();
     expect(await screen.findByRole("heading", { name: "Tu agenda está libre hoy" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "No hay más turnos próximos" })).toBeInTheDocument();
+    expect(screen.getByRole("navigation", { name: "Navegación principal" })).toBeInTheDocument();
+    fireEvent.click(screen.getAllByRole("button", { name: "Mi agenda" })[0]);
+    expect(acciones.agenda).toHaveBeenCalled();
   });
 
   it("aísla el error de agenda y permite reintentar", async () => {
@@ -110,28 +183,9 @@ describe("dashboard profesional", () => {
     fireEvent.click(screen.getByRole("button", { name: /Reintentar/ }));
     await waitFor(() => expect(turnoService.obtenerMiAgendaProfesional).toHaveBeenCalledTimes(2));
   });
-
-  it("conecta la navegación profesional de escritorio y móvil", async () => {
-    prepararDatos([]);
-    const acciones = renderizar();
-    await screen.findByRole("heading", { name: "Tu agenda está libre hoy" });
-    fireEvent.click(screen.getAllByRole("button", { name: "Mi agenda" })[0]);
-    fireEvent.click(screen.getAllByRole("button", { name: "Mi disponibilidad" })[0]);
-    fireEvent.click(screen.getAllByRole("button", { name: "Mi perfil" })[0]);
-    expect(acciones.agenda).toHaveBeenCalled();
-    expect(acciones.disponibilidad).toHaveBeenCalled();
-    expect(acciones.perfil).toHaveBeenCalled();
-    expect(screen.getByRole("navigation", { name: "Navegación principal" })).toBeInTheDocument();
-  });
-
-  it("mantiene las acciones permitidas para el profesional", async () => {
-    prepararDatos();
-    vi.mocked(turnoService.finalizarMiTurno).mockResolvedValue(turno({ estado: "finalizado" }));
-    renderizar();
-    const agenda = await screen.findByRole("region", { name: "Agenda de hoy" });
-    fireEvent.click(within(agenda).getByRole("button", { name: /Finalizar/ }));
-    await waitFor(() => expect(turnoService.finalizarMiTurno).toHaveBeenCalledWith(1));
-    expect(within(agenda).getByText("Finalizado")).toBeInTheDocument();
-    expect(within(agenda).queryByRole("button", { name: /Marcar ausente/ })).not.toBeInTheDocument();
-  });
 });
+
+function renderizarConResultado() {
+  const acciones = { agenda: vi.fn(), disponibilidad: vi.fn(), perfil: vi.fn(), salir: vi.fn() };
+  return render(<DashboardProfesional nombre="Sofía" onAbrirAgenda={acciones.agenda} onAbrirDisponibilidad={acciones.disponibilidad} onAbrirPerfil={acciones.perfil} onCerrarSesion={acciones.salir} />);
+}

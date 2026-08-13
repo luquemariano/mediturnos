@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import axios from "axios";
 
 import "./DashboardProfesional.css";
@@ -28,6 +28,10 @@ type DashboardProfesionalProps = {
   onCerrarSesion: () => void;
 };
 
+type Periodo = "manana" | "tarde";
+
+const ESTADOS_TERMINALES = ["cancelado", "finalizado", "ausente"];
+
 function detalleError(error: unknown, alternativo: string): string {
   if (axios.isAxiosError(error) && typeof error.response?.data?.detail === "string") {
     return error.response.data.detail;
@@ -46,11 +50,7 @@ function fechaLarga(ahora: Date): string {
 }
 
 function saludo(ahora: Date): string {
-  const hora = Number(new Intl.DateTimeFormat("en-US", {
-    timeZone: ZONA_HORARIA_NEGOCIO,
-    hour: "2-digit",
-    hour12: false,
-  }).format(ahora));
+  const hora = horaMinutosNegocio(ahora) / 60;
   if (hora < 12) return "Buen día";
   if (hora < 20) return "Buenas tardes";
   return "Buenas noches";
@@ -64,6 +64,26 @@ function diaSemanaNegocio(ahora: Date): number {
   return ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].indexOf(nombre);
 }
 
+function horaMinutosNegocio(fecha: Date): number {
+  const partes = new Intl.DateTimeFormat("en-US", {
+    timeZone: ZONA_HORARIA_NEGOCIO,
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(fecha);
+  const valores = Object.fromEntries(partes.map((parte) => [parte.type, parte.value]));
+  return Number(valores.hour) * 60 + Number(valores.minute);
+}
+
+function minutosHora(valor: string): number {
+  const [hora, minuto] = valor.split(":").map(Number);
+  return hora * 60 + minuto;
+}
+
+function periodoTurno(turno: Turno): Periodo {
+  return horaMinutosNegocio(new Date(turno.fecha_hora)) < 13 * 60 ? "manana" : "tarde";
+}
+
 function etiquetaEstado(estado: Turno["estado"]): string {
   return {
     reservado: "Pendiente",
@@ -74,19 +94,38 @@ function etiquetaEstado(estado: Turno["estado"]): string {
   }[estado];
 }
 
-function rangoDisponibilidad(items: Disponibilidad[]): string {
-  if (items.length === 0) return "No tenés horarios configurados para hoy.";
-  return `Hoy atendés ${items.map((item) =>
-    `de ${item.hora_inicio.slice(0, 5)} a ${item.hora_fin.slice(0, 5)}`
-  ).join(" y ")}.`;
+function horarioTurno(turno: Turno): string {
+  const inicio = formatearHoraTurno(turno.fecha_hora);
+  return turno.fecha_fin ? `${inicio}–${formatearHoraTurno(turno.fecha_fin)}` : inicio;
+}
+
+function rangoPeriodo(items: Disponibilidad[], periodo: Periodo): string {
+  const franjas = items.filter((item) => {
+    const inicio = minutosHora(item.hora_inicio);
+    return periodo === "manana" ? inicio < 13 * 60 : inicio >= 13 * 60;
+  });
+  if (franjas.length === 0) return "Sin disponibilidad";
+  return franjas.map((item) =>
+    `${item.hora_inicio.slice(0, 5)}–${item.hora_fin.slice(0, 5)}`
+  ).join(" · ");
+}
+
+function dentroDeDisponibilidad(ahora: Date, items: Disponibilidad[]): boolean {
+  const minutos = horaMinutosNegocio(ahora);
+  return items.some((item) =>
+    minutos >= minutosHora(item.hora_inicio) && minutos < minutosHora(item.hora_fin)
+  );
 }
 
 function DashboardSkeleton() {
   return <div className="prof-skeleton" aria-label="Cargando agenda">
-    <span className="prof-skeleton-linea ancha" />
-    <span className="prof-skeleton-linea media" />
-    <div className="prof-skeleton-resumen"><span/><span/><span/></div>
-    <div className="prof-skeleton-grilla"><span/><span/></div>
+    <div className="prof-skeleton-proximo" />
+    <div className="prof-skeleton-layout">
+      <div className="prof-skeleton-agenda">
+        <span /><span /><span /><span />
+      </div>
+      <div className="prof-skeleton-jornada" />
+    </div>
   </div>;
 }
 
@@ -107,6 +146,7 @@ export default function DashboardProfesional({
   const [errorDisponibilidad, setErrorDisponibilidad] = useState("");
   const [errorAccion, setErrorAccion] = useState("");
   const [turnoActualizando, setTurnoActualizando] = useState<number | null>(null);
+  const [turnoExpandido, setTurnoExpandido] = useState<number | null>(null);
 
   const cargarAgenda = useCallback(async () => {
     setCargandoAgenda(true);
@@ -148,15 +188,18 @@ export default function DashboardProfesional({
     .filter((turno) => claveFechaNegocio(turno.fecha_hora) === hoy)
     .sort((a, b) => new Date(a.fecha_hora).getTime() - new Date(b.fecha_hora).getTime()), [hoy, turnos]);
   const proximoTurno = useMemo(() => turnos
-    .filter((turno) => !["cancelado", "finalizado", "ausente"].includes(turno.estado))
+    .filter((turno) => !ESTADOS_TERMINALES.includes(turno.estado))
     .filter((turno) => new Date(turno.fecha_hora).getTime() >= ahora.getTime())
     .sort((a, b) => new Date(a.fecha_hora).getTime() - new Date(b.fecha_hora).getTime())[0], [ahora, turnos]);
   const disponibilidadHoy = disponibilidades.filter((item) => item.dia_semana === diaSemanaNegocio(ahora));
+  const turnosManana = turnosHoy.filter((turno) => periodoTurno(turno) === "manana");
+  const turnosTarde = turnosHoy.filter((turno) => periodoTurno(turno) === "tarde");
   const resumen = {
     confirmados: turnosHoy.filter((turno) => turno.estado === "confirmado").length,
     pendientes: turnosHoy.filter((turno) => turno.estado === "reservado").length,
-    cancelados: turnosHoy.filter((turno) => turno.estado === "cancelado").length,
+    resueltos: turnosHoy.filter((turno) => ESTADOS_TERMINALES.includes(turno.estado)).length,
   };
+  const mostrarAhora = dentroDeDisponibilidad(ahora, disponibilidadHoy);
 
   async function actualizarTurno(turno: Turno, accion: "finalizar" | "ausente") {
     setErrorAccion("");
@@ -166,6 +209,7 @@ export default function DashboardProfesional({
         ? await finalizarMiTurno(turno.id)
         : await marcarAusenteMiTurno(turno.id);
       setTurnos((actuales) => actuales.map((item) => item.id === actualizado.id ? actualizado : item));
+      setTurnoExpandido(null);
     } catch (error) {
       setErrorAccion(detalleError(error, "No pudimos actualizar el turno."));
     } finally {
@@ -173,75 +217,164 @@ export default function DashboardProfesional({
     }
   }
 
+  function alternarTurno(turno: Turno) {
+    if (ESTADOS_TERMINALES.includes(turno.estado) || turno.id === proximoTurno?.id) return;
+    setTurnoExpandido((actual) => actual === turno.id ? null : turno.id);
+  }
+
+  function manejarTeclado(evento: React.KeyboardEvent<HTMLElement>, turno: Turno) {
+    if (evento.key === "Enter" || evento.key === " ") {
+      evento.preventDefault();
+      alternarTurno(turno);
+    }
+  }
+
+  function indicadorAhora(turnosPeriodo: Turno[]) {
+    if (!mostrarAhora) return -1;
+    const minutosAhora = horaMinutosNegocio(ahora);
+    return turnosPeriodo.findIndex((turno) =>
+      horaMinutosNegocio(new Date(turno.fecha_hora)) >= minutosAhora
+    );
+  }
+
+  function renderTurno(turno: Turno) {
+    const terminal = ESTADOS_TERMINALES.includes(turno.estado);
+    const proximo = turno.id === proximoTurno?.id;
+    const expandido = proximo || turnoExpandido === turno.id;
+    const pasado = new Date(turno.fecha_fin ?? turno.fecha_hora).getTime() < ahora.getTime();
+    const accionable = !terminal;
+
+    return <li
+      key={turno.id}
+      className={`prof-turno estado-${turno.estado}${proximo ? " es-proximo" : ""}${pasado ? " es-pasado" : ""}${expandido ? " esta-expandido" : ""}`}
+    >
+      <article
+        tabIndex={accionable ? 0 : undefined}
+        aria-label={`${formatearHoraTurno(turno.fecha_hora)}, ${turno.paciente_nombre}, ${etiquetaEstado(turno.estado)}`}
+        aria-expanded={accionable ? expandido : undefined}
+        onClick={() => alternarTurno(turno)}
+        onKeyDown={(evento) => manejarTeclado(evento, turno)}
+      >
+        <time dateTime={turno.fecha_hora}>{formatearHoraTurno(turno.fecha_hora)}</time>
+        <span className="prof-turno-marca" aria-hidden="true" />
+        <div className="prof-turno-contenido">
+          <div className="prof-turno-identidad">
+            <h3>{turno.paciente_nombre}</h3>
+            <p>{turno.prestacion_nombre} · {turno.especialidad_nombre}</p>
+            {turno.fecha_fin && <small>{horarioTurno(turno)}</small>}
+            {turno.observaciones && terminal && <small>{turno.observaciones}</small>}
+          </div>
+          <span className="prof-estado"><i aria-hidden="true" />{etiquetaEstado(turno.estado)}</span>
+          {accionable && <div className="prof-turno-acciones">
+            <button
+              type="button"
+              disabled={turnoActualizando === turno.id}
+              onClick={(evento) => { evento.stopPropagation(); void actualizarTurno(turno, "finalizar"); }}
+            ><Icono nombre="check" />Finalizar</button>
+            <button
+              type="button"
+              disabled={turnoActualizando === turno.id}
+              onClick={(evento) => { evento.stopPropagation(); void actualizarTurno(turno, "ausente"); }}
+            >Marcar ausente</button>
+          </div>}
+        </div>
+      </article>
+    </li>;
+  }
+
+  function renderPeriodo(periodo: Periodo, items: Turno[]) {
+    const posicionAhora = indicadorAhora(items);
+    const ahoraPertenece = mostrarAhora && disponibilidadHoy.some((item) => {
+      const inicio = minutosHora(item.hora_inicio);
+      const esPeriodo = periodo === "manana" ? inicio < 13 * 60 : inicio >= 13 * 60;
+      const minutos = horaMinutosNegocio(ahora);
+      return esPeriodo && minutos >= inicio && minutos < minutosHora(item.hora_fin);
+    });
+
+    return <section className="prof-periodo" aria-labelledby={`periodo-${periodo}`}>
+      <header>
+        <h3 id={`periodo-${periodo}`}><span />{periodo === "manana" ? "Mañana" : "Tarde"}</h3>
+        <p>{rangoPeriodo(disponibilidadHoy, periodo)}</p>
+      </header>
+      <ol>
+        {items.length === 0 && <li className="prof-periodo-vacio">No hay turnos en esta franja.</li>}
+        {items.map((turno, indice) => <Fragment key={turno.id}>
+          {ahoraPertenece && posicionAhora === indice && <li className="prof-ahora" role="status"><span>Ahora</span><i /></li>}
+          {renderTurno(turno)}
+        </Fragment>)}
+        {ahoraPertenece && (posicionAhora === -1 || items.length === 0) && <li className="prof-ahora" role="status"><span>Ahora</span><i /></li>}
+      </ol>
+    </section>;
+  }
+
   const nombreCompleto = perfil ? `${perfil.nombre} ${perfil.apellido}` : nombre;
   const iniciales = nombreCompleto.split(" ").slice(0, 2).map((parte) => parte.charAt(0)).join("").toUpperCase();
 
   return <div className="prof-app-shell">
     <aside className="prof-sidebar">
-      <div className="prof-marca"><span className="prof-marca-simbolo">M</span><strong>MediTurnos</strong></div>
+      <div className="prof-marca">
+        <span className="prof-marca-simbolo">M</span>
+        <div><strong>MediTurnos</strong><small>Agenda profesional</small></div>
+      </div>
       <nav aria-label="Navegación profesional">
-        <button className="activo" type="button" aria-current="page"><Icono nombre="inicio"/>Inicio</button>
-        <button type="button" onClick={onAbrirAgenda}><Icono nombre="agenda"/>Mi agenda</button>
-        <button type="button" onClick={onAbrirDisponibilidad}><Icono nombre="reloj"/>Mi disponibilidad</button>
-        <button type="button" onClick={onAbrirPerfil}><Icono nombre="perfil"/>Mi perfil</button>
+        <button className="activo" type="button" aria-current="page"><Icono nombre="inicio" />Inicio</button>
+        <button type="button" onClick={onAbrirAgenda}><Icono nombre="agenda" />Mi agenda</button>
+        <button type="button" onClick={onAbrirDisponibilidad}><Icono nombre="reloj" />Mi disponibilidad</button>
+        <button type="button" onClick={onAbrirPerfil}><Icono nombre="perfil" />Mi perfil</button>
       </nav>
       <div className="prof-sidebar-perfil">
         <span className="prof-avatar">{iniciales || "P"}</span>
         <div><strong>{nombreCompleto}</strong><small>Profesional</small></div>
-        <button type="button" onClick={onCerrarSesion} aria-label="Cerrar sesión"><Icono nombre="salir"/></button>
+        <button type="button" onClick={onCerrarSesion} aria-label="Cerrar sesión"><Icono nombre="salir" /></button>
       </div>
     </aside>
 
     <main className="prof-main">
       <header className="prof-topbar">
         <div className="prof-marca-movil"><span className="prof-marca-simbolo">M</span><strong>MediTurnos</strong></div>
-        <span className="prof-topbar-titulo">Inicio</span>
-        <button type="button" className="prof-boton-secundario" onClick={onAbrirAgenda}>Ver agenda completa</button>
+        <span className="prof-topbar-titulo">Hoy</span>
+        <button type="button" className="prof-enlace-topbar" onClick={onAbrirAgenda}>Ver agenda completa <Icono nombre="flecha" /></button>
         <button type="button" className="prof-avatar prof-avatar-movil" onClick={onAbrirPerfil} aria-label="Abrir mi perfil">{iniciales || "P"}</button>
       </header>
 
       <div className="prof-contenido">
         <section className="prof-saludo">
           <div><h1>{saludo(ahora)}, {perfil?.nombre ?? nombre}</h1><p>{fechaLarga(ahora)}</p></div>
-          {!cargandoAgenda && !errorAgenda && <p className="prof-contexto">{turnosHoy.length === 1 ? "Tenés 1 turno programado para hoy." : `Tenés ${turnosHoy.length} turnos programados para hoy.`}</p>}
+          {!cargandoAgenda && !errorAgenda && <p className="prof-resumen-textual" aria-label="Resumen de la jornada">
+            <strong>{turnosHoy.length}</strong> turnos <i /> <strong>{resumen.confirmados}</strong> confirmados <i /> <strong>{resumen.pendientes}</strong> pendiente{resumen.pendientes === 1 ? "" : "s"} <i /> <strong>{resumen.resueltos}</strong> resueltos
+          </p>}
         </section>
 
         {cargandoAgenda ? <DashboardSkeleton /> : <>
-          <section className="prof-resumen" aria-label="Resumen de la jornada">
-            <div className="confirmados"><span/><strong>{resumen.confirmados}</strong><small>Confirmados</small></div>
-            <div className="pendientes"><span/><strong>{resumen.pendientes}</strong><small>Pendientes</small></div>
-            <div className="cancelados"><span/><strong>{resumen.cancelados}</strong><small>Cancelados</small></div>
+          <section className="prof-proximo" aria-labelledby="proximo-titulo">
+            {errorAgenda ? <p className="prof-texto-error">No pudimos consultar el próximo turno.</p>
+            : proximoTurno ? <>
+              <div className="prof-proximo-hora"><span>Próximo</span><time dateTime={proximoTurno.fecha_hora}>{formatearHoraTurno(proximoTurno.fecha_hora)}</time></div>
+              <div className="prof-proximo-persona"><h2 id="proximo-titulo">{proximoTurno.paciente_nombre}</h2><p>{proximoTurno.prestacion_nombre}</p><small>{horarioTurno(proximoTurno)}</small></div>
+              <div className="prof-proximo-estado"><span className="prof-estado"><i aria-hidden="true" />{etiquetaEstado(proximoTurno.estado)}</span><button type="button" onClick={onAbrirAgenda}>Ir a la agenda</button></div>
+            </> : <div className="prof-proximo-vacio"><span>Próximo</span><h2 id="proximo-titulo">No hay más turnos próximos</h2><p>Tu agenda no tiene reservas futuras activas.</p></div>}
           </section>
 
           <div className="prof-layout">
             <section className="prof-agenda-seccion" aria-labelledby="agenda-hoy-titulo">
-              <header><div><h2 id="agenda-hoy-titulo">Agenda de hoy</h2><p>{turnosHoy.length === 1 ? "1 turno" : `${turnosHoy.length} turnos`}</p></div><button type="button" onClick={onAbrirAgenda}>Ver toda <Icono nombre="flecha"/></button></header>
-              {errorAgenda ? <div className="prof-error" role="alert"><Icono nombre="alerta"/><div><strong>No pudimos cargar tu agenda</strong><p>{errorAgenda}</p><button type="button" onClick={() => void cargarAgenda()}><Icono nombre="recargar"/>Reintentar</button></div></div>
-              : turnosHoy.length === 0 ? <div className="prof-vacio"><Icono nombre="agenda"/><h3>Tu agenda está libre hoy</h3><p>No tenés turnos programados para esta jornada.</p><button type="button" onClick={onAbrirDisponibilidad}>Revisar disponibilidad</button></div>
-              : <ol className="prof-timeline">{turnosHoy.map((turno) => <li key={turno.id} className={`estado-${turno.estado}`}>
-                <time dateTime={turno.fecha_hora}>{formatearHoraTurno(turno.fecha_hora)}</time><span className="prof-timeline-marca"/><article>
-                  <div className="prof-turno-principal"><div><h3>{turno.paciente_nombre}</h3><p>{turno.prestacion_nombre} · {turno.especialidad_nombre}</p></div><span className={`prof-estado estado-${turno.estado}`}>{etiquetaEstado(turno.estado)}</span></div>
-                  {turno.observaciones && <small>Tiene observaciones</small>}
-                  {["reservado", "confirmado"].includes(turno.estado) && <div className="prof-turno-acciones">
-                    <button type="button" disabled={turnoActualizando === turno.id} onClick={() => void actualizarTurno(turno, "finalizar")}><Icono nombre="check"/>Finalizar</button>
-                    <button type="button" disabled={turnoActualizando === turno.id} onClick={() => void actualizarTurno(turno, "ausente")}>Marcar ausente</button>
-                  </div>}
-                </article>
-              </li>)}</ol>}
+              <header><div><h2 id="agenda-hoy-titulo">Agenda de hoy</h2><p>{turnosHoy.length === 1 ? "1 turno programado" : `${turnosHoy.length} turnos programados`}</p></div><button type="button" onClick={onAbrirAgenda}>Ver toda</button></header>
+              {errorAgenda ? <div className="prof-error" role="alert"><div><strong>No pudimos cargar tu agenda</strong><p>{errorAgenda}</p><button type="button" onClick={() => void cargarAgenda()}><Icono nombre="recargar" />Reintentar</button></div></div>
+              : turnosHoy.length === 0 ? <div className="prof-vacio"><h3>Tu agenda está libre hoy</h3><p>No tenés turnos programados para esta jornada.</p><button type="button" onClick={onAbrirDisponibilidad}>Revisar disponibilidad</button></div>
+              : <>{renderPeriodo("manana", turnosManana)}{renderPeriodo("tarde", turnosTarde)}</>}
               {errorAccion && <p className="prof-error-accion" role="alert">{errorAccion}</p>}
             </section>
 
-            <aside className="prof-columna-lateral">
-              <section className="prof-proximo" aria-labelledby="proximo-titulo">
-                <header><span>Próximo turno</span>{proximoTurno && <span className={`prof-estado estado-${proximoTurno.estado}`}>{etiquetaEstado(proximoTurno.estado)}</span>}</header>
-                {errorAgenda ? <p className="prof-texto-error">No pudimos consultar el próximo turno.</p>
-                : proximoTurno ? <><time id="proximo-titulo" dateTime={proximoTurno.fecha_hora}>{formatearHoraTurno(proximoTurno.fecha_hora)}</time><h2>{proximoTurno.paciente_nombre}</h2><p>{proximoTurno.prestacion_nombre}</p><small>{claveFechaNegocio(proximoTurno.fecha_hora) === hoy ? "Hoy" : new Intl.DateTimeFormat("es-AR", {timeZone: ZONA_HORARIA_NEGOCIO, weekday:"long", day:"numeric", month:"short"}).format(new Date(proximoTurno.fecha_hora))}</small><button type="button" onClick={onAbrirAgenda}>Ver detalle <Icono nombre="flecha"/></button></>
-                : <div className="prof-proximo-vacio"><Icono nombre="check"/><h2 id="proximo-titulo">No hay más turnos próximos</h2><p>Tu agenda no tiene reservas futuras activas.</p></div>}
-              </section>
-
-              <section className="prof-disponibilidad-resumen">
-                <Icono nombre="reloj"/><div><h2>Mi disponibilidad</h2>{cargandoPerfil ? <span className="prof-skeleton-linea corta"/> : errorDisponibilidad ? <p className="prof-texto-error">{errorDisponibilidad}</p> : <p>{rangoDisponibilidad(disponibilidadHoy)}</p>}<button type="button" onClick={onAbrirDisponibilidad}>Configurar horarios <Icono nombre="flecha"/></button></div>
-              </section>
+            <aside className="prof-jornada" aria-labelledby="jornada-titulo">
+              <span>Disponibilidad de hoy</span>
+              <h2 id="jornada-titulo">Tu jornada</h2>
+              {cargandoPerfil ? <div className="prof-jornada-cargando"><span /><span /></div>
+              : errorDisponibilidad ? <p className="prof-texto-error">{errorDisponibilidad}</p>
+              : <div className="prof-franjas">
+                <div><small>Mañana</small><strong>{rangoPeriodo(disponibilidadHoy, "manana")}</strong></div>
+                <div><small>Tarde</small><strong>{rangoPeriodo(disponibilidadHoy, "tarde")}</strong></div>
+              </div>}
+              <div className="prof-jornada-resumen"><strong>{turnosHoy.length} turnos programados</strong><p>{resumen.confirmados} confirmados · {resumen.pendientes} pendiente{resumen.pendientes === 1 ? "" : "s"}</p></div>
+              <button type="button" onClick={onAbrirDisponibilidad}>Configurar horarios</button>
             </aside>
           </div>
         </>}
@@ -249,10 +382,10 @@ export default function DashboardProfesional({
     </main>
 
     <nav className="prof-nav-movil" aria-label="Navegación principal">
-      <button className="activo" type="button" aria-current="page"><Icono nombre="inicio"/><span>Inicio</span></button>
-      <button type="button" onClick={onAbrirAgenda}><Icono nombre="agenda"/><span>Agenda</span></button>
-      <button type="button" onClick={onAbrirDisponibilidad}><Icono nombre="reloj"/><span>Disponibilidad</span></button>
-      <button type="button" onClick={onAbrirPerfil}><Icono nombre="perfil"/><span>Perfil</span></button>
+      <button className="activo" type="button" aria-current="page"><Icono nombre="inicio" /><span>Inicio</span></button>
+      <button type="button" onClick={onAbrirAgenda}><Icono nombre="agenda" /><span>Agenda</span></button>
+      <button type="button" onClick={onAbrirDisponibilidad}><Icono nombre="reloj" /><span>Disponibilidad</span></button>
+      <button type="button" onClick={onAbrirPerfil}><Icono nombre="perfil" /><span>Perfil</span></button>
     </nav>
   </div>;
 }

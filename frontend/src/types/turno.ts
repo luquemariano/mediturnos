@@ -18,6 +18,7 @@ export interface Turno {
   especialidad_nombre: string;
 
   fecha_hora: string;
+  fecha_fin?: string;
   estado: EstadoTurno;
   observaciones: string | null;
 }
