@@ -26,6 +26,9 @@ from app.schemas.disponibilidad import (
 from app.schemas.disponibilidad_excepcion import (
     DisponibilidadExcepcionCrear,
     DisponibilidadExcepcionRespuesta,
+    DisponibilidadExcepcionRango,
+    DisponibilidadExcepcionRangoCreadoRespuesta,
+    DisponibilidadExcepcionRangoReabiertoRespuesta,
 )
 from app.services.paciente_service import obtener_pacientes_activos
 from app.services.profesional_service import (
@@ -52,6 +55,8 @@ from app.services.disponibilidad_excepcion_service import (
     crear_excepcion,
     eliminar_excepcion,
     obtener_excepciones,
+    cerrar_rango,
+    reabrir_rango,
 )
 from datetime import date
 
@@ -264,6 +269,38 @@ def crear_mi_excepcion_disponibilidad(
         raise HTTPException(status_code=403, detail="El usuario autenticado no es un profesional.")
     profesional = obtener_mi_profesional(db, usuario_actual.id)
     return crear_excepcion(db, profesional.id, datos)
+
+
+@router.post(
+    "/me/excepciones-disponibilidad/rango",
+    response_model=DisponibilidadExcepcionRangoCreadoRespuesta,
+    summary="Cerrar un rango de fechas propio",
+)
+def cerrar_mi_disponibilidad_por_rango(
+    datos: DisponibilidadExcepcionRango,
+    db: Session = Depends(obtener_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual),
+):
+    if usuario_actual.rol != "profesional":
+        raise HTTPException(status_code=403, detail="El usuario autenticado no es un profesional.")
+    profesional = obtener_mi_profesional(db, usuario_actual.id)
+    return cerrar_rango(db, profesional.id, datos.fecha_desde, datos.fecha_hasta)
+
+
+@router.post(
+    "/me/excepciones-disponibilidad/reabrir-rango",
+    response_model=DisponibilidadExcepcionRangoReabiertoRespuesta,
+    summary="Reabrir un rango de fechas propio",
+)
+def reabrir_mi_disponibilidad_por_rango(
+    datos: DisponibilidadExcepcionRango,
+    db: Session = Depends(obtener_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual),
+):
+    if usuario_actual.rol != "profesional":
+        raise HTTPException(status_code=403, detail="El usuario autenticado no es un profesional.")
+    profesional = obtener_mi_profesional(db, usuario_actual.id)
+    return reabrir_rango(db, profesional.id, datos.fecha_desde, datos.fecha_hasta)
 
 
 @router.delete(

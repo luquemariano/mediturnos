@@ -5,6 +5,9 @@ import type {
   DisponibilidadCrear,
   DisponibilidadExcepcion,
   DisponibilidadExcepcionCrear,
+  DisponibilidadExcepcionRango,
+  DisponibilidadExcepcionRangoCreado,
+  DisponibilidadExcepcionRangoReabierto,
 } from "../types/disponibilidad";
 
 export async function obtenerDisponibilidades(): Promise<Disponibilidad[]> {
@@ -60,5 +63,15 @@ export async function crearMiExcepcion(datos: DisponibilidadExcepcionCrear): Pro
 
 export async function eliminarMiExcepcion(id: number): Promise<DisponibilidadExcepcion> {
   const respuesta = await api.delete<DisponibilidadExcepcion>(`/profesionales/me/excepciones-disponibilidad/${id}`);
+  return respuesta.data;
+}
+
+export async function cerrarMiDisponibilidadPorRango(datos: DisponibilidadExcepcionRango): Promise<DisponibilidadExcepcionRangoCreado> {
+  const respuesta = await api.post<DisponibilidadExcepcionRangoCreado>("/profesionales/me/excepciones-disponibilidad/rango", datos);
+  return respuesta.data;
+}
+
+export async function reabrirMiDisponibilidadPorRango(datos: DisponibilidadExcepcionRango): Promise<DisponibilidadExcepcionRangoReabierto> {
+  const respuesta = await api.post<DisponibilidadExcepcionRangoReabierto>("/profesionales/me/excepciones-disponibilidad/reabrir-rango", datos);
   return respuesta.data;
 }

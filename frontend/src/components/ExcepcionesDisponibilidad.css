@@ -3,7 +3,7 @@
 .mi-excepciones > header span, .mi-excepciones-modal > span { color: var(--prof-text-secondary); font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
 .mi-excepciones h2, .mi-excepciones-modal h3 { font-family: Manrope, sans-serif; font-size: 20px; font-weight: 600; letter-spacing: -.015em; }
 .mi-excepciones > header p { max-width: 560px; margin-top: 3px; color: var(--prof-text-secondary); font-size: 13px; }
-.mi-excepciones-acciones { display: flex; gap: 10px; }
+.mi-excepciones-acciones { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
 .mi-excepciones button { min-height: 40px; padding: 0 13px; border: 1px solid var(--prof-border); border-radius: 7px; background: var(--prof-surface); color: var(--prof-primary); font-weight: 700; cursor: pointer; }
 .mi-excepciones-acciones button:last-child { border-color: var(--prof-primary); background: var(--prof-primary); color: #fff; }
 .mi-excepciones ol { margin: 0; padding: 0; list-style: none; }
@@ -11,6 +11,7 @@
 .mi-excepciones li:last-child { border: 0; }
 .mi-excepciones li > i { align-self: stretch; border-radius: 2px; background: var(--prof-accent); }
 .mi-excepciones li > i.cierre_dia { background: var(--prof-text-secondary); }
+.mi-excepciones li.mi-excepciones-periodo { grid-template-columns: 3px minmax(220px,1fr) auto; background: rgba(241,236,227,.42); }
 .mi-excepciones li strong { display: block; font-family: Manrope, sans-serif; font-size: 15px; }
 .mi-excepciones li small { color: var(--prof-text-secondary); font-size: 12px; }
 .mi-excepciones time { color: var(--prof-primary-dark); font-family: Manrope, sans-serif; font-variant-numeric: tabular-nums; font-weight: 600; }
@@ -33,4 +34,4 @@
 .mi-excepciones-modal-acciones button.eliminar { border-color: var(--prof-danger); background: var(--prof-danger); }
 .mi-excepciones-modal button:disabled { cursor: wait; opacity: .6; }
 .mi-excepciones-resumen { padding-block: 12px; border-block: 1px solid rgba(101,113,109,.18); font-family: Manrope, sans-serif; font-variant-numeric: tabular-nums; }
-@media (max-width: 720px) { .mi-excepciones { margin: 20px -16px 0; border-inline: 0; border-radius: 0; } .mi-excepciones > header { align-items: stretch; flex-direction: column; padding: 16px; } .mi-excepciones-acciones { display: grid; grid-template-columns: 1fr 1fr; } .mi-excepciones li { grid-template-columns: 3px minmax(0,1fr) auto; gap: 10px; padding: 12px 16px; } .mi-excepciones li time { grid-column: 2; } .mi-excepciones li > button { grid-column: 3; grid-row: 1 / span 2; min-height: 44px; } }
+@media (max-width: 720px) { .mi-excepciones { margin: 20px -16px 0; border-inline: 0; border-radius: 0; } .mi-excepciones > header { align-items: stretch; flex-direction: column; padding: 16px; } .mi-excepciones-acciones { display: grid; grid-template-columns: 1fr 1fr; } .mi-excepciones-acciones button:last-child { grid-column: 1 / -1; } .mi-excepciones li, .mi-excepciones li.mi-excepciones-periodo { grid-template-columns: 3px minmax(0,1fr) auto; gap: 10px; padding: 12px 16px; } .mi-excepciones li time { grid-column: 2; } .mi-excepciones li > button { grid-column: 3; grid-row: 1 / span 2; min-height: 44px; } }

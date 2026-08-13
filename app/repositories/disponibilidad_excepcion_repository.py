@@ -39,3 +39,25 @@ def guardar_excepcion(db: Session, profesional_id: int, datos):
     excepcion = DisponibilidadExcepcion(profesional_id=profesional_id, **datos.model_dump())
     db.add(excepcion)
     return excepcion
+
+
+def buscar_cierres_activos_rango(db: Session, profesional_id: int, fecha_desde: date, fecha_hasta: date):
+    return db.query(DisponibilidadExcepcion).filter(
+        DisponibilidadExcepcion.profesional_id == profesional_id,
+        DisponibilidadExcepcion.tipo == "cierre_dia",
+        DisponibilidadExcepcion.fecha >= fecha_desde,
+        DisponibilidadExcepcion.fecha <= fecha_hasta,
+        DisponibilidadExcepcion.activa.is_(True),
+    ).order_by(DisponibilidadExcepcion.fecha).all()
+
+
+def guardar_cierre_fecha(db: Session, profesional_id: int, fecha: date):
+    excepcion = DisponibilidadExcepcion(
+        profesional_id=profesional_id,
+        fecha=fecha,
+        tipo="cierre_dia",
+        hora_inicio=None,
+        hora_fin=None,
+    )
+    db.add(excepcion)
+    return excepcion

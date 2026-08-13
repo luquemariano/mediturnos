@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta
 from types import SimpleNamespace
 
 from fastapi import HTTPException
@@ -10,6 +10,8 @@ from app.repositories.disponibilidad_excepcion_repository import (
     buscar_excepciones_activas_fecha,
     guardar_excepcion,
     listar_excepciones_profesional,
+    buscar_cierres_activos_rango,
+    guardar_cierre_fecha,
 )
 from app.schemas.disponibilidad_excepcion import DisponibilidadExcepcionCrear
 from app.core.datetime_utils import fecha_actual_negocio
@@ -64,3 +66,36 @@ def eliminar_excepcion(db: Session, profesional_id: int, excepcion_id: int):
     db.commit()
     db.refresh(excepcion)
     return excepcion
+
+
+def cerrar_rango(db: Session, profesional_id: int, fecha_desde: date, fecha_hasta: date):
+    if fecha_desde < fecha_actual_negocio():
+        raise HTTPException(status_code=400, detail="La fecha desde no puede ser anterior a hoy.")
+    cierres = buscar_cierres_activos_rango(db, profesional_id, fecha_desde, fecha_hasta)
+    existentes = {item.fecha for item in cierres}
+    cantidad_dias = (fecha_hasta - fecha_desde).days + 1
+    if cantidad_dias < 1:
+        raise HTTPException(status_code=422, detail="La fecha hasta debe ser igual o posterior a la fecha desde.")
+    if cantidad_dias > 365:
+        raise HTTPException(status_code=422, detail="El período no puede superar los 365 días.")
+
+    creados = 0
+    for desplazamiento in range(cantidad_dias):
+        fecha = fecha_desde + timedelta(days=desplazamiento)
+        if fecha not in existentes:
+            guardar_cierre_fecha(db, profesional_id, fecha)
+            creados += 1
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=409, detail="No pudimos cerrar el período por un cambio concurrente. Intentá nuevamente.")
+    return {"creados": creados, "ya_existentes": len(existentes)}
+
+
+def reabrir_rango(db: Session, profesional_id: int, fecha_desde: date, fecha_hasta: date):
+    cierres = buscar_cierres_activos_rango(db, profesional_id, fecha_desde, fecha_hasta)
+    for cierre in cierres:
+        cierre.activa = False
+    db.commit()
+    return {"reabiertos": len(cierres)}

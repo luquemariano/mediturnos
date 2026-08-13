@@ -34,3 +34,27 @@ class DisponibilidadExcepcionRespuesta(BaseModel):
     activa: bool
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class DisponibilidadExcepcionRango(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    fecha_desde: date
+    fecha_hasta: date
+
+    @model_validator(mode="after")
+    def validar_rango(self):
+        if self.fecha_hasta < self.fecha_desde:
+            raise ValueError("La fecha hasta debe ser igual o posterior a la fecha desde.")
+        if (self.fecha_hasta - self.fecha_desde).days + 1 > 365:
+            raise ValueError("El período no puede superar los 365 días.")
+        return self
+
+
+class DisponibilidadExcepcionRangoCreadoRespuesta(BaseModel):
+    creados: int
+    ya_existentes: int
+
+
+class DisponibilidadExcepcionRangoReabiertoRespuesta(BaseModel):
+    reabiertos: int

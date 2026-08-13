@@ -14,6 +14,8 @@ vi.mock("../src/services/disponibilidadService", () => ({
   obtenerMisExcepciones: vi.fn(),
   crearMiExcepcion: vi.fn(),
   eliminarMiExcepcion: vi.fn(),
+  cerrarMiDisponibilidadPorRango: vi.fn(),
+  reabrirMiDisponibilidadPorRango: vi.fn(),
   obtenerDisponibilidadesProfesional: vi.fn(),
 }));
 vi.mock("../src/services/profesionalService", () => ({
