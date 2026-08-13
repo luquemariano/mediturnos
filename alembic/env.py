@@ -8,6 +8,7 @@ from app.core.config import settings
 from app.database.connection import Base
 from app.models import (  # noqa: F401
     Disponibilidad,
+    DisponibilidadExcepcion,
     Especialidad,
     Paciente,
     Pago,

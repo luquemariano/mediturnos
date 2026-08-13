@@ -11,6 +11,9 @@ vi.mock("../src/services/disponibilidadService", () => ({
   actualizarMiDisponibilidad: vi.fn(),
   crearDisponibilidad: vi.fn(),
   eliminarMiDisponibilidad: vi.fn(),
+  obtenerMisExcepciones: vi.fn(),
+  crearMiExcepcion: vi.fn(),
+  eliminarMiExcepcion: vi.fn(),
   obtenerDisponibilidadesProfesional: vi.fn(),
 }));
 vi.mock("../src/services/profesionalService", () => ({
@@ -37,6 +40,7 @@ const acciones = { volver: vi.fn(), agenda: vi.fn(), perfil: vi.fn(), salir: vi.
 function preparar(items: Disponibilidad[] = []) {
   vi.mocked(profesionalService.obtenerMiPerfilProfesional).mockResolvedValue(perfil);
   vi.mocked(disponibilidadService.obtenerDisponibilidadesProfesional).mockResolvedValue(items);
+  vi.mocked(disponibilidadService.obtenerMisExcepciones).mockResolvedValue([]);
 }
 
 function renderizar() {
@@ -64,7 +68,7 @@ describe("mi disponibilidad profesional Signature", () => {
     expect(screen.getByRole("navigation", { name: "Navegación profesional" })).toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: "Mi disponibilidad" })[0]).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("navigation", { name: "Navegación principal" })).toBeInTheDocument();
-    expect(screen.getByText(/semana habitual/i)).toBeInTheDocument();
+    expect(screen.getByText("Semana habitual")).toBeInTheDocument();
     expect(screen.getByText("Configurá los días y horarios en los que atendés normalmente cada semana.")).toBeInTheDocument();
     expect(screen.getByText(/nuevo horario habitual/i)).toBeInTheDocument();
   });

@@ -102,6 +102,7 @@ def test_horarios_libres_se_deduplican_ante_datos_historicos(monkeypatch):
     monkeypatch.setattr(disponibilidad_service, "fecha_actual_negocio", lambda: date(2026, 1, 1))
     monkeypatch.setattr(disponibilidad_service, "buscar_por_dia", lambda db, profesional_id, dia: [horario, horario])
     monkeypatch.setattr(disponibilidad_service, "buscar_turnos_del_dia", lambda *args: [])
+    monkeypatch.setattr(disponibilidad_service, "resolver_franjas_fecha", lambda db, profesional_id, fecha, habituales: habituales)
 
     resultado = disponibilidad_service.obtener_horarios_libres(
         SimpleNamespace(), 1, date(2026, 1, 5)

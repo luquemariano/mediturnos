@@ -26,6 +26,7 @@ from app.core.datetime_utils import (
     fecha_actual_negocio,
     fecha_hora_civil_a_utc,
 )
+from app.services.disponibilidad_excepcion_service import resolver_franjas_fecha
 
 
 def _validar_sin_solapamiento(
@@ -176,10 +177,13 @@ def validar_turno_dentro_disponibilidad(
     duracion_minutos: int,
 ) -> None:
     fecha_hora = a_zona_negocio(fecha_hora)
-    disponibilidades = buscar_por_dia(
+    habituales = buscar_por_dia(
         db,
         profesional_id,
         fecha_hora.weekday(),
+    )
+    disponibilidades = resolver_franjas_fecha(
+        db, profesional_id, fecha_hora.date(), habituales,
     )
     fin_turno = fecha_hora + timedelta(
         minutes=duracion_minutos,
@@ -263,10 +267,13 @@ def obtener_horarios_libres(
 
     dia_semana = fecha.weekday()
 
-    disponibilidades = buscar_por_dia(
+    habituales = buscar_por_dia(
         db,
         prestacion.profesional_id,
         dia_semana,
+    )
+    disponibilidades = resolver_franjas_fecha(
+        db, prestacion.profesional_id, fecha, habituales,
     )
 
     if not disponibilidades:

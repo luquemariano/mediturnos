@@ -23,6 +23,10 @@ from app.schemas.disponibilidad import (
     DisponibilidadActualizar,
     DisponibilidadRespuesta,
 )
+from app.schemas.disponibilidad_excepcion import (
+    DisponibilidadExcepcionCrear,
+    DisponibilidadExcepcionRespuesta,
+)
 from app.services.paciente_service import obtener_pacientes_activos
 from app.services.profesional_service import (
     EspecialidadesConPrestacionesError,
@@ -44,6 +48,12 @@ from app.services.disponibilidad_service import (
     actualizar_disponibilidad_profesional,
     desactivar_disponibilidad_profesional,
 )
+from app.services.disponibilidad_excepcion_service import (
+    crear_excepcion,
+    eliminar_excepcion,
+    obtener_excepciones,
+)
+from datetime import date
 
 
 router = APIRouter(
@@ -220,6 +230,56 @@ def eliminar_mi_disponibilidad(
     return desactivar_disponibilidad_profesional(
         db, disponibilidad_id, profesional.id,
     )
+
+
+@router.get(
+    "/me/excepciones-disponibilidad",
+    response_model=list[DisponibilidadExcepcionRespuesta],
+    summary="Listar mis excepciones de disponibilidad",
+)
+def listar_mis_excepciones_disponibilidad(
+    fecha_desde: date | None = None,
+    fecha_hasta: date | None = None,
+    db: Session = Depends(obtener_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual),
+):
+    if usuario_actual.rol != "profesional":
+        raise HTTPException(status_code=403, detail="El usuario autenticado no es un profesional.")
+    profesional = obtener_mi_profesional(db, usuario_actual.id)
+    return obtener_excepciones(db, profesional.id, fecha_desde, fecha_hasta)
+
+
+@router.post(
+    "/me/excepciones-disponibilidad",
+    response_model=DisponibilidadExcepcionRespuesta,
+    status_code=201,
+    summary="Crear una excepción de disponibilidad propia",
+)
+def crear_mi_excepcion_disponibilidad(
+    datos: DisponibilidadExcepcionCrear,
+    db: Session = Depends(obtener_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual),
+):
+    if usuario_actual.rol != "profesional":
+        raise HTTPException(status_code=403, detail="El usuario autenticado no es un profesional.")
+    profesional = obtener_mi_profesional(db, usuario_actual.id)
+    return crear_excepcion(db, profesional.id, datos)
+
+
+@router.delete(
+    "/me/excepciones-disponibilidad/{excepcion_id}",
+    response_model=DisponibilidadExcepcionRespuesta,
+    summary="Eliminar una excepción de disponibilidad propia",
+)
+def eliminar_mi_excepcion_disponibilidad(
+    excepcion_id: int,
+    db: Session = Depends(obtener_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual),
+):
+    if usuario_actual.rol != "profesional":
+        raise HTTPException(status_code=403, detail="El usuario autenticado no es un profesional.")
+    profesional = obtener_mi_profesional(db, usuario_actual.id)
+    return eliminar_excepcion(db, profesional.id, excepcion_id)
 
 
 @router.patch(

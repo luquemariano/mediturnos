@@ -5,6 +5,7 @@ import axios from "axios";
 import "./MiDisponibilidad.css";
 import Icono from "./Icono";
 import ProfesionalShell from "./ProfesionalShell";
+import ExcepcionesDisponibilidad from "./ExcepcionesDisponibilidad";
 import { actualizarMiDisponibilidad, crearDisponibilidad, eliminarMiDisponibilidad, obtenerDisponibilidadesProfesional } from "../services/disponibilidadService";
 import { obtenerMiPerfilProfesional } from "../services/profesionalService";
 import type { Disponibilidad } from "../types/disponibilidad";
@@ -279,6 +280,7 @@ export default function MiDisponibilidad({
         <button type="button" className="mi-disp-abrir-movil" aria-expanded={formularioAbierto} onClick={() => formularioAbierto ? setFormularioAbierto(false) : abrirFormulario()}>{formularioAbierto ? "Cerrar formulario" : "Agregar franja"}</button>
         <div className={`mi-disp-formulario-contenedor${formularioAbierto ? " esta-abierto" : ""}`}>{formulario}</div>
       </div>}
+      <ExcepcionesDisponibilidad />
       {gestion && <div className="mi-disp-modal-fondo" role="presentation" onMouseDown={(evento) => { if (evento.target === evento.currentTarget) cerrarGestion(); }}>
         <section className="mi-disp-modal" role="dialog" aria-modal="true" aria-labelledby="mi-disp-gestion-titulo">
           {gestion.modo === "editar" ? <>

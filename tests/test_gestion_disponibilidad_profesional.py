@@ -104,6 +104,7 @@ def test_franja_desactivada_deja_de_generar_slots(monkeypatch):
         lambda *args: [franja for franja in [propia] if franja.activa],
     )
     monkeypatch.setattr(disponibilidad_service, "buscar_turnos_del_dia", lambda *args: [])
+    monkeypatch.setattr(disponibilidad_service, "resolver_franjas_fecha", lambda db, profesional_id, fecha, habituales: habituales)
 
     assert disponibilidad_service.obtener_horarios_libres(DBFalsa(), 1, date(2026, 8, 17)) == []
 
