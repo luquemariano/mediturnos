@@ -80,6 +80,18 @@ beforeEach(() => {
 afterEach(() => vi.useRealTimers());
 
 describe("dashboard profesional Signature", () => {
+  it.each([
+    ["2026-08-13T11:30:00Z", "Buen día, Sofía"],
+    ["2026-08-13T18:20:00Z", "Buenas tardes, Sofía"],
+    ["2026-08-14T00:45:00Z", "Buenas noches, Sofía"],
+    ["2026-08-13T04:15:00Z", "Buenas noches, Sofía"],
+  ])("calcula el saludo local para %s", async (fecha, esperado) => {
+    vi.setSystemTime(new Date(fecha));
+    prepararDatos([]);
+    renderizar();
+    expect(await screen.findByRole("heading", { name: esperado })).toBeInTheDocument();
+  });
+
   it("renderiza navegación, saludo y resumen textual de la jornada", async () => {
     prepararDatos();
     renderizar();
@@ -111,6 +123,9 @@ describe("dashboard profesional Signature", () => {
     expect(within(proximo).getByText("Consulta psiquiátrica")).toBeInTheDocument();
     expect(within(proximo).getByText("09:00–09:50")).toBeInTheDocument();
     expect(within(proximo).getByText("Confirmado")).toBeInTheDocument();
+    const sectorEstado = within(proximo).getByText("Confirmado").closest(".prof-proximo-estado");
+    expect(sectorEstado).toHaveClass("estado-confirmado");
+    expect(within(proximo).getByRole("button", { name: "Ir a la agenda" })).toBeInTheDocument();
   });
 
   it("muestra estados terminales sin acciones", async () => {

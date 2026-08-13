@@ -3,6 +3,7 @@ import axios from "axios";
 
 import "./DashboardProfesional.css";
 import Icono from "./Icono";
+import ProfesionalShell from "./ProfesionalShell";
 import type { Disponibilidad } from "../types/disponibilidad";
 import type { Profesional } from "../types/profesional";
 import type { Turno } from "../types/turno";
@@ -51,8 +52,8 @@ function fechaLarga(ahora: Date): string {
 
 function saludo(ahora: Date): string {
   const hora = horaMinutosNegocio(ahora) / 60;
-  if (hora < 12) return "Buen día";
-  if (hora < 20) return "Buenas tardes";
+  if (hora >= 5 && hora < 12) return "Buen día";
+  if (hora >= 12 && hora < 20) return "Buenas tardes";
   return "Buenas noches";
 }
 
@@ -308,35 +309,17 @@ export default function DashboardProfesional({
   }
 
   const nombreCompleto = perfil ? `${perfil.nombre} ${perfil.apellido}` : nombre;
-  const iniciales = nombreCompleto.split(" ").slice(0, 2).map((parte) => parte.charAt(0)).join("").toUpperCase();
-
-  return <div className="prof-app-shell">
-    <aside className="prof-sidebar">
-      <div className="prof-marca">
-        <span className="prof-marca-simbolo">M</span>
-        <div><strong>MediTurnos</strong><small>Agenda profesional</small></div>
-      </div>
-      <nav aria-label="Navegación profesional">
-        <button className="activo" type="button" aria-current="page"><Icono nombre="inicio" />Inicio</button>
-        <button type="button" onClick={onAbrirAgenda}><Icono nombre="agenda" />Mi agenda</button>
-        <button type="button" onClick={onAbrirDisponibilidad}><Icono nombre="reloj" />Mi disponibilidad</button>
-        <button type="button" onClick={onAbrirPerfil}><Icono nombre="perfil" />Mi perfil</button>
-      </nav>
-      <div className="prof-sidebar-perfil">
-        <span className="prof-avatar">{iniciales || "P"}</span>
-        <div><strong>{nombreCompleto}</strong><small>Profesional</small></div>
-        <button type="button" onClick={onCerrarSesion} aria-label="Cerrar sesión"><Icono nombre="salir" /></button>
-      </div>
-    </aside>
-
-    <main className="prof-main">
-      <header className="prof-topbar">
-        <div className="prof-marca-movil"><span className="prof-marca-simbolo">M</span><strong>MediTurnos</strong></div>
-        <span className="prof-topbar-titulo">Hoy</span>
-        <button type="button" className="prof-enlace-topbar" onClick={onAbrirAgenda}>Ver agenda completa <Icono nombre="flecha" /></button>
-        <button type="button" className="prof-avatar prof-avatar-movil" onClick={onAbrirPerfil} aria-label="Abrir mi perfil">{iniciales || "P"}</button>
-      </header>
-
+  return <ProfesionalShell
+    activo="inicio"
+    nombre={nombreCompleto}
+    tituloTopbar="Hoy"
+    onAbrirInicio={() => undefined}
+    onAbrirAgenda={onAbrirAgenda}
+    onAbrirDisponibilidad={onAbrirDisponibilidad}
+    onAbrirPerfil={onAbrirPerfil}
+    onCerrarSesion={onCerrarSesion}
+    accionTopbar={<button type="button" className="prof-enlace-topbar" onClick={onAbrirAgenda}>Ver agenda completa <Icono nombre="flecha" /></button>}
+  >
       <div className="prof-contenido">
         <section className="prof-saludo">
           <div><h1>{saludo(ahora)}, {perfil?.nombre ?? nombre}</h1><p>{fechaLarga(ahora)}</p></div>
@@ -351,7 +334,7 @@ export default function DashboardProfesional({
             : proximoTurno ? <>
               <div className="prof-proximo-hora"><span>Próximo</span><time dateTime={proximoTurno.fecha_hora}>{formatearHoraTurno(proximoTurno.fecha_hora)}</time></div>
               <div className="prof-proximo-persona"><h2 id="proximo-titulo">{proximoTurno.paciente_nombre}</h2><p>{proximoTurno.prestacion_nombre}</p><small>{horarioTurno(proximoTurno)}</small></div>
-              <div className="prof-proximo-estado"><span className="prof-estado"><i aria-hidden="true" />{etiquetaEstado(proximoTurno.estado)}</span><button type="button" onClick={onAbrirAgenda}>Ir a la agenda</button></div>
+              <div className={`prof-proximo-estado estado-${proximoTurno.estado}`}><span className="prof-estado"><i aria-hidden="true" />{etiquetaEstado(proximoTurno.estado)}</span><button type="button" onClick={onAbrirAgenda}>Ir a la agenda</button></div>
             </> : <div className="prof-proximo-vacio"><span>Próximo</span><h2 id="proximo-titulo">No hay más turnos próximos</h2><p>Tu agenda no tiene reservas futuras activas.</p></div>}
           </section>
 
@@ -379,13 +362,5 @@ export default function DashboardProfesional({
           </div>
         </>}
       </div>
-    </main>
-
-    <nav className="prof-nav-movil" aria-label="Navegación principal">
-      <button className="activo" type="button" aria-current="page"><Icono nombre="inicio" /><span>Inicio</span></button>
-      <button type="button" onClick={onAbrirAgenda}><Icono nombre="agenda" /><span>Agenda</span></button>
-      <button type="button" onClick={onAbrirDisponibilidad}><Icono nombre="reloj" /><span>Disponibilidad</span></button>
-      <button type="button" onClick={onAbrirPerfil}><Icono nombre="perfil" /><span>Perfil</span></button>
-    </nav>
-  </div>;
+  </ProfesionalShell>;
 }

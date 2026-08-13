@@ -190,7 +190,14 @@ function App() {
 
     if (vista === "turnos") {
       if (usuario.rol === "profesional" || usuario.rol === "paciente") {
-        return <AgendaPropia tipo={usuario.rol} onVolver={() => setVista("dashboard")} />;
+        return <AgendaPropia
+          tipo={usuario.rol}
+          nombre={usuario.nombre}
+          onVolver={() => setVista("dashboard")}
+          onAbrirDisponibilidad={() => setVista("disponibilidades")}
+          onAbrirPerfil={() => setVista("perfil")}
+          onCerrarSesion={cerrarSesion}
+        />;
       }
       return (
         <Turnos
