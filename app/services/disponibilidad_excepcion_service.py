@@ -12,8 +12,9 @@ from app.repositories.disponibilidad_excepcion_repository import (
     listar_excepciones_profesional,
     buscar_cierres_activos_rango,
     guardar_cierre_fecha,
+    buscar_feriado_propio,
 )
-from app.schemas.disponibilidad_excepcion import DisponibilidadExcepcionCrear
+from app.schemas.disponibilidad_excepcion import DisponibilidadExcepcionCrear, FeriadoCrear
 from app.core.datetime_utils import fecha_actual_negocio
 
 
@@ -71,7 +72,7 @@ def eliminar_excepcion(db: Session, profesional_id: int, excepcion_id: int):
 def cerrar_rango(db: Session, profesional_id: int, fecha_desde: date, fecha_hasta: date):
     if fecha_desde < fecha_actual_negocio():
         raise HTTPException(status_code=400, detail="La fecha desde no puede ser anterior a hoy.")
-    cierres = buscar_cierres_activos_rango(db, profesional_id, fecha_desde, fecha_hasta)
+    cierres = buscar_cierres_activos_rango(db, profesional_id, fecha_desde, fecha_hasta, ("vacaciones", "legacy"))
     existentes = {item.fecha for item in cierres}
     cantidad_dias = (fecha_hasta - fecha_desde).days + 1
     if cantidad_dias < 1:
@@ -83,7 +84,7 @@ def cerrar_rango(db: Session, profesional_id: int, fecha_desde: date, fecha_hast
     for desplazamiento in range(cantidad_dias):
         fecha = fecha_desde + timedelta(days=desplazamiento)
         if fecha not in existentes:
-            guardar_cierre_fecha(db, profesional_id, fecha)
+            guardar_cierre_fecha(db, profesional_id, fecha, "vacaciones")
             creados += 1
     try:
         db.commit()
@@ -94,8 +95,34 @@ def cerrar_rango(db: Session, profesional_id: int, fecha_desde: date, fecha_hast
 
 
 def reabrir_rango(db: Session, profesional_id: int, fecha_desde: date, fecha_hasta: date):
-    cierres = buscar_cierres_activos_rango(db, profesional_id, fecha_desde, fecha_hasta)
+    cierres = buscar_cierres_activos_rango(db, profesional_id, fecha_desde, fecha_hasta, ("vacaciones", "legacy"))
     for cierre in cierres:
         cierre.activa = False
     db.commit()
     return {"reabiertos": len(cierres)}
+
+
+def crear_feriado(db: Session, profesional_id: int, datos: FeriadoCrear):
+    if datos.fecha < fecha_actual_negocio():
+        raise HTTPException(status_code=400, detail="La fecha no puede ser anterior a hoy.")
+    existentes = buscar_excepciones_activas_fecha(db, profesional_id, datos.fecha)
+    if any(item.origen in ("feriado", "no_laborable") for item in existentes):
+        raise HTTPException(status_code=409, detail="Ya existe un feriado o día no laborable activo para esta fecha.")
+    excepcion = guardar_cierre_fecha(db, profesional_id, datos.fecha, datos.tipo, datos.nombre)
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=409, detail="Ya existe un feriado o día no laborable activo para esta fecha.")
+    db.refresh(excepcion)
+    return excepcion
+
+
+def eliminar_feriado(db: Session, profesional_id: int, excepcion_id: int):
+    excepcion = buscar_feriado_propio(db, excepcion_id, profesional_id)
+    if excepcion is None:
+        raise HTTPException(status_code=404, detail="Feriado o día no laborable no encontrado.")
+    excepcion.activa = False
+    db.commit()
+    db.refresh(excepcion)
+    return excepcion

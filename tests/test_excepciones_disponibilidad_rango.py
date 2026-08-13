@@ -34,7 +34,7 @@ def test_crear_rango_valido_incluye_limites(monkeypatch, desde, hasta, dias):
     creados = []
     monkeypatch.setattr(servicio, "fecha_actual_negocio", lambda: date(2026, 1, 1))
     monkeypatch.setattr(servicio, "buscar_cierres_activos_rango", lambda *args: [])
-    monkeypatch.setattr(servicio, "guardar_cierre_fecha", lambda db, profesional_id, fecha: creados.append(fecha))
+    monkeypatch.setattr(servicio, "guardar_cierre_fecha", lambda db, profesional_id, fecha, origen: creados.append(fecha))
     resultado = servicio.cerrar_rango(DBFalsa(), 7, desde, hasta)
     assert resultado == {"creados": dias, "ya_existentes": 0}
     assert len(creados) == dias
@@ -55,7 +55,7 @@ def test_cierres_existentes_no_se_duplican_y_extraordinaria_no_se_toca(monkeypat
     creados = []
     monkeypatch.setattr(servicio, "fecha_actual_negocio", lambda: date(2026, 9, 1))
     monkeypatch.setattr(servicio, "buscar_cierres_activos_rango", lambda *args: existentes)
-    monkeypatch.setattr(servicio, "guardar_cierre_fecha", lambda db, profesional_id, fecha: creados.append(fecha))
+    monkeypatch.setattr(servicio, "guardar_cierre_fecha", lambda db, profesional_id, fecha, origen: creados.append(fecha))
     resultado = servicio.cerrar_rango(DBFalsa(), 7, date(2026, 9, 12), date(2026, 9, 15))
     assert resultado == {"creados": 2, "ya_existentes": 2}
     assert extra.activa is True

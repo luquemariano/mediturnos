@@ -6,10 +6,10 @@ import ExcepcionesDisponibilidad from "../src/components/ExcepcionesDisponibilid
 import * as servicio from "../src/services/disponibilidadService";
 import type { DisponibilidadExcepcion } from "../src/types/disponibilidad";
 
-vi.mock("../src/services/disponibilidadService", () => ({ obtenerMisExcepciones: vi.fn(), crearMiExcepcion: vi.fn(), eliminarMiExcepcion: vi.fn(), cerrarMiDisponibilidadPorRango: vi.fn(), reabrirMiDisponibilidadPorRango: vi.fn() }));
+vi.mock("../src/services/disponibilidadService", () => ({ obtenerMisExcepciones: vi.fn(), crearMiExcepcion: vi.fn(), eliminarMiExcepcion: vi.fn(), cerrarMiDisponibilidadPorRango: vi.fn(), reabrirMiDisponibilidadPorRango: vi.fn(), crearMiFeriado: vi.fn(), eliminarMiFeriado: vi.fn() }));
 
 function item(datos: Partial<DisponibilidadExcepcion> = {}): DisponibilidadExcepcion {
-  return { id: 1, profesional_id: 7, fecha: "2026-08-20", tipo: "cierre_dia", hora_inicio: null, hora_fin: null, activa: true, ...datos };
+  return { id: 1, profesional_id: 7, fecha: "2026-08-20", tipo: "cierre_dia", origen: "manual", nombre: null, hora_inicio: null, hora_fin: null, activa: true, ...datos };
 }
 
 beforeEach(() => { vi.clearAllMocks(); vi.mocked(servicio.obtenerMisExcepciones).mockResolvedValue([]); });
@@ -106,12 +106,12 @@ describe("excepciones de disponibilidad", () => {
 
   it("agrupa cierres consecutivos y reabre el período sin tocar horarios especiales", async () => {
     vi.mocked(servicio.obtenerMisExcepciones).mockResolvedValue([
-      item({ id: 1, fecha: "2026-09-12" }), item({ id: 2, fecha: "2026-09-13" }), item({ id: 3, fecha: "2026-09-14" }),
+      item({ id: 1, fecha: "2026-09-12", origen: "vacaciones" }), item({ id: 2, fecha: "2026-09-13", origen: "vacaciones" }), item({ id: 3, fecha: "2026-09-14", origen: "vacaciones" }),
       item({ id: 4, fecha: "2026-09-13", tipo: "franja_extraordinaria", hora_inicio: "17:00:00", hora_fin: "19:00:00" }),
     ]);
     vi.mocked(servicio.reabrirMiDisponibilidadPorRango).mockResolvedValue({ reabiertos: 3 });
     render(<ExcepcionesDisponibilidad />);
-    expect(await screen.findByText("Período cerrado · 3 días")).toBeInTheDocument();
+    expect(await screen.findByText("Vacaciones · 3 días")).toBeInTheDocument();
     expect(screen.getByText("17:00–19:00")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Reabrir período" }));
     const dialogo = screen.getByRole("dialog", { name: "Reabrir período" });
@@ -119,5 +119,37 @@ describe("excepciones de disponibilidad", () => {
     fireEvent.click(within(dialogo).getByRole("button", { name: "Reabrir período" }));
     expect(await screen.findByRole("status")).toHaveTextContent("Período reabierto correctamente");
     expect(screen.getByText("17:00–19:00")).toBeInTheDocument();
+  });
+
+  it("crea y muestra un feriado con nombre opcional y advertencia", async () => {
+    vi.mocked(servicio.crearMiFeriado).mockResolvedValue(item({ id: 9, origen: "feriado", nombre: "San Martín" }));
+    render(<ExcepcionesDisponibilidad />); await screen.findByText("Sin cambios próximos");
+    fireEvent.click(screen.getByRole("button", { name: "Agregar feriado" }));
+    const dialogo = screen.getByRole("dialog", { name: "Agregar feriado" });
+    expect(dialogo).toHaveTextContent("Los turnos ya creados para esta fecha no serán cancelados");
+    fireEvent.click(within(dialogo).getByRole("button", { name: "Confirmar" }));
+    expect(screen.getByRole("alert")).toHaveTextContent("Seleccioná una fecha");
+    fireEvent.change(within(dialogo).getByLabelText("Fecha del feriado"), { target: { value: "2026-08-20" } });
+    fireEvent.change(within(dialogo).getByLabelText("Nombre o motivo"), { target: { value: "San Martín" } });
+    fireEvent.click(within(dialogo).getByRole("button", { name: "Confirmar" }));
+    expect(await screen.findByText("San Martín")).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("Feriado agregado correctamente");
+  });
+
+  it("muestra día no laborable, permite horario especial y quita sólo la marca", async () => {
+    vi.mocked(servicio.obtenerMisExcepciones).mockResolvedValue([
+      item({ id: 10, origen: "no_laborable", nombre: "Asueto local" }),
+      item({ id: 11, tipo: "franja_extraordinaria", hora_inicio: "10:00:00", hora_fin: "12:00:00" }),
+    ]);
+    vi.mocked(servicio.eliminarMiFeriado).mockResolvedValue(item({ id: 10, origen: "no_laborable", activa: false }));
+    render(<ExcepcionesDisponibilidad />);
+    expect(await screen.findByText("Día no laborable")).toBeInTheDocument();
+    expect(screen.getByText("10:00–12:00")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Quitar feriado" }));
+    const dialogo = screen.getByRole("dialog", { name: "Quitar feriado" });
+    expect(dialogo).toHaveTextContent("Si existe otro cierre para la fecha, permanecerá cerrada");
+    fireEvent.click(within(dialogo).getByRole("button", { name: "Quitar feriado" }));
+    expect(await screen.findByRole("status")).toHaveTextContent("Feriado eliminado correctamente");
+    expect(screen.getByText("10:00–12:00")).toBeInTheDocument();
   });
 });

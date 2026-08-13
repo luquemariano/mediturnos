@@ -11,9 +11,12 @@
 .mi-excepciones li:last-child { border: 0; }
 .mi-excepciones li > i { align-self: stretch; border-radius: 2px; background: var(--prof-accent); }
 .mi-excepciones li > i.cierre_dia { background: var(--prof-text-secondary); }
+.mi-excepciones li > i.feriado, .mi-excepciones li > i.no_laborable { background: var(--prof-accent); }
+.mi-excepciones li.mi-excepciones-feriado { background: rgba(241,236,227,.3); }
 .mi-excepciones li.mi-excepciones-periodo { grid-template-columns: 3px minmax(220px,1fr) auto; background: rgba(241,236,227,.42); }
 .mi-excepciones li strong { display: block; font-family: Manrope, sans-serif; font-size: 15px; }
 .mi-excepciones li small { color: var(--prof-text-secondary); font-size: 12px; }
+.mi-excepciones-motivo { display: block; margin-top: 2px; color: var(--prof-text); font-size: 13px; }
 .mi-excepciones time { color: var(--prof-primary-dark); font-family: Manrope, sans-serif; font-variant-numeric: tabular-nums; font-weight: 600; }
 .mi-excepciones-vacio { padding: 28px 18px; color: var(--prof-text-secondary); text-align: center; }
 .mi-excepciones-vacio strong { color: var(--prof-text); }
@@ -26,7 +29,8 @@
 .mi-excepciones-modal { width: min(470px,100%); padding: 25px; border: 1px solid rgba(168,102,67,.22); border-radius: 10px; background: var(--prof-surface-warm); }
 .mi-excepciones-modal form { display: grid; gap: 15px; margin-top: 20px; }
 .mi-excepciones-modal label { display: grid; gap: 6px; font-size: 13px; font-weight: 700; }
-.mi-excepciones-modal input { width: 100%; min-height: 44px; padding: 8px 11px; border: 1px solid var(--prof-border); border-radius: 7px; background: var(--prof-surface); color: var(--prof-text); font: inherit; }
+.mi-excepciones-modal input, .mi-excepciones-modal select { width: 100%; min-height: 44px; padding: 8px 11px; border: 1px solid var(--prof-border); border-radius: 7px; background: var(--prof-surface); color: var(--prof-text); font: inherit; }
+.mi-excepciones-modal label small { color: var(--prof-text-secondary); font-weight: 400; }
 .mi-excepciones-dia { color: var(--prof-primary-dark); font-family: Manrope, sans-serif; font-weight: 600; }
 .mi-excepciones-aviso, .mi-excepciones-modal > p { margin-top: 16px; color: var(--prof-text-secondary); font-size: 13px; line-height: 1.5; }
 .mi-excepciones-modal-acciones { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }

@@ -29,6 +29,7 @@ from app.schemas.disponibilidad_excepcion import (
     DisponibilidadExcepcionRango,
     DisponibilidadExcepcionRangoCreadoRespuesta,
     DisponibilidadExcepcionRangoReabiertoRespuesta,
+    FeriadoCrear,
 )
 from app.services.paciente_service import obtener_pacientes_activos
 from app.services.profesional_service import (
@@ -57,6 +58,8 @@ from app.services.disponibilidad_excepcion_service import (
     obtener_excepciones,
     cerrar_rango,
     reabrir_rango,
+    crear_feriado,
+    eliminar_feriado,
 )
 from datetime import date
 
@@ -317,6 +320,39 @@ def eliminar_mi_excepcion_disponibilidad(
         raise HTTPException(status_code=403, detail="El usuario autenticado no es un profesional.")
     profesional = obtener_mi_profesional(db, usuario_actual.id)
     return eliminar_excepcion(db, profesional.id, excepcion_id)
+
+
+@router.post(
+    "/me/feriados",
+    response_model=DisponibilidadExcepcionRespuesta,
+    status_code=201,
+    summary="Agregar un feriado o día no laborable propio",
+)
+def crear_mi_feriado(
+    datos: FeriadoCrear,
+    db: Session = Depends(obtener_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual),
+):
+    if usuario_actual.rol != "profesional":
+        raise HTTPException(status_code=403, detail="El usuario autenticado no es un profesional.")
+    profesional = obtener_mi_profesional(db, usuario_actual.id)
+    return crear_feriado(db, profesional.id, datos)
+
+
+@router.delete(
+    "/me/feriados/{excepcion_id}",
+    response_model=DisponibilidadExcepcionRespuesta,
+    summary="Quitar un feriado o día no laborable propio",
+)
+def eliminar_mi_feriado(
+    excepcion_id: int,
+    db: Session = Depends(obtener_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual),
+):
+    if usuario_actual.rol != "profesional":
+        raise HTTPException(status_code=403, detail="El usuario autenticado no es un profesional.")
+    profesional = obtener_mi_profesional(db, usuario_actual.id)
+    return eliminar_feriado(db, profesional.id, excepcion_id)
 
 
 @router.patch(

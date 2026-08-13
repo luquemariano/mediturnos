@@ -1,7 +1,7 @@
 from datetime import date, time
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class DisponibilidadExcepcionCrear(BaseModel):
@@ -29,6 +29,8 @@ class DisponibilidadExcepcionRespuesta(BaseModel):
     profesional_id: int
     fecha: date
     tipo: str
+    origen: str
+    nombre: str | None
     hora_inicio: time | None
     hora_fin: time | None
     activa: bool
@@ -58,3 +60,17 @@ class DisponibilidadExcepcionRangoCreadoRespuesta(BaseModel):
 
 class DisponibilidadExcepcionRangoReabiertoRespuesta(BaseModel):
     reabiertos: int
+
+
+class FeriadoCrear(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    fecha: date
+    tipo: Literal["feriado", "no_laborable"]
+    nombre: str | None = Field(default=None, max_length=120)
+
+    @model_validator(mode="after")
+    def normalizar_nombre(self):
+        if self.nombre is not None:
+            self.nombre = self.nombre.strip() or None
+        return self

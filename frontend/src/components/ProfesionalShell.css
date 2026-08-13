@@ -17,6 +17,11 @@
   --prof-danger: #a94e49;
   --prof-neutral-state: #5e6f78;
   --prof-completed: #52766e;
+  --turno-estado-confirmado: #176f6a;
+  --turno-estado-reservado: #a96e24;
+  --turno-estado-finalizado: #287a5a;
+  --turno-estado-ausente: #5e6f78;
+  --turno-estado-cancelado: #b24f4a;
   min-height: 100vh;
   display: grid;
   grid-template-columns: 248px minmax(0, 1fr);

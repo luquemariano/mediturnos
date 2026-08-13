@@ -8,6 +8,7 @@ import type {
   DisponibilidadExcepcionRango,
   DisponibilidadExcepcionRangoCreado,
   DisponibilidadExcepcionRangoReabierto,
+  FeriadoCrear,
 } from "../types/disponibilidad";
 
 export async function obtenerDisponibilidades(): Promise<Disponibilidad[]> {
@@ -73,5 +74,15 @@ export async function cerrarMiDisponibilidadPorRango(datos: DisponibilidadExcepc
 
 export async function reabrirMiDisponibilidadPorRango(datos: DisponibilidadExcepcionRango): Promise<DisponibilidadExcepcionRangoReabierto> {
   const respuesta = await api.post<DisponibilidadExcepcionRangoReabierto>("/profesionales/me/excepciones-disponibilidad/reabrir-rango", datos);
+  return respuesta.data;
+}
+
+export async function crearMiFeriado(datos: FeriadoCrear): Promise<DisponibilidadExcepcion> {
+  const respuesta = await api.post<DisponibilidadExcepcion>("/profesionales/me/feriados", datos);
+  return respuesta.data;
+}
+
+export async function eliminarMiFeriado(id: number): Promise<DisponibilidadExcepcion> {
+  const respuesta = await api.delete<DisponibilidadExcepcion>(`/profesionales/me/feriados/${id}`);
   return respuesta.data;
 }

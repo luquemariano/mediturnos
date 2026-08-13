@@ -41,7 +41,7 @@
 .agenda-prof-observacion { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .agenda-prof-turno.esta-expandido .agenda-prof-observacion, .agenda-prof-turno.es-proximo .agenda-prof-observacion { overflow: visible; white-space: normal; }
 .agenda-prof-turno.esta-expandido article, .agenda-prof-turno.es-proximo article { min-height: 108px; padding-block: 11px; }
-.agenda-prof-estado { display: inline-flex; align-items: center; gap: 7px; color: var(--prof-success); font-size: 12px; font-weight: 700; white-space: nowrap; }
+.agenda-prof-estado { display: inline-flex; align-items: center; gap: 7px; color: var(--turno-estado-confirmado); font-size: 12px; font-weight: 700; white-space: nowrap; }
 .agenda-prof-estado i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
 .agenda-prof-acciones { grid-column: 1 / -1; display: flex; justify-content: flex-end; gap: 8px; max-height: 0; overflow: hidden; opacity: 0; transition: max-height .15s ease, opacity .15s ease, margin .15s ease; }
 .agenda-prof-turno.esta-expandido .agenda-prof-acciones, .agenda-prof-turno article:hover .agenda-prof-acciones, .agenda-prof-turno article:focus-within .agenda-prof-acciones { max-height: 88px; margin-top: 4px; opacity: 1; }
@@ -56,17 +56,17 @@
 .agenda-prof-turno.es-proximo time, .agenda-prof-turno.es-proximo h3 { font-weight: 700; }
 .agenda-prof-turno.es-pasado:not(.es-proximo) article { background: rgba(246,245,240,.3); }
 .agenda-prof-turno.es-pasado:not(.es-proximo) .agenda-prof-identidad p { color: rgba(101,113,109,.65); }
-.agenda-prof-turno.estado-reservado .agenda-prof-marca, .agenda-prof-turno.estado-reservado .agenda-prof-estado { color: var(--prof-warning); background-color: var(--prof-warning); }
+.agenda-prof-turno.estado-reservado .agenda-prof-marca, .agenda-prof-turno.estado-reservado .agenda-prof-estado { color: var(--turno-estado-reservado); background-color: var(--prof-warning); }
 .agenda-prof-turno.estado-reservado .agenda-prof-estado { background: none; }
 .agenda-prof-turno.estado-finalizado article, .agenda-prof-turno.estado-cancelado article { min-height: 64px; padding-block: 7px; }
 .agenda-prof-turno.estado-finalizado .agenda-prof-marca { background: var(--prof-completed); }
-.agenda-prof-turno.estado-finalizado .agenda-prof-estado { color: var(--prof-completed); }
+.agenda-prof-turno.estado-finalizado .agenda-prof-estado { color: var(--turno-estado-finalizado); }
 .agenda-prof-turno.estado-ausente article { min-height: 68px; padding-block: 7px; background: rgba(94,111,120,.055); }
 .agenda-prof-turno.estado-ausente .agenda-prof-marca { background: var(--prof-neutral-state); }
-.agenda-prof-turno.estado-ausente .agenda-prof-estado { color: var(--prof-neutral-state); }
+.agenda-prof-turno.estado-ausente .agenda-prof-estado { color: var(--turno-estado-ausente); }
 .agenda-prof-turno.estado-cancelado article { background: rgba(169,78,73,.04); }
 .agenda-prof-turno.estado-cancelado .agenda-prof-marca { background: rgba(169,78,73,.68); }
-.agenda-prof-turno.estado-cancelado .agenda-prof-estado { color: var(--prof-danger); }
+.agenda-prof-turno.estado-cancelado .agenda-prof-estado { color: var(--turno-estado-cancelado); }
 .agenda-prof-error-accion { padding: 9px 18px 10px 131px; border-bottom: 1px solid rgba(169,78,73,.14); background: rgba(169,78,73,.06); color: var(--prof-danger); font-size: 13px; }
 
 section.agenda-prof-estado { min-height: 360px; display: grid; place-items: center; align-content: center; padding: 40px; text-align: center; }
