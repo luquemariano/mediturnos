@@ -1,0 +1,53 @@
+services:
+  - type: web
+    name: mediturnos-api
+    runtime: docker
+    plan: free
+    healthCheckPath: /health/ready
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: mediturnos-db
+          property: connectionString
+      - key: APP_TIMEZONE
+        value: America/Argentina/Buenos_Aires
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: JWT_ALGORITHM
+        value: HS256
+      - key: JWT_EXPIRE_MINUTES
+        value: 60
+      - key: PASSWORD_RESET_EXPIRE_MINUTES
+        value: 60
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: EMAIL_PROVIDER
+        value: resend
+      - key: RESEND_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+
+  - type: web
+    name: mediturnos-frontend
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm ci && npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - key: VITE_API_URL
+        sync: false
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+
+databases:
+  - name: mediturnos-db
+    plan: free
+    databaseName: mediturnos
+    user: mediturnos

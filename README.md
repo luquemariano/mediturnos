@@ -219,6 +219,109 @@ Si Resend rechaza o no puede entregar la solicitud, la operación de base se
 revierte y el nuevo token no queda utilizable. La respuesta pública continúa
 siendo genérica para no revelar si el email pertenece a una cuenta.
 
+### Deploy en Render
+
+El repositorio incluye `render.yaml` para crear mediante un Blueprint tres
+recursos conectados: PostgreSQL administrado, la API FastAPI como Web Service
+Docker y el frontend React como Static Site. El Blueprint no contiene secretos.
+Al importar el Blueprint, seleccioná la rama que quieras desplegar; para esta
+primera prueba corresponde `feature/mvp`. Como no se declara `repo` ni `branch`
+en el archivo, Render utiliza el repositorio y la rama vinculados al Blueprint.
+
+Para una URL pública se recomienda `APP_ENV=production`, aunque el despliegue
+sea de prueba. De este modo siguen vigentes las garantías de producción: no se
+admite SQLite, el secreto JWT debe ser fuerte, Swagger/OpenAPI queda
+deshabilitado, CORS no acepta `*` ni localhost, el seed demo queda bloqueado y
+la recuperación requiere un proveedor real. Usar `APP_ENV=demo` expondría
+herramientas y datos pensados para un entorno controlado y no es la opción
+recomendada para un servicio accesible desde Internet.
+
+Al crear el Blueprint, Render solicita los valores marcados con `sync: false`.
+Configurá en el backend:
+
+| Variable | Requerida | Configuración |
+| --- | --- | --- |
+| `APP_ENV` | Sí | Definida como `production` por el Blueprint. |
+| `DATABASE_URL` | Sí | Inyectada desde el PostgreSQL administrado; no cargarla manualmente. |
+| `APP_TIMEZONE` | Sí | Definida como `America/Argentina/Buenos_Aires`. |
+| `JWT_SECRET_KEY` | Sí | Generada de forma segura por Render. |
+| `JWT_ALGORITHM` | Sí | Definida como `HS256`. |
+| `JWT_EXPIRE_MINUTES` | Sí | Definida como `60`; puede ajustarse. |
+| `CORS_ALLOWED_ORIGINS` | Sí | Lista JSON con la URL HTTPS exacta del Static Site, sin `/` final. |
+| `FRONTEND_URL` | Sí | URL HTTPS pública del Static Site, sin `/` final. |
+| `PASSWORD_RESET_EXPIRE_MINUTES` | Sí | Definida como `60`; puede ajustarse. |
+| `EMAIL_PROVIDER` | Sí | Definida como `resend`. |
+| `RESEND_API_KEY` | Sí | Secreto cargado desde el Dashboard de Render. |
+| `EMAIL_FROM` | Sí | Remitente autorizado por Resend. |
+| `MERCADO_PAGO_ACCESS_TOKEN` | No | Sólo cuando se habiliten pagos reales. |
+| `MERCADO_PAGO_WEBHOOK_SECRET` | No | Sólo cuando se habiliten webhooks reales. |
+
+En el frontend, `VITE_API_URL` es obligatoria durante el build y debe contener
+la URL HTTPS pública del Web Service, sin `/` final. Vite incorpora este valor
+al bundle: si cambia la URL de la API, hay que reconstruir el Static Site.
+
+Las variables `DEMO_SEED_ENABLED`, `DEMO_ADMIN_*` y
+`DEMO_PROFESSIONAL_*` no se configuran en este despliegue porque el seed está
+bloqueado en `production`. Tampoco se deben cargar `.env` ni secretos en Git.
+
+El Web Service usa el `Dockerfile` de la raíz. Su comando de inicio es
+`python -m app.scripts.start`: primero ejecuta `alembic upgrade head` y sólo si
+la migración termina correctamente inicia Uvicorn en `0.0.0.0:$PORT`. Render
+inyecta `PORT`; Docker Compose local conserva su valor predeterminado `8000`.
+La URL de PostgreSQL entregada como `postgresql://` se normaliza internamente a
+`postgresql+psycopg://`.
+
+El Static Site usa:
+
+```text
+Root Directory: frontend
+Build Command: npm ci && npm run build
+Publish Directory: dist
+```
+
+La regla `/* -> /index.html` incluida en el Blueprint permite abrir directamente
+rutas del cliente como `/reset-password?token=...` sin recibir un 404.
+
+Render debe comprobar la API mediante `GET /health/ready`, que valida tanto el
+proceso como la conexión a PostgreSQL. `GET /health/live` queda disponible como
+sonda de vida sin acceso a la base.
+
+Inicialmente pueden utilizarse las URLs asignadas por Render:
+
+```text
+Frontend: https://<frontend>.onrender.com
+Backend:  https://<backend>.onrender.com
+```
+
+Configurá `FRONTEND_URL` y el único origen de `CORS_ALLOWED_ORIGINS` con la
+primera URL, y `VITE_API_URL` con la segunda. Esto no elimina la restricción del
+remitente: para enviar emails a usuarios externos, Resend requiere un dominio
+verificado. Su remitente de prueba sólo sirve bajo las limitaciones documentadas
+en la sección anterior.
+
+Cuando estén disponibles `turnelia.com.ar` y `api.turnelia.com.ar`, agregalos
+como Custom Domains del Static Site y del Web Service respectivamente, seguí
+las instrucciones DNS que muestre Render y actualizá:
+
+```text
+FRONTEND_URL=https://turnelia.com.ar
+CORS_ALLOWED_ORIGINS=["https://turnelia.com.ar"]
+VITE_API_URL=https://api.turnelia.com.ar
+```
+
+El cambio de dominio no requiere modificar la aplicación. Render administra el
+certificado TLS; el Static Site debe reconstruirse porque Vite incorpora
+`VITE_API_URL` durante el build. Si se usa el dominio para enviar emails, también
+debe verificarse en Resend y actualizarse `EMAIL_FROM` desde el entorno.
+
+El plan gratuito es sólo para esta prueba: el Web Service puede suspenderse por
+inactividad y tener un arranque lento. PostgreSQL gratuito está limitado a 1 GB,
+no ofrece backups y expira 30 días después de su creación; tras el período de
+gracia, Render elimina la base. No debe utilizarse para clientes pagos ni para
+información real que necesite persistencia, recuperación o garantías operativas.
+Antes de una prueba prolongada o comercial, migrá a una base paga con backups y
+revisá los planes vigentes de Render.
+
 ### 4. Cargar datos demo
 
 El seed está deshabilitado por defecto. Antes de ejecutarlo, configurá
