@@ -20,6 +20,7 @@ from app.models.profesional import Profesional
 from app.models.profesional_especialidad import (
     ProfesionalEspecialidad,
 )
+from app.models.profesional_paciente import ProfesionalPaciente
 from app.models.turno import Turno
 from app.models.usuario import Usuario
 from app.core.security import generar_hash_password
@@ -372,6 +373,35 @@ def obtener_o_crear_disponibilidad_demo(
     db.flush()
 
     return disponibilidad
+
+
+def vincular_profesional_paciente_demo(
+    db: Session,
+    profesional: Profesional,
+    paciente: Paciente,
+) -> ProfesionalPaciente:
+    relacion = (
+        db.query(ProfesionalPaciente)
+        .filter(
+            ProfesionalPaciente.profesional_id == profesional.id,
+            ProfesionalPaciente.paciente_id == paciente.id,
+        )
+        .first()
+    )
+
+    if relacion is not None:
+        relacion.activo = True
+        return relacion
+
+    relacion = ProfesionalPaciente(
+        profesional_id=profesional.id,
+        paciente_id=paciente.id,
+        activo=True,
+    )
+    db.add(relacion)
+    db.flush()
+
+    return relacion
 
 
 def vincular_profesional_especialidad(
@@ -930,6 +960,22 @@ def _cargar_datos_demo(
         obra_social="APROSS",
         numero_afiliado="APROSS-45111223",
     )
+
+    for paciente_demo in (
+        juan_perez,
+        silvina_perez,
+        ana_lopez,
+        roberto_sanchez,
+        mariana_torres,
+        diego_ferreyra,
+        paula_romero,
+        mateo_castro,
+    ):
+        vincular_profesional_paciente_demo(
+            db,
+            sofia_ramirez,
+            paciente_demo,
+        )
 
     db.flush()
 

@@ -15,6 +15,7 @@ from app.models.paciente import Paciente
 from app.models.pago import Pago
 from app.models.prestacion import Prestacion
 from app.models.profesional import Profesional
+from app.models.profesional_paciente import ProfesionalPaciente
 from app.models.turno import Turno
 from app.models.usuario import Usuario
 from app.scripts.seed import (
@@ -475,6 +476,37 @@ def test_seed_es_idempotente_en_registros_principales(db):
     assert db.query(Paciente).count() == 8
     assert db.query(Turno).count() == 21
     assert db.query(Disponibilidad).count() == 2
+    assert db.query(ProfesionalPaciente).count() == 8
+
+
+def test_seed_vincula_y_reactiva_pacientes_demo_con_sofia(db):
+    cargar_datos_demo(db)
+    profesional = (
+        db.query(Profesional)
+        .filter(Profesional.matricula == "MP-DEMO-PSIQ-001")
+        .one()
+    )
+    relaciones = (
+        db.query(ProfesionalPaciente)
+        .filter(ProfesionalPaciente.profesional_id == profesional.id)
+        .all()
+    )
+
+    assert len(relaciones) == 8
+    assert all(relacion.activo for relacion in relaciones)
+
+    relaciones[0].activo = False
+    db.commit()
+
+    cargar_datos_demo(db)
+
+    relaciones_actualizadas = (
+        db.query(ProfesionalPaciente)
+        .filter(ProfesionalPaciente.profesional_id == profesional.id)
+        .all()
+    )
+    assert len(relaciones_actualizadas) == 8
+    assert all(relacion.activo for relacion in relaciones_actualizadas)
 
 
 def test_seed_crea_jornada_representativa_para_sofia(db):
