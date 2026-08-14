@@ -1,8 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 64" fill="none">
-  <g>
-    <path fill="#176F6A" d="M7 7h11.5L32 23.5 45.5 7H57v31H46V22.5L32 39 18 22.5V38H7V7Z"/>
-    <path fill="#176F6A" d="M7 44h11v13H7zM23 44h9v9h-9zM37 44h9v13h-9z"/>
-    <path fill="#A86643" d="M51 44h6v9h-6z"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 180" fill="none">
+  <g transform="translate(4 10)">
+    <rect x="2" y="2" width="60" height="25" rx="8" fill="#176F6A"/>
+    <rect x="66" y="2" width="60" height="25" rx="8" fill="#176F6A"/>
+    <rect x="48" y="32" width="32" height="38" rx="7" fill="#A86643"/>
+    <rect x="48" y="75" width="32" height="24" rx="2" fill="#176F6A"/>
+    <rect x="48" y="104" width="32" height="24" rx="2" fill="#176F6A"/>
+    <path fill="#176F6A" d="M48 133h32v17a8 8 0 0 1-8 8H56a8 8 0 0 1-8-8v-17Z"/>
   </g>
-  <text x="76" y="41" fill="#153E3B" font-family="Manrope, Arial, sans-serif" font-size="27" font-weight="700" letter-spacing="-.7">Turnelia</text>
+  <text x="174" y="105" fill="#153E3B" font-family="Manrope, Avenir Next, Arial, sans-serif" font-size="82" font-weight="650" letter-spacing="-3">Turnelia</text>
+  <text x="179" y="148" fill="#176F6A" font-family="Source Sans 3, Avenir Next, Arial, sans-serif" font-size="25" font-weight="400" letter-spacing="6.5">Agenda profesional</text>
 </svg>

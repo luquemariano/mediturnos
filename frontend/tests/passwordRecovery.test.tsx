@@ -23,6 +23,7 @@ describe("recuperación de contraseña", () => {
     render(<App />);
     await screen.findByRole("button", { name: "¿Olvidaste tu contraseña?" });
     expect(screen.getByRole("heading", { name: "Turnelia" })).toBeInTheDocument();
+    expect(screen.getByText("Agenda profesional")).toBeInTheDocument();
     const simbolo = document.querySelector('.autenticacion-marca img[src="/brand/mediturnos-symbol.svg"]');
     expect(simbolo).toHaveAttribute("alt", "");
     expect(simbolo).toHaveAttribute("aria-hidden", "true");

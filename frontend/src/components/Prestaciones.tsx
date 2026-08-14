@@ -160,7 +160,7 @@ function Prestaciones({
       <section className="dashboard">
         <header className="dashboard-encabezado">
           <div className="marca dashboard-marca">
-            <span className="marca-icono">+</span>
+            <img className="marca-icono" src="/brand/mediturnos-symbol.svg" alt="" aria-hidden="true" />
             <div>
               <h1>Turnelia</h1>
               <p>Gestión de prestaciones</p>

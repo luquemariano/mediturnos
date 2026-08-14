@@ -297,6 +297,14 @@ form button:disabled {
   margin-bottom: 0;
 }
 
+.dashboard-marca .marca-icono {
+  width: 44px;
+  height: 44px;
+  display: block;
+  flex: 0 0 auto;
+  object-fit: contain;
+}
+
 .usuario-resumen {
   display: flex;
   align-items: center;

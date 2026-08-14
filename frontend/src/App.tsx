@@ -395,7 +395,7 @@ function App() {
   return (
     <main className="pagina-login">
       <div className="acceso-publico">
-        <AuthBrand subtitulo="Tu agenda profesional, simple y ordenada." />
+        <AuthBrand subtitulo="Agenda profesional" />
 
         <section className="tarjeta-login">
         {vistaAcceso === "forgot" && <form className="formulario-acceso" onSubmit={manejarRecuperacion}>
