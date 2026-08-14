@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
+import type { FormEvent } from "react";
+import axios from "axios";
 
 import "./PerfilPropio.css";
 import ProfesionalShell from "./ProfesionalShell";
@@ -8,6 +10,7 @@ import { obtenerMiPerfilProfesional } from "../services/profesionalService";
 import type { Especialidad } from "../types/especialidad";
 import type { Paciente } from "../types/paciente";
 import type { Profesional } from "../types/profesional";
+import { cambiarPassword } from "../services/authService";
 
 type PerfilPacienteProps = {
   tipo: "paciente";
@@ -74,6 +77,13 @@ function PerfilProfesional(props: PerfilProfesionalProps) {
   const [cargandoEspecialidades, setCargandoEspecialidades] = useState(true);
   const [errorPerfil, setErrorPerfil] = useState("");
   const [errorEspecialidades, setErrorEspecialidades] = useState("");
+  const [modalPassword, setModalPassword] = useState(false);
+  const [passwordActual, setPasswordActual] = useState("");
+  const [passwordNueva, setPasswordNueva] = useState("");
+  const [passwordRepetida, setPasswordRepetida] = useState("");
+  const [guardandoPassword, setGuardandoPassword] = useState(false);
+  const [mensajePassword, setMensajePassword] = useState("");
+  const [passwordActualizada, setPasswordActualizada] = useState(false);
 
   const cargarEspecialidades = useCallback(async () => {
     setCargandoEspecialidades(true);
@@ -107,6 +117,44 @@ function PerfilProfesional(props: PerfilProfesionalProps) {
 
   const nombreShell = perfil ? `${perfil.nombre} ${perfil.apellido}` : props.nombre;
   const especialidadesPorId = new Map(especialidades.map((item) => [item.id, item.nombre]));
+
+  function cerrarModalPassword() {
+    if (guardandoPassword) return;
+    setModalPassword(false);
+    setPasswordActual("");
+    setPasswordNueva("");
+    setPasswordRepetida("");
+    setMensajePassword("");
+    setPasswordActualizada(false);
+  }
+
+  async function actualizarPassword(evento: FormEvent<HTMLFormElement>) {
+    evento.preventDefault();
+    if (guardandoPassword) return;
+    setPasswordActualizada(false);
+    if (passwordNueva !== passwordRepetida) {
+      setMensajePassword("Las contraseñas no coinciden.");
+      return;
+    }
+    setGuardandoPassword(true);
+    setMensajePassword("");
+    try {
+      const respuesta = await cambiarPassword({
+        current_password: passwordActual,
+        new_password: passwordNueva,
+      });
+      setPasswordActualizada(true);
+      setMensajePassword(respuesta.mensaje);
+      setPasswordActual("");
+      setPasswordNueva("");
+      setPasswordRepetida("");
+    } catch (error) {
+      const detalle = axios.isAxiosError(error) ? error.response?.data?.detail : null;
+      setMensajePassword(typeof detalle === "string" ? detalle : "No pudimos actualizar tu contraseña.");
+    } finally {
+      setGuardandoPassword(false);
+    }
+  }
 
   return <ProfesionalShell
     activo="perfil"
@@ -148,7 +196,8 @@ function PerfilProfesional(props: PerfilProfesionalProps) {
         </div>
 
         <section className="perfil-profesional-contacto" aria-labelledby="perfil-contacto-titulo">
-          <h3 id="perfil-contacto-titulo">Datos de contacto</h3>
+          <div className="perfil-contacto-titulo"><h3 id="perfil-contacto-titulo">Datos de contacto</h3>
+            <button type="button" onClick={() => setModalPassword(true)}>Cambiar contraseña</button></div>
           <dl>
             <div><dt>Email</dt><dd>{perfil.email ?? "No informado"}</dd></div>
             <div><dt>Teléfono</dt><dd>{perfil.telefono ?? "No informado"}</dd></div>
@@ -176,6 +225,22 @@ function PerfilProfesional(props: PerfilProfesionalProps) {
           </ul>}
         </section>
       </section>}
+      {modalPassword && <div className="perfil-modal-fondo" role="presentation">
+        <section className="perfil-modal" role="dialog" aria-modal="true" aria-labelledby="cambiar-password-titulo">
+          <header><p>Seguridad</p><h2 id="cambiar-password-titulo">Cambiar contraseña</h2></header>
+          <form onSubmit={actualizarPassword}>
+            <label>Contraseña actual<input type="password" value={passwordActual}
+              onChange={(e) => setPasswordActual(e.target.value)} required /></label>
+            <label>Nueva contraseña<input type="password" minLength={8} maxLength={128} value={passwordNueva}
+              onChange={(e) => setPasswordNueva(e.target.value)} required /></label>
+            <label>Repetir nueva contraseña<input type="password" minLength={8} maxLength={128} value={passwordRepetida}
+              onChange={(e) => setPasswordRepetida(e.target.value)} required /></label>
+            {mensajePassword && <p role={passwordActualizada ? "status" : "alert"} className={passwordActualizada ? "exito" : "error"}>{mensajePassword}</p>}
+            <footer><button type="button" className="cancelar" onClick={cerrarModalPassword} disabled={guardandoPassword}>Cancelar</button>
+              <button type="submit" disabled={guardandoPassword}>{guardandoPassword ? "Actualizando…" : "Actualizar contraseña"}</button></footer>
+          </form>
+        </section>
+      </div>}
     </div>
   </ProfesionalShell>;
 }

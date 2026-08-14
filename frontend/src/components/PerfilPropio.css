@@ -88,6 +88,12 @@
   border-top: 1px solid var(--prof-border);
 }
 .perfil-profesional-contacto h3 { color: var(--prof-text-secondary); }
+.perfil-contacto-titulo { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.perfil-contacto-titulo button {
+  min-height: 40px; padding: 0 16px; border: 1px solid var(--prof-primary); border-radius: 8px;
+  background: #fff; color: var(--prof-primary); font-weight: 700; cursor: pointer;
+}
+.perfil-contacto-titulo button:hover { background: #e5f0ed; color: var(--prof-primary-hover); border-color: var(--prof-primary-hover); }
 .perfil-profesional-contacto dl {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -219,6 +225,7 @@
   .perfil-profesional-contacto { margin: 0 24px; padding-block: 24px 26px; }
   .perfil-profesional-contacto dl { grid-template-columns: 1fr; gap: 20px; margin-top: 17px; }
   .perfil-profesional-contacto dd { font-size: 16px; }
+  .perfil-contacto-titulo { align-items: flex-start; flex-direction: column; }
   .perfil-profesional-actividad { padding: 24px; }
   .perfil-profesional-actividad li { grid-template-columns: 1fr; gap: 3px; padding: 14px 0; }
   .perfil-actividad-error { align-items: flex-start; flex-direction: column; }
@@ -232,6 +239,25 @@
   .perfil-skeleton-rol { width: 34%; }
   .perfil-skeleton-matricula { width: 62%; }
 }
+
+.perfil-modal-fondo {
+  position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 20px;
+  background: rgba(21, 62, 59, .42);
+}
+.perfil-modal { width: min(100%, 480px); padding: 30px; border-radius: 16px; background: #fff; box-shadow: 0 24px 70px rgba(21, 62, 59, .22); }
+.perfil-modal header p { margin: 0; color: #176f6a; font-size: 12px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.perfil-modal header h2 { margin: 5px 0 22px; color: #153e3b; font-family: Manrope, sans-serif; }
+.perfil-modal form { gap: 16px; }
+.perfil-modal label { display: grid; gap: 7px; color: #153e3b; font-size: 14px; font-weight: 700; }
+.perfil-modal input { padding: 12px 13px; border: 1px solid #c7d0cb; border-radius: 8px; font: inherit; }
+.perfil-modal input:focus-visible { outline: 3px solid rgba(23, 111, 106, .2); border-color: #176f6a; }
+.perfil-modal footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; }
+.perfil-modal footer button { min-height: 44px; padding: 0 17px; border: 1px solid #176f6a; border-radius: 8px; background: #176f6a; color: #fff; font-weight: 700; }
+.perfil-modal footer button.cancelar { border-color: #d9e0dc; background: #fff; color: #153e3b; }
+.perfil-modal footer button:disabled { cursor: not-allowed; opacity: .65; }
+.perfil-modal .error { margin: 0; color: #963f3a; font-size: 14px; }
+.perfil-modal .exito { margin: 0; color: #176f6a; font-size: 14px; }
+@media (max-width: 520px) { .perfil-modal { padding: 24px; } .perfil-modal footer { align-items: stretch; flex-direction: column-reverse; } }
 
 @media (prefers-reduced-motion: reduce) {
   .perfil-skeleton-linea { animation: none; }

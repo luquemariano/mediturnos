@@ -1,10 +1,12 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { AxiosError } from "axios";
 
 import PerfilPropio from "../src/components/PerfilPropio";
 import * as especialidadService from "../src/services/especialidadService";
 import * as pacienteService from "../src/services/pacienteService";
 import * as profesionalService from "../src/services/profesionalService";
+import * as authService from "../src/services/authService";
 import type { Especialidad } from "../src/types/especialidad";
 import type { Paciente } from "../src/types/paciente";
 import type { Profesional } from "../src/types/profesional";
@@ -12,6 +14,7 @@ import type { Profesional } from "../src/types/profesional";
 vi.mock("../src/services/especialidadService", () => ({ obtenerEspecialidades: vi.fn() }));
 vi.mock("../src/services/pacienteService", () => ({ obtenerMiPerfilPaciente: vi.fn() }));
 vi.mock("../src/services/profesionalService", () => ({ obtenerMiPerfilProfesional: vi.fn() }));
+vi.mock("../src/services/authService", () => ({ cambiarPassword: vi.fn() }));
 
 const perfil: Profesional = {
   id: 7,
@@ -49,6 +52,8 @@ const acciones = {
   inicio: vi.fn(),
   agenda: vi.fn(),
   disponibilidad: vi.fn(),
+  pacientes: vi.fn(),
+  prestaciones: vi.fn(),
   perfil: vi.fn(),
   salir: vi.fn(),
 };
@@ -60,6 +65,8 @@ function renderizarProfesional() {
     onVolver={acciones.inicio}
     onAbrirAgenda={acciones.agenda}
     onAbrirDisponibilidad={acciones.disponibilidad}
+    onAbrirPacientes={acciones.pacientes}
+    onAbrirPrestaciones={acciones.prestaciones}
     onAbrirPerfil={acciones.perfil}
     onCerrarSesion={acciones.salir}
   />);
@@ -175,5 +182,45 @@ describe("perfil profesional Salud Humana Signature", () => {
     renderizarProfesional();
     await screen.findByRole("heading", { name: "Sofía Ramírez" });
     expect(screen.getAllByText("No informado")).toHaveLength(2);
+  });
+
+  it("cambia la contraseña desde un modal y bloquea doble submit", async () => {
+    preparar();
+    let resolver!: (valor: { mensaje: string }) => void;
+    vi.mocked(authService.cambiarPassword).mockReturnValue(new Promise((resolve) => { resolver = resolve; }));
+    renderizarProfesional();
+    await screen.findByRole("heading", { name: "Sofía Ramírez" });
+    fireEvent.click(screen.getByRole("button", { name: "Cambiar contraseña" }));
+    const dialogo = screen.getByRole("dialog");
+    const campos = within(dialogo).getAllByLabelText(/Contraseña|Nueva contraseña|Repetir nueva/);
+    fireEvent.change(campos[0], { target: { value: "password-inicial" } });
+    fireEvent.change(campos[1], { target: { value: "password-renovada" } });
+    fireEvent.change(campos[2], { target: { value: "password-renovada" } });
+    const submit = within(dialogo).getByRole("button", { name: "Actualizar contraseña" });
+    fireEvent.click(submit);
+    fireEvent.click(submit);
+    expect(authService.cambiarPassword).toHaveBeenCalledOnce();
+    expect(authService.cambiarPassword).toHaveBeenCalledWith({
+      current_password: "password-inicial", new_password: "password-renovada",
+    });
+    expect(within(dialogo).getByRole("button", { name: "Actualizando…" })).toBeDisabled();
+    resolver({ mensaje: "Tu contraseña fue actualizada." });
+    expect(await within(dialogo).findByRole("status")).toHaveTextContent("Tu contraseña fue actualizada.");
+  });
+
+  it("mantiene el modal abierto ante contraseña actual incorrecta", async () => {
+    preparar();
+    const error = new AxiosError("incorrecta");
+    error.response = { data: { detail: "La contraseña actual es incorrecta." } } as never;
+    vi.mocked(authService.cambiarPassword).mockRejectedValue(error);
+    renderizarProfesional();
+    await screen.findByRole("heading", { name: "Sofía Ramírez" });
+    fireEvent.click(screen.getByRole("button", { name: "Cambiar contraseña" }));
+    const dialogo = screen.getByRole("dialog");
+    const campos = within(dialogo).getAllByLabelText(/Contraseña|Nueva contraseña|Repetir nueva/);
+    campos.forEach((campo, indice) => fireEvent.change(campo, { target: { value: indice === 0 ? "incorrecta" : "password-renovada" } }));
+    fireEvent.submit(within(dialogo).getByRole("button", { name: "Actualizar contraseña" }).closest("form")!);
+    expect(await within(dialogo).findByRole("alert")).toHaveTextContent("La contraseña actual es incorrecta.");
+    expect(dialogo).toBeInTheDocument();
   });
 });

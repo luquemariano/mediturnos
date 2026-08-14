@@ -8,4 +8,5 @@ from app.models.profesional_paciente import ProfesionalPaciente
 from app.models.profesional_especialidad import ProfesionalEspecialidad
 from app.models.turno import Turno
 from app.models.pago import Pago
+from app.models.password_reset_token import PasswordResetToken
 from app.models.usuario import Usuario

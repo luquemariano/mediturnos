@@ -67,6 +67,8 @@ class Settings(BaseSettings):
     jwt_secret_key: str
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 60
+    password_reset_expire_minutes: int = 60
+    frontend_url: str = "http://localhost:5173"
     demo_seed_enabled: bool = False
     demo_admin_email: str | None = None
     demo_admin_password: SecretStr | None = None
@@ -74,6 +76,13 @@ class Settings(BaseSettings):
     demo_professional_email: str | None = None
     demo_professional_password: SecretStr | None = None
     demo_professional_reset_password: bool = False
+
+    @field_validator("password_reset_expire_minutes")
+    @classmethod
+    def validar_expiracion_password_reset(cls, minutos: int) -> int:
+        if minutos <= 0:
+            raise ValueError("PASSWORD_RESET_EXPIRE_MINUTES debe ser mayor que cero.")
+        return minutos
 
     @field_validator("cors_allowed_origins")
     @classmethod

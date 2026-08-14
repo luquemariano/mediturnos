@@ -18,6 +18,8 @@ import MisPrestaciones from "./components/MisPrestaciones";
 import {
   iniciarSesion,
   obtenerUsuarioActual,
+  restablecerPassword,
+  solicitarRecuperacion,
 } from "./services/authService";
 import type { UsuarioActual } from "./types/auth";
 import {
@@ -37,6 +39,8 @@ type Vista =
   | "disponibilidades"
   | "perfil";
 
+type VistaAcceso = "login" | "forgot" | "reset";
+
 
 function App() {
   const [email, setEmail] =
@@ -50,6 +54,10 @@ function App() {
 
   const [cargando, setCargando] =
     useState(false);
+  const [vistaAcceso, setVistaAcceso] = useState<VistaAcceso>(
+    window.location.pathname === "/reset-password" ? "reset" : "login",
+  );
+  const [repetirPassword, setRepetirPassword] = useState("");
 
   const [usuario, setUsuario] =
     useState<UsuarioActual | null>(null);
@@ -142,6 +150,54 @@ function App() {
     } finally {
       setCargando(false);
     }
+  }
+
+  async function manejarRecuperacion(evento: FormEvent<HTMLFormElement>) {
+    evento.preventDefault();
+    if (cargando) return;
+    setCargando(true);
+    setMensaje("");
+    try {
+      const respuesta = await solicitarRecuperacion({ email });
+      setMensaje(respuesta.mensaje);
+    } catch {
+      setMensaje("No pudimos enviar las instrucciones. Intentá nuevamente.");
+    } finally {
+      setCargando(false);
+    }
+  }
+
+  async function manejarReset(evento: FormEvent<HTMLFormElement>) {
+    evento.preventDefault();
+    if (cargando) return;
+    if (password !== repetirPassword) {
+      setMensaje("Las contraseñas no coinciden.");
+      return;
+    }
+    const token = new URLSearchParams(window.location.search).get("token");
+    if (!token) {
+      setMensaje("El enlace de recuperación no es válido o venció.");
+      return;
+    }
+    setCargando(true);
+    setMensaje("");
+    try {
+      const respuesta = await restablecerPassword({ token, new_password: password });
+      setMensaje(respuesta.mensaje);
+    } catch (error) {
+      const detalle = axios.isAxiosError(error) ? error.response?.data?.detail : null;
+      setMensaje(typeof detalle === "string" ? detalle : "No pudimos actualizar tu contraseña.");
+    } finally {
+      setCargando(false);
+    }
+  }
+
+  function volverAlLogin() {
+    window.history.replaceState({}, "", "/");
+    setVistaAcceso("login");
+    setPassword("");
+    setRepetirPassword("");
+    setMensaje("");
   }
 
 
@@ -351,7 +407,42 @@ function App() {
           </div>
         </div>
 
-        <form onSubmit={manejarInicioSesion}>
+        {vistaAcceso === "forgot" && <form onSubmit={manejarRecuperacion}>
+          <header className="acceso-encabezado">
+            <h2>Recuperar contraseña</h2>
+            <p>Ingresá tu correo y te enviaremos instrucciones.</p>
+          </header>
+          <div className="campo">
+            <label htmlFor="email-recuperacion">Correo electrónico</label>
+            <input id="email-recuperacion" type="email" value={email}
+              onChange={(evento) => setEmail(evento.target.value)} required />
+          </div>
+          <button type="submit" disabled={cargando}>
+            {cargando ? "Enviando…" : "Enviar instrucciones"}
+          </button>
+          {mensaje && <p className="mensaje-login" role="status">{mensaje}</p>}
+          <button type="button" className="boton-enlace" onClick={volverAlLogin}>
+            Volver a iniciar sesión
+          </button>
+        </form>}
+
+        {vistaAcceso === "reset" && <form onSubmit={manejarReset}>
+          <header className="acceso-encabezado">
+            <h2>Restablecer contraseña</h2>
+            <p>Elegí una nueva contraseña de al menos 8 caracteres.</p>
+          </header>
+          <div className="campo"><label htmlFor="new-password">Nueva contraseña</label>
+            <input id="new-password" type="password" minLength={8} maxLength={128}
+              value={password} onChange={(evento) => setPassword(evento.target.value)} required /></div>
+          <div className="campo"><label htmlFor="repeat-password">Repetir contraseña</label>
+            <input id="repeat-password" type="password" minLength={8} maxLength={128}
+              value={repetirPassword} onChange={(evento) => setRepetirPassword(evento.target.value)} required /></div>
+          <button type="submit" disabled={cargando}>{cargando ? "Guardando…" : "Actualizar contraseña"}</button>
+          {mensaje && <p className="mensaje-login" role="status">{mensaje}</p>}
+          <button type="button" className="boton-enlace" onClick={volverAlLogin}>Volver a iniciar sesión</button>
+        </form>}
+
+        {vistaAcceso === "login" && <form onSubmit={manejarInicioSesion}>
           <div className="campo">
             <label htmlFor="email">
               Correo electrónico
@@ -372,6 +463,10 @@ function App() {
               required
             />
           </div>
+
+          <button type="button" className="boton-enlace olvide-password" onClick={() => {
+            setVistaAcceso("forgot"); setMensaje("");
+          }}>¿Olvidaste tu contraseña?</button>
 
           <div className="campo">
             <label htmlFor="password">
@@ -408,7 +503,7 @@ function App() {
               {mensaje}
             </p>
           )}
-        </form>
+        </form>}
       </section>
     </main>
   );

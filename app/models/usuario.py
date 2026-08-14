@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from app.models.paciente import Paciente
+    from app.models.password_reset_token import PasswordResetToken
     from app.models.profesional import Profesional
 
 class Usuario(Base):
@@ -61,4 +62,9 @@ class Usuario(Base):
     profesional: Mapped["Profesional | None"] = relationship(
         back_populates="usuario",
         uselist=False,
+    )
+
+    password_reset_tokens: Mapped[list["PasswordResetToken"]] = relationship(
+        back_populates="usuario",
+        cascade="all, delete-orphan",
     )

@@ -418,3 +418,16 @@ form button:disabled {
     display: none;
   }
 }
+
+.acceso-encabezado h2 { margin: 0; color: #153e3b; font-size: 23px; }
+.acceso-encabezado p { margin: 6px 0 0; color: #65716d; line-height: 1.5; }
+form .boton-enlace {
+  padding: 2px;
+  border: 0;
+  background: transparent;
+  color: #176f6a;
+  font-size: 14px;
+  font-weight: 700;
+}
+form .boton-enlace:hover { background: transparent; color: #115a56; text-decoration: underline; }
+.olvide-password { justify-self: end; margin-top: -10px; }
