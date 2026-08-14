@@ -208,7 +208,7 @@ def test_email_recuperacion_usa_frontend_url_y_expiracion(monkeypatch):
     assert f"https://app.mediturnos.example/reset-password?token={token}" in mensaje.texto
     assert "45 minutos" in mensaje.texto
     assert "45 minutos" in mensaje.html
-    assert "MediTurnos" in mensaje.asunto
+    assert "Turnelia" in mensaje.asunto
 
 
 def test_fallo_provider_no_deja_token_utilizable(client, monkeypatch):
@@ -257,7 +257,7 @@ def test_resend_envia_payload_sin_exponer_secretos(monkeypatch, caplog):
         return Respuesta()
 
     monkeypatch.setattr(email_service.requests, "post", post)
-    provider = email_service.ResendEmailProvider(api_key, "MediTurnos <no-reply@example.com>")
+    provider = email_service.ResendEmailProvider(api_key, "Turnelia <no-reply@example.com>")
     provider.enviar(email_service.TransactionalEmail(
         destinatario="persona@example.com",
         asunto="Asunto",

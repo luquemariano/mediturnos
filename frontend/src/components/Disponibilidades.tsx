@@ -118,7 +118,7 @@ function Disponibilidades({ onVolver }: DisponibilidadesProps) {
         <header className="dashboard-encabezado">
           <div className="marca dashboard-marca">
             <span className="marca-icono">+</span>
-            <div><h1>MediTurnos</h1><p>Gestión de disponibilidades</p></div>
+            <div><h1>Turnelia</h1><p>Gestión de disponibilidades</p></div>
           </div>
           <button type="button" className="boton-cerrar-sesion" onClick={onVolver}>
             Volver al panel

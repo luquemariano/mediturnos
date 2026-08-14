@@ -11,7 +11,7 @@ export default function AuthBrand({ subtitulo }: AuthBrandProps) {
       aria-hidden="true"
     />
     <div>
-      <h1>MediTurnos</h1>
+      <h1>Turnelia</h1>
       {subtitulo && <p>{subtitulo}</p>}
     </div>
   </div>;

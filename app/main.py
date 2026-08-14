@@ -19,7 +19,7 @@ def crear_app(configuracion: Settings = settings) -> FastAPI:
         configuracion.app_env != "production"
     )
     app = FastAPI(
-        title="MediTurnos API",
+        title="Turnelia API",
         description="Sistema de gestión de turnos médicos y pagos.",
         version="0.1.0",
         docs_url="/docs" if documentacion_habilitada else None,
@@ -62,7 +62,7 @@ def crear_app(configuracion: Settings = settings) -> FastAPI:
     @app.get("/")
     def inicio():
         return {
-            "mensaje": "¡Bienvenido a MediTurnos!"
+            "mensaje": "¡Bienvenido a Turnelia!"
         }
 
     return app

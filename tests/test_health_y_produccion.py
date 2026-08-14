@@ -22,7 +22,7 @@ def crear_configuracion_produccion(**cambios) -> Settings:
         "frontend_url": "https://app.mediturnos.example",
         "email_provider": "resend",
         "resend_api_key": "resend-test-key",
-        "email_from": "MediTurnos <no-reply@mediturnos.example>",
+        "email_from": "Turnelia <no-reply@mediturnos.example>",
     }
     valores.update(cambios)
 

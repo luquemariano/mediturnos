@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="docs/images/mediturnos-banner.png" alt="Portada de MediTurnos" width="100%">
+  <img src="frontend/public/brand/mediturnos-logo-horizontal.svg" alt="Turnelia" width="320">
 </p>
 
-<h1 align="center">MediTurnos</h1>
+<h1 align="center">Turnelia</h1>
 
 <p align="center">
   Aplicación Full Stack para la gestión de turnos médicos, desarrollada como proyecto de portfolio.
@@ -16,7 +16,7 @@
 
 ## Descripción
 
-**MediTurnos** es una demostración técnica de una plataforma moderna para consultorios, clínicas y centros de salud. El proyecto integra una API REST con FastAPI, autenticación mediante JWT, persistencia en PostgreSQL, contenedores Docker y una interfaz desarrollada con React y TypeScript.
+**Turnelia** es una demostración técnica de una plataforma moderna para consultorios, clínicas y centros de salud. El repositorio conserva internamente el nombre `mediturnos`. El proyecto integra una API REST con FastAPI, autenticación mediante JWT, persistencia en PostgreSQL, contenedores Docker y una interfaz desarrollada con React y TypeScript.
 
 El alcance fue pensado para portfolio: presenta un recorrido funcional, visualmente atractivo y técnicamente escalable, sin pretender reemplazar un producto médico listo para producción.
 
@@ -187,12 +187,12 @@ estos entornos no necesitás comprar ni verificar un dominio.
 En producción, `FRONTEND_URL` debe ser la URL pública donde está desplegado el
 frontend. Puede ser un subdominio asignado por el hosting —por ejemplo,
 `https://mi-app.onrender.com`— y no necesita coincidir con el dominio remitente
-del correo. MediTurnos exige además un proveedor transaccional real:
+del correo. Turnelia exige además un proveedor transaccional real:
 
 ```dotenv
 EMAIL_PROVIDER=resend
 RESEND_API_KEY=configurar_como_secreto
-EMAIL_FROM=MediTurnos <no-reply@dominio-verificado.example>
+EMAIL_FROM=Turnelia <no-reply@dominio-verificado.example>
 FRONTEND_URL=https://url-publica-asignada-por-el-hosting.example
 ```
 
@@ -331,7 +331,7 @@ La documentación interactiva completa está disponible en `/docs`.
 
 ## Alcance y evolución futura
 
-MediTurnos es una demo técnica escalable. Algunas extensiones posibles:
+Turnelia es una demo técnica escalable. Algunas extensiones posibles:
 
 - Calendario semanal y mensual.
 - CRUD completo de profesionales y especialidades.

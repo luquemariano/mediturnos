@@ -456,7 +456,7 @@ function App() {
                 )
               }
               placeholder={
-                "usuario@mediturnos.com"
+                "usuario@turnelia.com.ar"
               }
               required
             />

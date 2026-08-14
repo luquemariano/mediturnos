@@ -165,7 +165,7 @@ function Profesionales({
             </span>
 
             <div>
-              <h1>MediTurnos</h1>
+              <h1>Turnelia</h1>
               <p>Gestión de profesionales</p>
             </div>
           </div>

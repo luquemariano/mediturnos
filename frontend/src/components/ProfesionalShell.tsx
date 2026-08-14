@@ -50,7 +50,7 @@ export default function ProfesionalShell({
     <aside className="prof-sidebar">
       <div className="prof-marca">
         <img className="prof-marca-simbolo" src="/brand/mediturnos-symbol-dark.svg" alt="" aria-hidden="true" />
-        <div><strong>MediTurnos</strong><small>Agenda profesional</small></div>
+        <div><strong>Turnelia</strong><small>Agenda profesional</small></div>
       </div>
       <nav aria-label="Navegación profesional">
         {items.map((item) => <button
@@ -70,7 +70,7 @@ export default function ProfesionalShell({
 
     <main className="prof-main">
       <header className="prof-topbar">
-        <div className="prof-marca-movil"><img className="prof-marca-simbolo" src="/brand/mediturnos-symbol.svg" alt="" aria-hidden="true" /><strong>MediTurnos</strong></div>
+        <div className="prof-marca-movil"><img className="prof-marca-simbolo" src="/brand/mediturnos-symbol.svg" alt="" aria-hidden="true" /><strong>Turnelia</strong></div>
         <span className="prof-topbar-titulo">{tituloTopbar}</span>
         {accionTopbar}
         <button type="button" className="prof-avatar prof-avatar-movil" onClick={onAbrirPerfil} aria-label="Abrir mi perfil">{iniciales || "P"}</button>

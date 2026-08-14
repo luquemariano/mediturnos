@@ -162,7 +162,7 @@ function Prestaciones({
           <div className="marca dashboard-marca">
             <span className="marca-icono">+</span>
             <div>
-              <h1>MediTurnos</h1>
+              <h1>Turnelia</h1>
               <p>Gestión de prestaciones</p>
             </div>
           </div>

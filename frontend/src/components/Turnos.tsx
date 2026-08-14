@@ -303,7 +303,7 @@ function Turnos({
             </span>
 
             <div>
-              <h1>MediTurnos</h1>
+              <h1>Turnelia</h1>
               <p>Agenda médica</p>
             </div>
           </div>

@@ -99,9 +99,9 @@ def construir_email_recuperacion(
     enlace = construir_enlace_recuperacion(token)
     enlace_html = escape(enlace, quote=True)
     minutos = settings.password_reset_expire_minutes
-    asunto = "Recuperá tu contraseña de MediTurnos"
+    asunto = "Recuperá tu contraseña de Turnelia"
     texto = (
-        "MediTurnos\n\nRecuperá tu contraseña\n\n"
+        "Turnelia\n\nRecuperá tu contraseña\n\n"
         "Recibimos una solicitud para cambiar la contraseña de tu cuenta.\n\n"
         f"Restablecer contraseña: {enlace}\n\n"
         f"Este enlace vence en {minutos} minutos.\n\n"
@@ -112,7 +112,7 @@ def construir_email_recuperacion(
   <body style="margin:0;background:#f6f5f0;color:#1d2927;font-family:Arial,sans-serif">
     <div style="max-width:560px;margin:0 auto;padding:32px 20px">
       <div style="background:#ffffff;border:1px solid #d9e0dc;border-radius:10px;padding:32px">
-        <p style="margin:0 0 24px;color:#176f6a;font-size:18px;font-weight:700">MediTurnos</p>
+        <p style="margin:0 0 24px;color:#176f6a;font-size:18px;font-weight:700">Turnelia</p>
         <h1 style="margin:0 0 16px;color:#153e3b;font-size:26px;line-height:1.25">Recuperá tu contraseña</h1>
         <p style="margin:0 0 24px;line-height:1.6">Recibimos una solicitud para cambiar la contraseña de tu cuenta.</p>
         <p style="margin:0 0 24px"><a href="{enlace_html}" style="display:inline-block;padding:12px 18px;border-radius:7px;background:#176f6a;color:#ffffff;text-decoration:none;font-weight:700">Restablecer contraseña</a></p>
