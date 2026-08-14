@@ -112,6 +112,28 @@ describe("mi disponibilidad profesional Signature", () => {
     expect(screen.getByRole("button", { name: "Cerrar formulario" })).toHaveAttribute("aria-expanded", "true");
   });
 
+  it("abre el formulario para agregar otra franja y conserva el día", async () => {
+    preparar([franja({ dia_semana: 0 })]);
+    renderizar();
+    const lunes = (await screen.findByRole("heading", { name: "Lunes" })).closest("li")!;
+
+    fireEvent.click(within(lunes).getByRole("button", { name: "Agregar otra franja" }));
+
+    expect(screen.getByLabelText("Día")).toHaveValue("0");
+    expect(screen.getByRole("button", { name: "Cerrar formulario" })).toHaveAttribute("aria-expanded", "true");
+  });
+
+  it("abre el formulario desde un día sin disponibilidad y precarga ese día", async () => {
+    preparar([franja({ dia_semana: 0 })]);
+    renderizar();
+    const viernes = (await screen.findByRole("heading", { name: "Viernes" })).closest("li")!;
+
+    fireEvent.click(within(viernes).getByRole("button", { name: "Agregar franja" }));
+
+    expect(screen.getByLabelText("Día")).toHaveValue("4");
+    expect(screen.getByRole("button", { name: "Cerrar formulario" })).toHaveAttribute("aria-expanded", "true");
+  });
+
   it("valida que la hora final sea posterior y enfoca el campo", async () => {
     preparar();
     renderizar();

@@ -2,50 +2,190 @@
   min-height: 100vh;
   display: grid;
   place-items: center;
-  padding: 24px;
+  padding: 56px 24px;
+  background: #f6f5f0;
+  color: #1d2927;
+  font-family: "Source Sans 3", Arial, sans-serif;
 }
 
-.tarjeta-login {
+.acceso-publico {
+  width: min(100%, 440px);
+}
+
+.pagina-login .tarjeta-login {
   width: 100%;
-  max-width: 420px;
-  padding: 32px;
+  padding: 38px 40px 40px;
   background: #ffffff;
-  border: 1px solid #eaecf0;
-  border-radius: 18px;
-  box-shadow: 0 18px 50px rgba(31, 41, 55, 0.12);
+  border: 1px solid #d9e0dc;
+  border-radius: 16px;
+  box-shadow: 0 12px 34px rgba(21, 62, 59, 0.07);
 }
 
-.marca {
+.pagina-login .marca {
   display: flex;
   align-items: center;
-  gap: 14px;
-  margin-bottom: 32px;
+  gap: 13px;
+  margin: 0 0 19px 4px;
 }
 
-.marca-icono {
-  width: 48px;
-  height: 48px;
-  display: grid;
-  place-items: center;
+.pagina-login .marca-icono {
+  width: 42px;
+  height: 42px;
+  display: block;
   flex-shrink: 0;
-  border-radius: 14px;
-  background: #2563eb;
-  color: #ffffff;
-  font-size: 32px;
+  object-fit: contain;
+}
+
+.pagina-login .marca h1 {
+  color: #153e3b;
+  font-family: Manrope, sans-serif;
+  font-size: 23px;
   font-weight: 700;
-  line-height: 1;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
 }
 
-.marca h1 {
-  color: #172033;
-  font-size: 28px;
-  line-height: 1.1;
-}
-
-.marca p {
-  margin-top: 4px;
-  color: #667085;
+.pagina-login .marca p {
+  margin-top: 2px;
+  color: #65716d;
   font-size: 14px;
+  line-height: 1.35;
+}
+
+.pagina-login .formulario-acceso { gap: 19px; }
+.pagina-login .acceso-encabezado { margin-bottom: 4px; }
+.pagina-login .acceso-encabezado-login { margin-bottom: 1px; }
+.pagina-login .acceso-etiqueta {
+  margin: 0 0 5px;
+  color: #a86643;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .11em;
+  text-transform: uppercase;
+}
+.pagina-login .acceso-encabezado h2 {
+  margin: 0;
+  color: #153e3b;
+  font-family: Manrope, sans-serif;
+  font-size: 25px;
+  letter-spacing: -.025em;
+  line-height: 1.25;
+}
+.pagina-login .acceso-encabezado > p:last-child:not(.acceso-etiqueta) {
+  margin: 8px 0 0;
+  color: #65716d;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.pagina-login .campo { gap: 7px; }
+.pagina-login .campo label { color: #1d2927; font-size: 14px; font-weight: 600; }
+.pagina-login .campo input {
+  min-height: 48px;
+  padding: 11px 13px;
+  border: 1px solid #d9e0dc;
+  border-radius: 8px;
+  background: #fff;
+  color: #1d2927;
+  font-family: inherit;
+  font-size: 16px;
+  box-shadow: none;
+}
+.pagina-login .campo input::placeholder { color: #89938f; opacity: 1; }
+.pagina-login .campo input:hover { border-color: #b8c5c0; }
+.pagina-login .campo input:focus,
+.pagina-login .campo input:focus-visible {
+  border-color: #176f6a;
+  outline: 0;
+  box-shadow: 0 0 0 3px rgba(23, 111, 106, .14);
+}
+.pagina-login .campo small { color: #65716d; font-size: 13px; }
+
+.pagina-login .formulario-acceso > button[type="submit"] {
+  min-height: 48px;
+  padding: 11px 18px;
+  border: 1px solid #176f6a;
+  border-radius: 8px;
+  background: #176f6a;
+  color: #fff;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  box-shadow: none;
+  transition: background .16s ease, border-color .16s ease;
+}
+.pagina-login .formulario-acceso > button[type="submit"]:hover { border-color: #115a56; background: #115a56; }
+.pagina-login .formulario-acceso > button[type="submit"]:active { border-color: #153e3b; background: #153e3b; transform: none; }
+.pagina-login .formulario-acceso > button[type="submit"]:focus-visible {
+  outline: 3px solid rgba(23, 111, 106, .22);
+  outline-offset: 2px;
+}
+.pagina-login .formulario-acceso > button[type="submit"]:disabled { opacity: .58; }
+
+.pagina-login form .boton-enlace {
+  justify-self: end;
+  margin: -7px 0 -2px;
+  padding: 2px;
+  border: 0;
+  background: transparent;
+  color: #176f6a;
+  font-size: 14px;
+  font-weight: 700;
+}
+.pagina-login form .boton-enlace:hover { background: transparent; color: #115a56; text-decoration: underline; }
+.pagina-login form .boton-enlace:active { color: #153e3b; transform: none; }
+.pagina-login form .boton-enlace:focus-visible { outline: 3px solid rgba(23, 111, 106, .18); outline-offset: 3px; }
+.pagina-login form .boton-secundario {
+  min-height: 46px;
+  padding: 10px 16px;
+  border: 1px solid #d9e0dc;
+  border-radius: 8px;
+  background: #fff;
+  color: #153e3b;
+  font-size: 15px;
+  font-weight: 700;
+}
+.pagina-login form .boton-secundario:hover { border-color: #c7d0cb; background: #f1ece3; }
+.pagina-login form .boton-secundario:active { background: #e8e2d8; transform: none; }
+.pagina-login form .boton-secundario:focus-visible { outline: 3px solid rgba(23, 111, 106, .18); outline-offset: 2px; }
+
+.pagina-login .mensaje-login {
+  margin: -2px 0 0;
+  padding-left: 12px;
+  border-left: 2px solid currentColor;
+  color: #65716d;
+  font-size: 14px;
+  line-height: 1.45;
+  text-align: left;
+}
+.pagina-login .mensaje-error { color: #a94e49; }
+.pagina-login .mensaje-exito { color: #176f6a; }
+.acceso-pie { margin: 17px 0 0; color: #65716d; font-size: 13px; text-align: center; }
+
+@media (max-width: 768px) {
+  .pagina-login { padding: 40px 22px; }
+  .pagina-login .tarjeta-login { padding: 34px 34px 36px; }
+}
+
+@media (max-width: 480px) {
+  .pagina-login {
+    min-height: 100dvh;
+    place-items: start center;
+    padding: 28px 16px;
+  }
+  .pagina-login .marca { margin: 0 0 16px 2px; }
+  .pagina-login .marca-icono { width: 39px; height: 39px; }
+  .pagina-login .marca h1 { font-size: 21px; }
+  .pagina-login .marca p { font-size: 13px; }
+  .pagina-login .tarjeta-login { padding: 28px 22px 30px; border-radius: 14px; }
+  .pagina-login .acceso-encabezado h2 { font-size: 23px; }
+  .pagina-login .formulario-acceso { gap: 17px; }
+  .pagina-login .formulario-acceso > button,
+  .pagina-login form .boton-secundario { width: 100%; }
+}
+
+@media (max-height: 700px) and (min-width: 481px) {
+  .pagina-login { place-items: start center; padding-block: 32px; }
 }
 
 form {

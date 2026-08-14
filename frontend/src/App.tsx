@@ -13,8 +13,10 @@ import Turnos from "./components/Turnos";
 import AgendaPropia from "./components/AgendaPropia";
 import MiDisponibilidad from "./components/MiDisponibilidad";
 import PerfilPropio from "./components/PerfilPropio";
+import AuthBrand from "./components/AuthBrand";
 import DashboardProfesional from "./components/DashboardProfesional";
 import MisPrestaciones from "./components/MisPrestaciones";
+import "./responsiveAudit.css";
 import {
   iniciarSesion,
   obtenerUsuarioActual,
@@ -392,25 +394,15 @@ function App() {
 
   return (
     <main className="pagina-login">
-      <section className="tarjeta-login">
-        <div className="marca">
-          <span className="marca-icono">
-            +
-          </span>
+      <div className="acceso-publico">
+        <AuthBrand subtitulo="Tu agenda profesional, simple y ordenada." />
 
-          <div>
-            <h1>MediTurnos</h1>
-
-            <p>
-              Gestión médica simple y segura
-            </p>
-          </div>
-        </div>
-
-        {vistaAcceso === "forgot" && <form onSubmit={manejarRecuperacion}>
+        <section className="tarjeta-login">
+        {vistaAcceso === "forgot" && <form className="formulario-acceso" onSubmit={manejarRecuperacion}>
           <header className="acceso-encabezado">
-            <h2>Recuperar contraseña</h2>
-            <p>Ingresá tu correo y te enviaremos instrucciones.</p>
+            <p className="acceso-etiqueta">Seguridad de tu cuenta</p>
+            <h2>Recuperar acceso</h2>
+            <p>Te enviaremos instrucciones para crear una nueva contraseña.</p>
           </header>
           <div className="campo">
             <label htmlFor="email-recuperacion">Correo electrónico</label>
@@ -420,29 +412,35 @@ function App() {
           <button type="submit" disabled={cargando}>
             {cargando ? "Enviando…" : "Enviar instrucciones"}
           </button>
-          {mensaje && <p className="mensaje-login" role="status">{mensaje}</p>}
-          <button type="button" className="boton-enlace" onClick={volverAlLogin}>
-            Volver a iniciar sesión
+          {mensaje && <p className={`mensaje-login ${mensaje.startsWith("No pudimos") ? "mensaje-error" : "mensaje-exito"}`} role="status">{mensaje}</p>}
+          <button type="button" className="boton-secundario" onClick={volverAlLogin}>
+            Volver al inicio de sesión
           </button>
         </form>}
 
-        {vistaAcceso === "reset" && <form onSubmit={manejarReset}>
+        {vistaAcceso === "reset" && <form className="formulario-acceso" onSubmit={manejarReset}>
           <header className="acceso-encabezado">
-            <h2>Restablecer contraseña</h2>
-            <p>Elegí una nueva contraseña de al menos 8 caracteres.</p>
+            <p className="acceso-etiqueta">Seguridad de tu cuenta</p>
+            <h2>Crear nueva contraseña</h2>
+            <p>Elegí una contraseña segura para volver a ingresar.</p>
           </header>
           <div className="campo"><label htmlFor="new-password">Nueva contraseña</label>
             <input id="new-password" type="password" minLength={8} maxLength={128}
-              value={password} onChange={(evento) => setPassword(evento.target.value)} required /></div>
+              value={password} onChange={(evento) => setPassword(evento.target.value)} required />
+            <small>Mínimo 8 caracteres.</small></div>
           <div className="campo"><label htmlFor="repeat-password">Repetir contraseña</label>
             <input id="repeat-password" type="password" minLength={8} maxLength={128}
               value={repetirPassword} onChange={(evento) => setRepetirPassword(evento.target.value)} required /></div>
           <button type="submit" disabled={cargando}>{cargando ? "Guardando…" : "Actualizar contraseña"}</button>
-          {mensaje && <p className="mensaje-login" role="status">{mensaje}</p>}
-          <button type="button" className="boton-enlace" onClick={volverAlLogin}>Volver a iniciar sesión</button>
+          {mensaje && <p className={`mensaje-login ${mensaje === "Tu contraseña fue actualizada." ? "mensaje-exito" : "mensaje-error"}`} role="status">{mensaje}</p>}
+          <button type="button" className="boton-secundario" onClick={volverAlLogin}>Volver a iniciar sesión</button>
         </form>}
 
-        {vistaAcceso === "login" && <form onSubmit={manejarInicioSesion}>
+        {vistaAcceso === "login" && <form className="formulario-acceso" onSubmit={manejarInicioSesion}>
+          <header className="acceso-encabezado acceso-encabezado-login">
+            <p className="acceso-etiqueta">Acceso profesional</p>
+            <h2>Iniciar sesión</h2>
+          </header>
           <div className="campo">
             <label htmlFor="email">
               Correo electrónico
@@ -463,10 +461,6 @@ function App() {
               required
             />
           </div>
-
-          <button type="button" className="boton-enlace olvide-password" onClick={() => {
-            setVistaAcceso("forgot"); setMensaje("");
-          }}>¿Olvidaste tu contraseña?</button>
 
           <div className="campo">
             <label htmlFor="password">
@@ -489,6 +483,10 @@ function App() {
             />
           </div>
 
+          <button type="button" className="boton-enlace olvide-password" onClick={() => {
+            setVistaAcceso("forgot"); setMensaje("");
+          }}>¿Olvidaste tu contraseña?</button>
+
           <button
             type="submit"
             disabled={cargando}
@@ -499,12 +497,14 @@ function App() {
           </button>
 
           {mensaje && (
-            <p className="mensaje-login">
+            <p className="mensaje-login mensaje-error" role="alert">
               {mensaje}
             </p>
           )}
         </form>}
-      </section>
+        </section>
+        <p className="acceso-pie">Gestión profesional con una experiencia humana.</p>
+      </div>
     </main>
   );
 }

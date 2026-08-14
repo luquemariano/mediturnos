@@ -32,8 +32,8 @@
 .mi-disp-acciones button.eliminar { color: var(--prof-danger); }
 .mi-disp-feedback-global { margin: -13px 0 16px; }
 
-.mi-disp-modal-fondo { position: fixed; z-index: 40; inset: 0; display: grid; place-items: center; padding: 20px; background: rgba(21,62,59,.36); }
-.mi-disp-modal { width: min(460px, 100%); padding: 26px; border: 1px solid rgba(168,102,67,.22); border-radius: 10px; background: var(--prof-surface-warm); }
+.mi-disp-modal-fondo { position: fixed; z-index: 40; inset: 0; display: grid; place-items: center; padding: 20px; overflow-y: auto; background: rgba(21,62,59,.36); }
+.mi-disp-modal { width: min(460px, 100%); max-height: calc(100dvh - 40px); overflow-y: auto; padding: 26px; border: 1px solid rgba(168,102,67,.22); border-radius: 10px; background: var(--prof-surface-warm); }
 .mi-disp-modal > span { color: var(--prof-text-secondary); font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
 .mi-disp-modal h2 { margin-top: 2px; font-family: Manrope, sans-serif; font-size: 22px; font-weight: 600; letter-spacing: -.02em; }
 .mi-disp-modal > p { margin-top: 14px; color: var(--prof-text-secondary); line-height: 1.5; }
@@ -47,6 +47,22 @@
 .mi-disp-modal-acciones button[type="submit"] { border-color: var(--prof-primary); background: var(--prof-primary); color: #fff; }
 .mi-disp-modal-acciones button.eliminar { border-color: var(--prof-danger); background: var(--prof-danger); color: #fff; }
 .mi-disp-modal-acciones button:disabled { cursor: wait; opacity: .6; }
+.mi-disp-modal-acciones .mi-disp-cancelar {
+  border: 1px solid #d9e0dc;
+  background: #fff;
+  color: #153e3b;
+}
+.mi-disp-modal-acciones .mi-disp-cancelar:hover {
+  border-color: #c7d0cb;
+  background: #f1ece3;
+  color: #153e3b;
+}
+.mi-disp-modal-acciones .mi-disp-cancelar:active { background: #e8e2d8; }
+.mi-disp-modal-acciones .mi-disp-cancelar:focus-visible {
+  outline: 3px solid rgba(23, 111, 106, .2);
+  outline-offset: 2px;
+  box-shadow: none;
+}
 
 .mi-disp-formulario-panel { padding: 22px; border: 1px solid rgba(168,102,67,.18); border-radius: 10px; background: var(--prof-surface-warm); }
 .mi-disp-formulario-panel.es-primera { border-color: rgba(168,102,67,.35); }
@@ -109,12 +125,65 @@
   .mi-disp-formulario-contenedor.esta-abierto { display: block; }
   .mi-disp-formulario-panel { padding: 20px; }
   .mi-disp-modal { padding: 22px 20px; }
+  .mi-disp-modal-fondo { align-items: end; padding: 0; }
+  .mi-disp-modal { width: 100%; max-height: calc(100dvh - 58px); border-radius: 12px 12px 0 0; }
   .mi-disp-skeleton-formulario { display: none; }
 }
 
 @media (max-width: 430px) {
   .mi-disp-semana li { grid-template-columns: 76px minmax(0, 1fr); padding-inline: 12px; }
   .mi-disp-horas { grid-template-columns: 1fr; }
+  .mi-disp-modal-acciones { align-items: stretch; flex-direction: column-reverse; }
+  .mi-disp-modal-acciones button { width: 100%; min-height: 44px; }
+}
+
+@media (max-width: 480px) {
+  .mi-disp-semana li { align-items: start; }
+  .mi-disp-semana li h3 { padding-top: 9px; }
+  .mi-disp-franjas { gap: 9px; }
+  .mi-disp-franja {
+    grid-template-columns: 3px minmax(52px, 1fr) auto;
+    grid-template-rows: auto auto auto;
+    align-items: center;
+    gap: 2px 8px;
+    min-width: 0;
+    padding-block: 4px;
+  }
+  .mi-disp-franja + .mi-disp-franja {
+    padding-top: 10px;
+    border-top: 1px solid rgba(101, 113, 109, .14);
+  }
+  .mi-disp-franja i { grid-column: 1; grid-row: 1 / -1; }
+  .mi-disp-franja small { grid-column: 2; grid-row: 1; }
+  .mi-disp-franja strong {
+    grid-column: 3;
+    grid-row: 1;
+    white-space: nowrap;
+  }
+  .mi-disp-gestionar {
+    grid-column: 2 / -1;
+    grid-row: 2;
+    justify-self: start;
+    min-height: 44px;
+    padding: 0;
+    font-size: 12px;
+    text-align: left;
+  }
+  .mi-disp-gestionar::after { content: none; }
+  .mi-disp-acciones {
+    grid-column: 2 / -1;
+    grid-row: 3;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .mi-disp-semana li > .mi-disp-agregar-dia {
+    justify-self: stretch;
+    width: 100%;
+    margin-top: 8px;
+    padding-inline: 8px;
+    text-align: left;
+  }
+  .mi-disp-formulario-contenedor { scroll-margin-block: 72px 92px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

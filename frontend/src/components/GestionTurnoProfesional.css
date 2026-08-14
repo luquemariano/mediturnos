@@ -1,5 +1,5 @@
 .gestion-turno-fondo { position: fixed; z-index: 110; inset: 0; display: grid; place-items: center; padding: 24px; background: rgba(21,62,59,.42); }
-.gestion-turno { width: min(590px, 100%); max-height: calc(100vh - 48px); overflow-y: auto; border: 1px solid rgba(101,113,109,.24); border-radius: 10px; background: var(--prof-surface); color: var(--prof-text); }
+.gestion-turno { width: min(590px, 100%); max-height: calc(100dvh - 48px); overflow-y: auto; border: 1px solid rgba(101,113,109,.24); border-radius: 10px; background: var(--prof-surface); color: var(--prof-text); }
 .gestion-turno > header { min-height: 76px; display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 16px 22px; border-bottom: 1px solid rgba(101,113,109,.16); background: var(--prof-surface-warm); }
 .gestion-turno > header span { color: var(--prof-text-secondary); font-size: 11px; font-weight: 700; letter-spacing: .08em; }
 .gestion-turno h2 { margin: 2px 0 0; font-family: Manrope, sans-serif; font-size: 23px; letter-spacing: -.02em; }

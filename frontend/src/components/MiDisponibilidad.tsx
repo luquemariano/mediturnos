@@ -81,6 +81,7 @@ export default function MiDisponibilidad({
   const selectorDia = useRef<HTMLSelectElement>(null);
   const inputInicio = useRef<HTMLInputElement>(null);
   const inputFin = useRef<HTMLInputElement>(null);
+  const formularioContenedor = useRef<HTMLDivElement>(null);
 
   const cargar = useCallback(async () => {
     setCargando(true);
@@ -108,7 +109,13 @@ export default function MiDisponibilidad({
     setFormularioAbierto(true);
     setErrorFormulario("");
     setExito("");
-    window.setTimeout(() => selectorDia.current?.focus(), 0);
+    window.setTimeout(() => {
+      formularioContenedor.current?.scrollIntoView?.({
+        behavior: "smooth",
+        block: "start",
+      });
+      selectorDia.current?.focus();
+    }, 0);
   }
 
   async function registrar(evento: FormEvent<HTMLFormElement>) {
@@ -277,14 +284,14 @@ export default function MiDisponibilidad({
                     </div>
                   </div>)}
                 </div>
-                <button type="button" onClick={() => abrirFormulario(indice)}>{franjas.length === 0 ? "Agregar franja" : "Agregar otra franja"}</button>
+                <button type="button" className="mi-disp-agregar-dia" onClick={() => abrirFormulario(indice)}>{franjas.length === 0 ? "Agregar franja" : "Agregar otra franja"}</button>
               </li>;
             })}
           </ol>}
         </section>
 
         <button type="button" className="mi-disp-abrir-movil" aria-expanded={formularioAbierto} onClick={() => formularioAbierto ? setFormularioAbierto(false) : abrirFormulario()}>{formularioAbierto ? "Cerrar formulario" : "Agregar franja"}</button>
-        <div className={`mi-disp-formulario-contenedor${formularioAbierto ? " esta-abierto" : ""}`}>{formulario}</div>
+        <div ref={formularioContenedor} className={`mi-disp-formulario-contenedor${formularioAbierto ? " esta-abierto" : ""}`}>{formulario}</div>
       </div>}
       <ExcepcionesDisponibilidad />
       {gestion && <div className="mi-disp-modal-fondo" role="presentation" onMouseDown={(evento) => { if (evento.target === evento.currentTarget) cerrarGestion(); }}>
@@ -304,7 +311,7 @@ export default function MiDisponibilidad({
               </div>
               {errorGestion && <p className="mi-disp-feedback error" role="alert">{errorGestion}</p>}
               <div className="mi-disp-modal-acciones">
-                <button type="button" onClick={cerrarGestion} disabled={guardandoGestion}>Cancelar</button>
+                <button type="button" className="mi-disp-cancelar" onClick={cerrarGestion} disabled={guardandoGestion}>Cancelar</button>
                 <button type="submit" disabled={guardandoGestion}>{guardandoGestion ? "Guardando…" : "Guardar cambios"}</button>
               </div>
             </form>

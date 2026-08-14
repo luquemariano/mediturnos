@@ -34,11 +34,12 @@
 .prof-app-shell svg { width: 20px; height: 20px; flex: 0 0 auto; }
 .prof-sidebar { position: sticky; top: 0; height: 100vh; display: grid; grid-template-rows: auto 1fr auto; padding: 28px 24px 20px; background: var(--prof-primary-dark); color: #fff; }
 .prof-marca, .prof-marca-movil { display: flex; align-items: center; gap: 12px; }
-.prof-marca-simbolo { width: 32px; height: 32px; display: grid; place-items: center; border: 1px solid rgba(229,240,237,.4); border-radius: 8px; color: #f6f5f0; font-family: Manrope, sans-serif; font-weight: 700; }
+.prof-marca-simbolo { width: 32px; height: 32px; display: block; flex: 0 0 auto; object-fit: contain; }
+.prof-sidebar .prof-marca-simbolo { width: 35px; height: 35px; }
 .prof-marca > div { display: grid; }
 .prof-marca strong, .prof-marca-movil strong { color: #f6f5f0; font-family: Manrope, sans-serif; font-size: 20px; line-height: 1.1; }
 .prof-marca small { margin-top: 4px; color: rgba(229,240,237,.7); font-size: 12px; }
-.prof-sidebar nav { display: grid; align-content: start; gap: 3px; margin: 44px -8px 0; }
+.prof-sidebar nav { display: grid; align-content: start; gap: 3px; margin: 41px -8px 0; }
 .prof-sidebar nav button { position: relative; width: 100%; height: 44px; display: flex; align-items: center; gap: 12px; padding: 0 14px; border: 0; border-radius: 0 8px 8px 0; background: transparent; color: rgba(229,240,237,.78); font-size: 15px; font-weight: 600; text-align: left; cursor: pointer; transition: background .15s ease, color .15s ease; }
 .prof-sidebar nav button::before { content: ""; position: absolute; inset: 8px auto 8px 0; width: 3px; border-radius: 0 2px 2px 0; background: transparent; }
 .prof-sidebar nav button:hover { background: rgba(255,255,255,.05); color: #fff; }
@@ -79,13 +80,19 @@
   .prof-topbar-titulo, .prof-enlace-topbar { display: none; }
   .prof-marca-movil { display: flex; margin-right: auto; }
   .prof-marca-movil strong { color: var(--prof-primary-dark); font-size: 17px; }
-  .prof-marca-movil .prof-marca-simbolo { width: 30px; height: 30px; border-color: var(--prof-border); color: var(--prof-primary-dark); }
+  .prof-marca-movil .prof-marca-simbolo { width: 30px; height: 30px; }
   .prof-avatar-movil { display: grid; cursor: pointer; }
   .prof-nav-movil { position: fixed; z-index: 40; inset: auto 0 0; min-height: 64px; display: grid; grid-template-columns: repeat(6, 1fr); padding: 6px 4px max(6px, env(safe-area-inset-bottom)); border-top: 1px solid var(--prof-border); background: rgba(255,255,255,.98); }
   .prof-nav-movil button { position: relative; min-width: 48px; min-height: 48px; display: grid; justify-items: center; align-content: center; gap: 3px; border: 0; background: transparent; color: var(--prof-text-secondary); font-size: 11px; font-weight: 600; cursor: pointer; }
   .prof-nav-movil button.activo { color: var(--prof-primary); }
   .prof-nav-movil button.activo::before { content: ""; position: absolute; top: -6px; width: 28px; height: 2px; background: var(--prof-accent); }
   .prof-nav-movil svg { width: 20px; height: 20px; }
+  .prof-app-shell input, .prof-app-shell select, .prof-app-shell textarea { font-size: 16px; }
+}
+
+@media (max-width: 390px) {
+  .prof-nav-movil { padding-inline: 2px; }
+  .prof-nav-movil button { gap: 2px; font-size: 10px; letter-spacing: -.02em; line-height: 1.05; }
 }
 
 @media (prefers-reduced-motion: reduce) {

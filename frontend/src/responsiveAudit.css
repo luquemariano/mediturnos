@@ -1,0 +1,13 @@
+/* Correcciones responsive transversales verificadas en la auditoría del MVP. */
+.prof-app-shell .mp-overlay { overflow-y: auto; }
+.prof-app-shell .mp-modal { max-height: calc(100dvh - 40px); }
+.prof-app-shell .mp-modal header button {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+}
+
+@media (max-width: 720px) {
+  .prof-app-shell .mp-modal { max-height: calc(100dvh - 58px); }
+  .prof-app-shell .mp-modal > footer .mp-boton { min-height: 44px; }
+}

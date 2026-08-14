@@ -22,6 +22,9 @@ describe("recuperación de contraseña", () => {
     });
     render(<App />);
     await screen.findByRole("button", { name: "¿Olvidaste tu contraseña?" });
+    const simbolo = document.querySelector('.autenticacion-marca img[src="/brand/mediturnos-symbol.svg"]');
+    expect(simbolo).toHaveAttribute("alt", "");
+    expect(simbolo).toHaveAttribute("aria-hidden", "true");
     fireEvent.click(screen.getByRole("button", { name: "¿Olvidaste tu contraseña?" }));
     fireEvent.change(screen.getByLabelText("Correo electrónico"), { target: { value: "persona@example.com" } });
     fireEvent.click(screen.getByRole("button", { name: "Enviar instrucciones" }));
@@ -46,7 +49,7 @@ describe("recuperación de contraseña", () => {
     window.history.replaceState({}, "", "/reset-password?token=token-seguro");
     vi.mocked(authService.restablecerPassword).mockResolvedValue({ mensaje: "Tu contraseña fue actualizada." });
     render(<App />);
-    await screen.findByRole("heading", { name: "Restablecer contraseña" });
+    await screen.findByRole("heading", { name: "Crear nueva contraseña" });
     fireEvent.change(screen.getByLabelText("Nueva contraseña"), { target: { value: "password-nueva" } });
     fireEvent.change(screen.getByLabelText("Repetir contraseña"), { target: { value: "distinta-password" } });
     fireEvent.click(screen.getByRole("button", { name: "Actualizar contraseña" }));
@@ -62,7 +65,7 @@ describe("recuperación de contraseña", () => {
   it("muestra token inválido sin token y error del backend", async () => {
     window.history.replaceState({}, "", "/reset-password");
     render(<App />);
-    await screen.findByRole("heading", { name: "Restablecer contraseña" });
+    await screen.findByRole("heading", { name: "Crear nueva contraseña" });
     fireEvent.change(screen.getByLabelText("Nueva contraseña"), { target: { value: "password-nueva" } });
     fireEvent.change(screen.getByLabelText("Repetir contraseña"), { target: { value: "password-nueva" } });
     fireEvent.click(screen.getByRole("button", { name: "Actualizar contraseña" }));
