@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import "./ProfesionalShell.css";
 import Icono from "./Icono";
 
-type SeccionProfesional = "inicio" | "agenda" | "disponibilidad" | "perfil";
+type SeccionProfesional = "inicio" | "agenda" | "pacientes" | "disponibilidad" | "perfil";
 
 type ProfesionalShellProps = {
   activo: SeccionProfesional;
@@ -12,6 +12,7 @@ type ProfesionalShellProps = {
   children: ReactNode;
   onAbrirInicio: () => void;
   onAbrirAgenda: () => void;
+  onAbrirPacientes: () => void;
   onAbrirDisponibilidad: () => void;
   onAbrirPerfil: () => void;
   onCerrarSesion: () => void;
@@ -25,6 +26,7 @@ export default function ProfesionalShell({
   children,
   onAbrirInicio,
   onAbrirAgenda,
+  onAbrirPacientes,
   onAbrirDisponibilidad,
   onAbrirPerfil,
   onCerrarSesion,
@@ -36,6 +38,7 @@ export default function ProfesionalShell({
   const items = [
     { id: "inicio" as const, texto: "Inicio", icono: "inicio" as const, accion: onAbrirInicio },
     { id: "agenda" as const, texto: "Mi agenda", icono: "agenda" as const, accion: onAbrirAgenda },
+    { id: "pacientes" as const, texto: "Pacientes", icono: "usuario" as const, accion: onAbrirPacientes },
     { id: "disponibilidad" as const, texto: "Mi disponibilidad", icono: "reloj" as const, accion: onAbrirDisponibilidad },
     { id: "perfil" as const, texto: "Mi perfil", icono: "perfil" as const, accion: onAbrirPerfil },
   ];

@@ -8,7 +8,8 @@ from app.core.dependencies import (
 )
 from app.database.connection import obtener_db
 from app.models.usuario import Usuario
-from app.schemas.paciente import PacienteSeleccionRespuesta
+from app.schemas.paciente import (PacienteSeleccionRespuesta, PacienteProfesionalCrear,
+    PacienteProfesionalActualizar)
 from app.schemas.profesional import (
     ProfesionalActualizar,
     ProfesionalCrear,
@@ -31,7 +32,9 @@ from app.schemas.disponibilidad_excepcion import (
     DisponibilidadExcepcionRangoReabiertoRespuesta,
     FeriadoCrear,
 )
-from app.services.paciente_service import obtener_pacientes_activos
+from app.services.paciente_service import (obtener_pacientes_profesional,
+    crear_paciente_profesional, actualizar_paciente_profesional,
+    desactivar_paciente_profesional, obtener_turnos_paciente_profesional)
 from app.services.profesional_service import (
     EspecialidadesConPrestacionesError,
     EspecialidadesDuplicadasError,
@@ -169,6 +172,7 @@ def ver_mi_agenda(
     summary="Listar pacientes activos para mi agenda",
 )
 def listar_pacientes_para_mi_agenda(
+    q: str | None = None,
     db: Session = Depends(obtener_db),
     usuario_actual: Usuario = Depends(obtener_usuario_actual),
 ):
@@ -178,8 +182,36 @@ def listar_pacientes_para_mi_agenda(
             detail="El usuario autenticado no es un profesional.",
         )
 
-    obtener_mi_profesional(db, usuario_actual.id)
-    return obtener_pacientes_activos(db)
+    profesional = obtener_mi_profesional(db, usuario_actual.id)
+    return obtener_pacientes_profesional(db, profesional.id, q)
+
+@router.post("/me/pacientes", response_model=PacienteSeleccionRespuesta, status_code=201)
+def registrar_mi_paciente(datos: PacienteProfesionalCrear, db: Session = Depends(obtener_db), usuario_actual: Usuario = Depends(obtener_usuario_actual)):
+    if usuario_actual.rol != "profesional":
+        raise HTTPException(status_code=403, detail="El usuario autenticado no es un profesional.")
+    profesional = obtener_mi_profesional(db, usuario_actual.id)
+    return crear_paciente_profesional(db, profesional.id, datos)
+
+@router.patch("/me/pacientes/{paciente_id}", response_model=PacienteSeleccionRespuesta)
+def editar_mi_paciente(paciente_id: int, datos: PacienteProfesionalActualizar, db: Session = Depends(obtener_db), usuario_actual: Usuario = Depends(obtener_usuario_actual)):
+    if usuario_actual.rol != "profesional":
+        raise HTTPException(status_code=403, detail="El usuario autenticado no es un profesional.")
+    profesional = obtener_mi_profesional(db, usuario_actual.id)
+    return actualizar_paciente_profesional(db, profesional.id, paciente_id, datos)
+
+@router.delete("/me/pacientes/{paciente_id}", status_code=204)
+def desactivar_mi_paciente(paciente_id: int, db: Session = Depends(obtener_db), usuario_actual: Usuario = Depends(obtener_usuario_actual)):
+    if usuario_actual.rol != "profesional":
+        raise HTTPException(status_code=403, detail="El usuario autenticado no es un profesional.")
+    profesional = obtener_mi_profesional(db, usuario_actual.id)
+    desactivar_paciente_profesional(db, profesional.id, paciente_id)
+
+@router.get("/me/pacientes/{paciente_id}/turnos", response_model=list[TurnoRespuesta])
+def historial_de_mi_paciente(paciente_id: int, db: Session = Depends(obtener_db), usuario_actual: Usuario = Depends(obtener_usuario_actual)):
+    if usuario_actual.rol != "profesional":
+        raise HTTPException(status_code=403, detail="El usuario autenticado no es un profesional.")
+    profesional = obtener_mi_profesional(db, usuario_actual.id)
+    return obtener_turnos_paciente_profesional(db, profesional.id, paciente_id)
 
 
 @router.post(

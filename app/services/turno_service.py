@@ -30,6 +30,7 @@ from app.schemas.turno import (
 from app.services.disponibilidad_service import (
     validar_turno_dentro_disponibilidad,
 )
+from app.services.paciente_service import paciente_pertenece_a_profesional
 
 
 SQLSTATE_CONFLICTO_EXCLUSION = "23P01"
@@ -228,6 +229,8 @@ def crear_turno_profesional(
     profesional_id: int,
     datos: TurnoCrear,
 ) -> Turno:
+    if not paciente_pertenece_a_profesional(db, profesional_id, datos.paciente_id):
+        raise HTTPException(status_code=404, detail="Paciente no encontrado.")
     return crear_turno(
         db,
         datos,

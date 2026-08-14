@@ -171,6 +171,7 @@ function App() {
         <DashboardProfesional
           nombre={usuario.nombre}
           onAbrirAgenda={() => setVista("turnos")}
+          onAbrirPacientes={() => setVista("pacientes")}
           onAbrirDisponibilidad={() => setVista("disponibilidades")}
           onAbrirPerfil={() => setVista("perfil")}
           onCerrarSesion={cerrarSesion}
@@ -181,9 +182,14 @@ function App() {
     if (vista === "pacientes") {
       return (
         <Pacientes
+          nombre={usuario.nombre}
           onVolver={() =>
             setVista("dashboard")
           }
+          onAbrirAgenda={() => setVista("turnos")}
+          onAbrirDisponibilidad={() => setVista("disponibilidades")}
+          onAbrirPerfil={() => setVista("perfil")}
+          onCerrarSesion={cerrarSesion}
         />
       );
     }
@@ -194,6 +200,7 @@ function App() {
           tipo={usuario.rol}
           nombre={usuario.nombre}
           onVolver={() => setVista("dashboard")}
+          onAbrirPacientes={() => setVista("pacientes")}
           onAbrirDisponibilidad={() => setVista("disponibilidades")}
           onAbrirPerfil={() => setVista("perfil")}
           onCerrarSesion={cerrarSesion}
@@ -217,6 +224,7 @@ function App() {
           nombre={usuario.nombre}
           onVolver={() => setVista("dashboard")}
           onAbrirAgenda={() => setVista("turnos")}
+          onAbrirPacientes={() => setVista("pacientes")}
           onAbrirPerfil={() => setVista("perfil")}
           onCerrarSesion={cerrarSesion}
         />;
@@ -234,6 +242,7 @@ function App() {
         nombre={usuario.nombre}
         onVolver={() => setVista("dashboard")}
         onAbrirAgenda={() => setVista("turnos")}
+        onAbrirPacientes={() => setVista("pacientes")}
         onAbrirDisponibilidad={() => setVista("disponibilidades")}
         onAbrirPerfil={() => setVista("perfil")}
         onCerrarSesion={cerrarSesion}

@@ -155,14 +155,14 @@ def test_profesional_lista_solo_datos_minimos_de_pacientes(
     )
     monkeypatch.setattr(
         profesionales,
-        "obtener_pacientes_activos",
-        lambda db: [SimpleNamespace(id=2, nombre="Ana", apellido="López")],
+        "obtener_pacientes_profesional",
+        lambda db, profesional_id, q: [SimpleNamespace(id=2, nombre="Ana", apellido="López", dni=None, telefono=None, email=None, fecha_nacimiento=None)],
     )
 
     respuesta = client.get("/profesionales/me/pacientes")
 
     assert respuesta.status_code == 200
-    assert respuesta.json() == [{"id": 2, "nombre": "Ana", "apellido": "López"}]
+    assert respuesta.json() == [{"id": 2, "nombre": "Ana", "apellido": "López", "dni": None, "telefono": None, "email": None, "fecha_nacimiento": None}]
 
 
 def test_profesional_crea_turno_sin_elegir_profesional(

@@ -81,7 +81,7 @@
   .prof-marca-movil strong { color: var(--prof-primary-dark); font-size: 17px; }
   .prof-marca-movil .prof-marca-simbolo { width: 30px; height: 30px; border-color: var(--prof-border); color: var(--prof-primary-dark); }
   .prof-avatar-movil { display: grid; cursor: pointer; }
-  .prof-nav-movil { position: fixed; z-index: 40; inset: auto 0 0; min-height: 64px; display: grid; grid-template-columns: repeat(4, 1fr); padding: 6px 4px max(6px, env(safe-area-inset-bottom)); border-top: 1px solid var(--prof-border); background: rgba(255,255,255,.98); }
+  .prof-nav-movil { position: fixed; z-index: 40; inset: auto 0 0; min-height: 64px; display: grid; grid-template-columns: repeat(5, 1fr); padding: 6px 4px max(6px, env(safe-area-inset-bottom)); border-top: 1px solid var(--prof-border); background: rgba(255,255,255,.98); }
   .prof-nav-movil button { position: relative; min-width: 48px; min-height: 48px; display: grid; justify-items: center; align-content: center; gap: 3px; border: 0; background: transparent; color: var(--prof-text-secondary); font-size: 11px; font-weight: 600; cursor: pointer; }
   .prof-nav-movil button.activo { color: var(--prof-primary); }
   .prof-nav-movil button.activo::before { content: ""; position: absolute; top: -6px; width: 28px; height: 2px; background: var(--prof-accent); }

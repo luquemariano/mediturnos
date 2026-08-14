@@ -1,409 +1,152 @@
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { useCallback, useEffect, useState } from "react";
+import type { FormEvent } from "react";
 import axios from "axios";
 
+import ProfesionalShell from "./ProfesionalShell";
+import Icono from "./Icono";
 import "./Pacientes.css";
-import ModalPaciente from "./ModalPaciente";
-import type { Paciente } from "../types/paciente";
-import { obtenerPacientes } from "../services/pacienteService";
+import type { PacienteSeleccion } from "../types/paciente";
+import {
+  buscarPacientesProfesional,
+  crearPacienteProfesional,
+  desactivarPacienteProfesional,
+  editarPacienteProfesional,
+  obtenerHistorialPaciente,
+} from "../services/pacienteService";
 
-type PacientesProps = {
+type Props = {
+  nombre: string;
   onVolver: () => void;
+  onAbrirAgenda: () => void;
+  onAbrirDisponibilidad: () => void;
+  onAbrirPerfil: () => void;
+  onCerrarSesion: () => void;
 };
 
-function normalizarTexto(
-  texto: string | null,
-): string {
-  return (texto ?? "")
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .trim();
+type Historial = Awaited<ReturnType<typeof obtenerHistorialPaciente>>[number];
+const FORM_VACIO = { nombre: "", apellido: "", dni: "", telefono: "", email: "", fecha_nacimiento: "" };
+const ZONA_HORARIA = "America/Argentina/Buenos_Aires";
+
+function detalleError(error: unknown): string {
+  return axios.isAxiosError(error) && typeof error.response?.data?.detail === "string"
+    ? error.response.data.detail : "Ocurrió un error inesperado.";
 }
 
-function Pacientes({
-  onVolver,
-}: PacientesProps) {
-  const [pacientes, setPacientes] =
-    useState<Paciente[]>([]);
+function etiquetaEstado(estado: string): string {
+  return estado === "reservado" ? "Pendiente" : estado.charAt(0).toUpperCase() + estado.slice(1);
+}
 
-  const [busqueda, setBusqueda] =
-    useState("");
+function fechaHistorial(fecha: string): string {
+  return new Intl.DateTimeFormat("es-AR", {
+    timeZone: ZONA_HORARIA, weekday: "short", day: "2-digit", month: "short",
+    year: "numeric", hour: "2-digit", minute: "2-digit",
+  }).format(new Date(fecha));
+}
 
-  const [cargando, setCargando] =
-    useState(true);
+export default function Pacientes(props: Props) {
+  const [pacientes, setPacientes] = useState<PacienteSeleccion[]>([]);
+  const [q, setQ] = useState("");
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState("");
+  const [mensaje, setMensaje] = useState("");
+  const [form, setForm] = useState(FORM_VACIO);
+  const [modal, setModal] = useState(false);
+  const [guardando, setGuardando] = useState(false);
+  const [seleccion, setSeleccion] = useState<PacienteSeleccion | null>(null);
+  const [editando, setEditando] = useState(false);
+  const [historial, setHistorial] = useState<Historial[]>([]);
+  const [cargandoHistorial, setCargandoHistorial] = useState(false);
+  const [confirmar, setConfirmar] = useState(false);
 
-  const [mensajeError, setMensajeError] =
-    useState("");
-
-  const [mensajeExito, setMensajeExito] =
-    useState("");
-
-  const [mostrarModal, setMostrarModal] =
-    useState(false);
-
-  const cargarPacientes =
-    useCallback(async () => {
-      setCargando(true);
-      setMensajeError("");
-
-      try {
-        const datos = await obtenerPacientes();
-        setPacientes(datos);
-      } catch (error) {
-        if (axios.isAxiosError(error)) {
-          const detalle =
-            error.response?.data?.detail;
-
-          setMensajeError(
-            typeof detalle === "string"
-              ? detalle
-              : "No se pudieron cargar los pacientes.",
-          );
-        } else {
-          setMensajeError(
-            "Ocurrió un error inesperado.",
-          );
-        }
-      } finally {
-        setCargando(false);
-      }
-    }, []);
+  const cargar = useCallback(async (termino = "") => {
+    setCargando(true); setError("");
+    try { setPacientes(await buscarPacientesProfesional(termino)); }
+    catch (e) { setError(detalleError(e)); }
+    finally { setCargando(false); }
+  }, []);
 
   useEffect(() => {
-    cargarPacientes();
-  }, [cargarPacientes]);
+    const temporizador = setTimeout(() => void cargar(q), 250);
+    return () => clearTimeout(temporizador);
+  }, [q, cargar]);
 
-  const pacientesFiltrados = useMemo(() => {
-    const termino =
-      normalizarTexto(busqueda);
-
-    if (!termino) {
-      return pacientes;
-    }
-
-    return pacientes.filter((paciente) => {
-      const valoresPaciente = [
-        paciente.nombre,
-        paciente.apellido,
-        `${paciente.nombre} ${paciente.apellido}`,
-        paciente.dni,
-        paciente.telefono,
-        paciente.email,
-        paciente.obra_social,
-        paciente.numero_afiliado,
-      ];
-
-      return valoresPaciente.some((valor) =>
-        normalizarTexto(valor).includes(termino),
-      );
-    });
-  }, [busqueda, pacientes]);
-
-  function abrirModal() {
-    setMensajeExito("");
-    setMostrarModal(true);
+  async function guardar(evento: FormEvent) {
+    evento.preventDefault();
+    if (guardando) return;
+    setGuardando(true); setError("");
+    try {
+      const datos = Object.fromEntries(Object.entries(form).map(([clave, valor]) => [clave, valor || null]));
+      if (editando && seleccion) {
+        const paciente = await editarPacienteProfesional(seleccion.id, datos);
+        setSeleccion(paciente); setMensaje("Paciente actualizado correctamente.");
+      } else {
+        await crearPacienteProfesional(datos as Omit<PacienteSeleccion, "id">);
+        setMensaje("Paciente creado correctamente.");
+      }
+      setModal(false); setEditando(false); setForm(FORM_VACIO);
+      await cargar(q);
+    } catch (e) { setError(detalleError(e)); }
+    finally { setGuardando(false); }
   }
 
-  function cerrarModal() {
-    setMostrarModal(false);
+  async function ver(paciente: PacienteSeleccion) {
+    setSeleccion(paciente); setConfirmar(false); setHistorial([]); setCargandoHistorial(true);
+    try { setHistorial(await obtenerHistorialPaciente(paciente.id)); }
+    catch (e) { setError(detalleError(e)); }
+    finally { setCargandoHistorial(false); }
   }
 
-  function limpiarBusqueda() {
-    setBusqueda("");
+  function editar() {
+    if (!seleccion) return;
+    setForm({ nombre: seleccion.nombre, apellido: seleccion.apellido, dni: seleccion.dni ?? "", telefono: seleccion.telefono ?? "", email: seleccion.email ?? "", fecha_nacimiento: seleccion.fecha_nacimiento ?? "" });
+    setEditando(true); setModal(true);
   }
 
-  function manejarPacienteCreado(
-    paciente: Paciente,
-  ) {
-    setPacientes((pacientesAnteriores) => [
-      ...pacientesAnteriores,
-      paciente,
-    ]);
-
-    setMostrarModal(false);
-
-    setMensajeExito(
-      `Paciente ${paciente.nombre} ${paciente.apellido} registrado correctamente.`,
-    );
+  async function desactivar() {
+    if (!seleccion) return;
+    try {
+      await desactivarPacienteProfesional(seleccion.id);
+      setSeleccion(null); setConfirmar(false); setMensaje("Paciente desactivado correctamente.");
+      await cargar(q);
+    } catch (e) { setError(detalleError(e)); }
   }
 
-  return (
-    <main className="pagina-dashboard">
-      <section className="dashboard">
-        <header className="dashboard-encabezado">
-          <div className="marca dashboard-marca">
-            <span className="marca-icono">
-              +
-            </span>
+  return <ProfesionalShell activo="pacientes" nombre={props.nombre} tituloTopbar="Pacientes"
+    onAbrirInicio={props.onVolver} onAbrirAgenda={props.onAbrirAgenda} onAbrirPacientes={() => undefined}
+    onAbrirDisponibilidad={props.onAbrirDisponibilidad} onAbrirPerfil={props.onAbrirPerfil} onCerrarSesion={props.onCerrarSesion}>
+    <div className="pacientes-pagina">
+      <header className="pacientes-cabecera">
+        <div><span>Directorio profesional</span><h1>Pacientes</h1><p>Gestioná tus pacientes y consultá su historial de turnos.</p></div>
+        <button type="button" className="pacientes-boton primario" onClick={() => { setEditando(false); setForm(FORM_VACIO); setModal(true); }}>Nuevo paciente</button>
+      </header>
+      {mensaje && <p role="status" className="pacientes-feedback exito">{mensaje}</p>}
+      {error && <div role="alert" className="pacientes-feedback error"><span>{error}</span><button type="button" onClick={() => void cargar(q)}>Reintentar</button></div>}
+      <label className="pacientes-buscador"><span>Buscar pacientes</span><input aria-label="Buscar pacientes" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Nombre, apellido, DNI o teléfono" /></label>
+      {cargando ? <div className="pacientes-estado"><span className="pacientes-spinner"/><p>Cargando pacientes...</p></div>
+      : pacientes.length === 0 ? <div className="pacientes-estado"><Icono nombre="usuario"/><h2>No hay pacientes para mostrar.</h2><p>{q ? "Probá con otra búsqueda." : "Creá tu primer paciente para empezar."}</p></div>
+      : <ul className="pacientes-lista">{pacientes.map((paciente) => <li key={paciente.id}>
+          <div className="pacientes-identidad"><span>{paciente.nombre.charAt(0)}{paciente.apellido.charAt(0)}</span><strong>{paciente.nombre} {paciente.apellido}</strong></div>
+          <dl><div><dt>Teléfono</dt><dd>{paciente.telefono || "No informado"}</dd></div><div><dt>Email</dt><dd>{paciente.email || "No informado"}</dd></div><div><dt>DNI</dt><dd>{paciente.dni || "No informado"}</dd></div></dl>
+          <button type="button" className="pacientes-boton enlace" onClick={() => void ver(paciente)}>Ver paciente <Icono nombre="flecha"/></button>
+        </li>)}</ul>}
+    </div>
 
-            <div>
-              <h1>MediTurnos</h1>
-              <p>Gestión de pacientes</p>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            className="boton-cerrar-sesion"
-            onClick={onVolver}
-          >
-            Volver al panel
-          </button>
-        </header>
-
-        <section className="pacientes-contenido">
-          <div className="pacientes-cabecera">
-            <div>
-              <p className="pacientes-etiqueta">
-                Módulo
-              </p>
-
-              <h2>Pacientes</h2>
-
-              <p>
-                Consultá y administrá la
-                información registrada de los
-                pacientes.
-              </p>
-            </div>
-
-            <button
-              type="button"
-              className="boton-primario"
-              onClick={abrirModal}
-            >
-              + Nuevo paciente
-            </button>
-          </div>
-
-          {mensajeExito && (
-            <p className="mensaje-pagina-exito">
-              {mensajeExito}
-            </p>
-          )}
-
-          {!cargando
-            && !mensajeError
-            && pacientes.length > 0
-            && (
-              <div className="pacientes-herramientas">
-                <div className="buscador-pacientes">
-                  <span
-                    className="buscador-icono"
-                    aria-hidden="true"
-                  >
-                    ⌕
-                  </span>
-
-                  <input
-                    type="search"
-                    value={busqueda}
-                    onChange={(evento) =>
-                      setBusqueda(
-                        evento.target.value,
-                      )
-                    }
-                    placeholder={
-                      "Buscar por nombre, DNI, email u obra social"
-                    }
-                    aria-label="Buscar pacientes"
-                  />
-
-                  {busqueda && (
-                    <button
-                      type="button"
-                      className="buscador-limpiar"
-                      onClick={limpiarBusqueda}
-                      aria-label="Limpiar búsqueda"
-                    >
-                      ×
-                    </button>
-                  )}
-                </div>
-
-                <p className="pacientes-contador">
-                  {pacientesFiltrados.length}
-                  {" "}
-                  {pacientesFiltrados.length === 1
-                    ? "paciente"
-                    : "pacientes"}
-                </p>
-              </div>
-            )}
-
-          {cargando && (
-            <div className="estado-pagina">
-              <span className="indicador-carga" />
-              <p>Cargando pacientes...</p>
-            </div>
-          )}
-
-          {!cargando && mensajeError && (
-            <div className="estado-pagina error-pagina">
-              <p>{mensajeError}</p>
-
-              <button
-                type="button"
-                className="boton-secundario"
-                onClick={cargarPacientes}
-              >
-                Reintentar
-              </button>
-            </div>
-          )}
-
-          {!cargando
-            && !mensajeError
-            && pacientes.length === 0
-            && (
-              <div className="estado-vacio">
-                <span>👥</span>
-
-                <h3>
-                  No hay pacientes registrados
-                </h3>
-
-                <p>
-                  Registrá el primer paciente
-                  para comenzar a gestionar sus
-                  turnos.
-                </p>
-
-                <button
-                  type="button"
-                  className="boton-primario"
-                  onClick={abrirModal}
-                >
-                  Registrar paciente
-                </button>
-              </div>
-            )}
-
-          {!cargando
-            && !mensajeError
-            && pacientes.length > 0
-            && pacientesFiltrados.length === 0
-            && (
-              <div className="estado-vacio">
-                <span>🔎</span>
-
-                <h3>
-                  No encontramos pacientes
-                </h3>
-
-                <p>
-                  No hay resultados para
-                  {" "}
-                  <strong>
-                    “{busqueda}”
-                  </strong>
-                  .
-                </p>
-
-                <button
-                  type="button"
-                  className="boton-secundario"
-                  onClick={limpiarBusqueda}
-                >
-                  Limpiar búsqueda
-                </button>
-              </div>
-            )}
-
-          {!cargando
-            && !mensajeError
-            && pacientesFiltrados.length > 0
-            && (
-              <div className="tabla-contenedor">
-                <table className="tabla-pacientes">
-                  <thead>
-                    <tr>
-                      <th>Paciente</th>
-                      <th>DNI</th>
-                      <th>Teléfono</th>
-                      <th>Obra social</th>
-                      <th>Estado</th>
-                    </tr>
-                  </thead>
-
-                  <tbody>
-                    {pacientesFiltrados.map(
-                      (paciente) => (
-                        <tr key={paciente.id}>
-                          <td>
-                            <div className="paciente-identidad">
-                              <span className="paciente-avatar">
-                                {paciente.nombre
-                                  .charAt(0)
-                                  .toUpperCase()}
-                              </span>
-
-                              <div>
-                                <strong>
-                                  {paciente.nombre}
-                                  {" "}
-                                  {paciente.apellido}
-                                </strong>
-
-                                <span>
-                                  {paciente.email
-                                    || "Sin email"}
-                                </span>
-                              </div>
-                            </div>
-                          </td>
-
-                          <td>
-                            {paciente.dni}
-                          </td>
-
-                          <td>
-                            {paciente.telefono}
-                          </td>
-
-                          <td>
-                            {paciente.obra_social
-                              || "Particular"}
-                          </td>
-
-                          <td>
-                            <span
-                              className={
-                                paciente.activo
-                                  ? "estado-activo"
-                                  : "estado-inactivo"
-                              }
-                            >
-                              {paciente.activo
-                                ? "Activo"
-                                : "Inactivo"}
-                            </span>
-                          </td>
-                        </tr>
-                      ),
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            )}
+    {seleccion && <><button type="button" className="paciente-detalle-fondo" aria-label="Cerrar detalle" onClick={() => setSeleccion(null)} />
+      <aside className="paciente-detalle" aria-label={`Detalle de ${seleccion.nombre} ${seleccion.apellido}`}>
+        <header><div><span>Paciente</span><h2>{seleccion.nombre} {seleccion.apellido}</h2></div><button type="button" className="detalle-cerrar" aria-label="Cerrar detalle" onClick={() => setSeleccion(null)}>×</button></header>
+        <section className="detalle-datos"><h3>Datos personales</h3><dl><div><dt>Teléfono</dt><dd>{seleccion.telefono || "No informado"}</dd></div><div><dt>Email</dt><dd>{seleccion.email || "No informado"}</dd></div><div><dt>DNI</dt><dd>{seleccion.dni || "No informado"}</dd></div><div><dt>Nacimiento</dt><dd>{seleccion.fecha_nacimiento ? new Intl.DateTimeFormat("es-AR", { timeZone: "UTC" }).format(new Date(`${seleccion.fecha_nacimiento}T00:00:00Z`)) : "No informado"}</dd></div></dl></section>
+        <div className="detalle-acciones"><button type="button" className="pacientes-boton secundario" onClick={editar}>Editar</button><button type="button" className="pacientes-boton destructivo" onClick={() => setConfirmar(true)}>Desactivar paciente</button></div>
+        <section className="detalle-historial"><header><span>Actividad</span><h3>Historial de turnos</h3></header>
+          {cargandoHistorial ? <p>Cargando historial...</p> : historial.length ? <ol>{historial.map((turno) => <li key={turno.id}><time dateTime={turno.fecha_hora}>{fechaHistorial(turno.fecha_hora)}</time><div><strong>{turno.prestacion_nombre}</strong><span className={`historial-estado estado-${turno.estado}`}>{etiquetaEstado(turno.estado)}</span></div></li>)}</ol> : <p>Sin turnos registrados.</p>}
         </section>
-      </section>
+      </aside></>}
 
-      {mostrarModal && (
-        <ModalPaciente
-          onCerrar={cerrarModal}
-          onPacienteCreado={
-            manejarPacienteCreado
-          }
-        />
-      )}
-    </main>
-  );
+    {confirmar && <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="desactivar-titulo"><div className="modal-paciente modal-confirmacion"><span className="modal-etiqueta">Acción sobre paciente</span><h2 id="desactivar-titulo">Desactivar paciente</h2><p>El paciente dejará de aparecer en tu listado activo. Sus turnos e historial se conservarán.</p><div className="modal-acciones"><button type="button" className="pacientes-boton secundario" onClick={() => setConfirmar(false)}>Cancelar</button><button type="button" className="pacientes-boton destructivo-solido" onClick={() => void desactivar()}>Desactivar</button></div></div></div>}
+
+    {modal && <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="paciente-modal-titulo"><form className="modal-paciente" onSubmit={guardar}>
+      <header className="modal-encabezado"><div><span className="modal-etiqueta">Datos básicos</span><h2 id="paciente-modal-titulo">{editando ? "Editar paciente" : "Nuevo paciente"}</h2><p>Completá la información necesaria para identificarlo.</p></div><button type="button" className="detalle-cerrar" aria-label="Cerrar" onClick={() => setModal(false)}>×</button></header>
+      <div className="formulario-grilla">{([['nombre','Nombre *'],['apellido','Apellido *'],['dni','DNI'],['telefono','Teléfono'],['email','Email'],['fecha_nacimiento','Fecha de nacimiento']] as const).map(([clave, etiqueta]) => <label key={clave}><span>{etiqueta}</span><input type={clave === "email" ? "email" : clave === "fecha_nacimiento" ? "date" : "text"} required={clave === "nombre" || clave === "apellido"} value={form[clave]} onChange={(e) => setForm({ ...form, [clave]: e.target.value })}/></label>)}</div>
+      <footer className="modal-acciones"><button type="button" className="pacientes-boton secundario" onClick={() => setModal(false)}>Cancelar</button><button className="pacientes-boton primario" disabled={guardando}>{guardando ? (editando ? "Guardando…" : "Creando…") : editando ? "Guardar cambios" : "Crear paciente"}</button></footer>
+    </form></div>}
+  </ProfesionalShell>;
 }
-
-export default Pacientes;

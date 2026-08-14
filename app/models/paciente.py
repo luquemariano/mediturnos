@@ -8,6 +8,7 @@ from app.database.connection import Base
 
 
 if TYPE_CHECKING:
+    from app.models.profesional_paciente import ProfesionalPaciente
     from app.models.usuario import Usuario
 
 
@@ -36,10 +37,10 @@ class Paciente(Base):
         nullable=False,
     )
 
-    dni: Mapped[str] = mapped_column(
+    dni: Mapped[str | None] = mapped_column(
         String(20),
         unique=True,
-        nullable=False,
+        nullable=True,
     )
 
     fecha_nacimiento: Mapped[date | None] = mapped_column(
@@ -47,9 +48,9 @@ class Paciente(Base):
         nullable=True,
     )
 
-    telefono: Mapped[str] = mapped_column(
+    telefono: Mapped[str | None] = mapped_column(
         String(30),
-        nullable=False,
+        nullable=True,
     )
 
     email: Mapped[str | None] = mapped_column(
@@ -76,3 +77,4 @@ class Paciente(Base):
     usuario: Mapped["Usuario | None"] = relationship(
         back_populates="paciente",
     )
+    profesionales_vinculados: Mapped[list["ProfesionalPaciente"]] = relationship(back_populates="paciente", cascade="all, delete-orphan")

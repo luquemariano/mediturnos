@@ -17,6 +17,7 @@ type MiDisponibilidadProps = {
   nombre: string;
   onVolver: () => void;
   onAbrirAgenda: () => void;
+  onAbrirPacientes: () => void;
   onAbrirPerfil: () => void;
   onCerrarSesion: () => void;
 };
@@ -52,6 +53,7 @@ export default function MiDisponibilidad({
   nombre,
   onVolver,
   onAbrirAgenda,
+  onAbrirPacientes,
   onAbrirPerfil,
   onCerrarSesion,
 }: MiDisponibilidadProps) {
@@ -239,6 +241,7 @@ export default function MiDisponibilidad({
     tituloTopbar="Mi disponibilidad"
     onAbrirInicio={onVolver}
     onAbrirAgenda={onAbrirAgenda}
+    onAbrirPacientes={onAbrirPacientes}
     onAbrirDisponibilidad={() => undefined}
     onAbrirPerfil={onAbrirPerfil}
     onCerrarSesion={onCerrarSesion}

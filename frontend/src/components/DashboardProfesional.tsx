@@ -31,6 +31,7 @@ import {
 type DashboardProfesionalProps = {
   nombre: string;
   onAbrirAgenda: () => void;
+  onAbrirPacientes: () => void;
   onAbrirDisponibilidad: () => void;
   onAbrirPerfil: () => void;
   onCerrarSesion: () => void;
@@ -132,6 +133,7 @@ function DashboardSkeleton() {
 export default function DashboardProfesional({
   nombre,
   onAbrirAgenda,
+  onAbrirPacientes,
   onAbrirDisponibilidad,
   onAbrirPerfil,
   onCerrarSesion,
@@ -316,6 +318,7 @@ export default function DashboardProfesional({
     tituloTopbar="Hoy"
     onAbrirInicio={() => undefined}
     onAbrirAgenda={onAbrirAgenda}
+    onAbrirPacientes={onAbrirPacientes}
     onAbrirDisponibilidad={onAbrirDisponibilidad}
     onAbrirPerfil={onAbrirPerfil}
     onCerrarSesion={onCerrarSesion}

@@ -19,6 +19,7 @@ type PerfilProfesionalProps = {
   nombre: string;
   onVolver: () => void;
   onAbrirAgenda: () => void;
+  onAbrirPacientes: () => void;
   onAbrirDisponibilidad: () => void;
   onAbrirPerfil: () => void;
   onCerrarSesion: () => void;
@@ -112,6 +113,7 @@ function PerfilProfesional(props: PerfilProfesionalProps) {
     tituloTopbar="Mi perfil"
     onAbrirInicio={props.onVolver}
     onAbrirAgenda={props.onAbrirAgenda}
+    onAbrirPacientes={props.onAbrirPacientes}
     onAbrirDisponibilidad={props.onAbrirDisponibilidad}
     onAbrirPerfil={props.onAbrirPerfil}
     onCerrarSesion={props.onCerrarSesion}

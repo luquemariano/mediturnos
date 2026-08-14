@@ -4,6 +4,7 @@ from app.models.especialidad import Especialidad
 from app.models.paciente import Paciente
 from app.models.prestacion import Prestacion
 from app.models.profesional import Profesional
+from app.models.profesional_paciente import ProfesionalPaciente
 from app.models.profesional_especialidad import ProfesionalEspecialidad
 from app.models.turno import Turno
 from app.models.pago import Pago
