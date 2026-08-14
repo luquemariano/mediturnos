@@ -170,6 +170,55 @@ docker compose --env-file .env exec api python -m app.scripts.bootstrap_admin
 Este comando no se ejecuta durante el arranque y se bloquea si ya existe un
 administrador o si el email pertenece a otra cuenta.
 
+### Email de recuperación de contraseña
+
+En `development`, `demo` y `test`, usá el proveedor local para evitar cualquier
+dependencia de Internet:
+
+```dotenv
+EMAIL_PROVIDER=in_memory
+FRONTEND_URL=http://localhost:5173
+PASSWORD_RESET_EXPIRE_MINUTES=60
+```
+
+Los enlaces se conservan únicamente en una salida controlada en memoria. En
+estos entornos no necesitás comprar ni verificar un dominio.
+
+En producción, `FRONTEND_URL` debe ser la URL pública donde está desplegado el
+frontend. Puede ser un subdominio asignado por el hosting —por ejemplo,
+`https://mi-app.onrender.com`— y no necesita coincidir con el dominio remitente
+del correo. MediTurnos exige además un proveedor transaccional real:
+
+```dotenv
+EMAIL_PROVIDER=resend
+RESEND_API_KEY=configurar_como_secreto
+EMAIL_FROM=MediTurnos <no-reply@dominio-verificado.example>
+FRONTEND_URL=https://url-publica-asignada-por-el-hosting.example
+```
+
+`FRONTEND_URL` no requiere un dominio comprado: puede cambiarse por la URL
+provista por Render u otro hosting. En cambio, para enviar correos reales a
+destinatarios externos, Resend exige verificar un dominio propio con acceso a
+sus registros DNS. `EMAIL_FROM` debe pertenecer a ese dominio verificado.
+La API key debe gestionarse como secreto y nunca incluirse en el repositorio
+ni en logs. `FRONTEND_URL` debe ser pública y no puede apuntar a localhost en
+producción.
+
+Resend ofrece `onboarding@resend.dev` para pruebas limitadas: sólo permite
+enviar al email asociado a la propia cuenta de Resend. También ofrece
+destinatarios especiales `@resend.dev` para simular entrega, rebote o denuncia.
+Estas opciones sirven para verificar la integración antes de comprar un
+dominio, pero no permiten recuperación real para usuarios externos y no deben
+usarse como configuración productiva.
+
+Cuando exista un dominio propio, no será necesario modificar `auth_service` ni
+la lógica de recuperación. Bastará con verificar el dominio en Resend y cambiar
+`EMAIL_FROM` y `FRONTEND_URL` en el entorno del deployment.
+
+Si Resend rechaza o no puede entregar la solicitud, la operación de base se
+revierte y el nuevo token no queda utilizable. La respuesta pública continúa
+siendo genérica para no revelar si el email pertenece a una cuenta.
+
 ### 4. Cargar datos demo
 
 El seed está deshabilitado por defecto. Antes de ejecutarlo, configurá

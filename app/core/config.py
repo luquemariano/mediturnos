@@ -69,6 +69,9 @@ class Settings(BaseSettings):
     jwt_expire_minutes: int = 60
     password_reset_expire_minutes: int = 60
     frontend_url: str = "http://localhost:5173"
+    email_provider: Literal["in_memory", "resend"] = "in_memory"
+    resend_api_key: SecretStr | None = None
+    email_from: str | None = None
     demo_seed_enabled: bool = False
     demo_admin_email: str | None = None
     demo_admin_password: SecretStr | None = None
@@ -83,6 +86,15 @@ class Settings(BaseSettings):
         if minutos <= 0:
             raise ValueError("PASSWORD_RESET_EXPIRE_MINUTES debe ser mayor que cero.")
         return minutos
+
+    @field_validator("frontend_url")
+    @classmethod
+    def validar_frontend_url(cls, valor: str) -> str:
+        try:
+            adaptador_origen_http.validate_python(valor)
+        except ValueError as error:
+            raise ValueError("FRONTEND_URL debe ser una URL HTTP o HTTPS válida.") from error
+        return valor.rstrip("/")
 
     @field_validator("cors_allowed_origins")
     @classmethod
@@ -179,6 +191,29 @@ class Settings(BaseSettings):
                     "En production, CORS_ALLOWED_ORIGINS no puede "
                     "contener localhost ni direcciones de loopback."
                 )
+
+        if self.email_provider != "resend":
+            raise ValueError(
+                "En production, EMAIL_PROVIDER debe ser 'resend'."
+            )
+        if (
+            self.resend_api_key is None
+            or not self.resend_api_key.get_secret_value().strip()
+        ):
+            raise ValueError(
+                "En production con Resend, RESEND_API_KEY es obligatorio."
+            )
+        if not self.email_from or not self.email_from.strip():
+            raise ValueError(
+                "En production con Resend, EMAIL_FROM es obligatorio."
+            )
+        frontend_host = adaptador_origen_http.validate_python(
+            self.frontend_url
+        ).host
+        if frontend_host is not None and es_host_loopback(frontend_host):
+            raise ValueError(
+                "En production, FRONTEND_URL no puede usar localhost ni loopback."
+            )
 
         return self
 

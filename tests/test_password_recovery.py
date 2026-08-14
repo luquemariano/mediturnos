@@ -1,5 +1,8 @@
 from datetime import UTC, datetime, timedelta
 
+import requests
+import pytest
+
 from app.core.security import generar_hash_password, verificar_password
 from app.models.password_reset_token import PasswordResetToken
 from app.models.usuario import Usuario
@@ -185,3 +188,100 @@ def test_email_desarrollo_no_registra_token_completo(caplog):
     email_service.enviar_recuperacion_password("persona@example.com", token)
     assert token not in caplog.text
     assert token in email_service.development_email_outbox["persona@example.com"]
+
+
+def test_email_recuperacion_usa_frontend_url_y_expiracion(monkeypatch):
+    token = "token-plano-para-enlace"
+    enviados = []
+
+    class ProviderFalso:
+        def enviar(self, mensaje):
+            enviados.append(mensaje)
+
+    monkeypatch.setattr(email_service.settings, "frontend_url", "https://app.mediturnos.example")
+    monkeypatch.setattr(email_service.settings, "password_reset_expire_minutes", 45)
+    monkeypatch.setattr(email_service, "obtener_email_provider", lambda: ProviderFalso())
+    email_service.enviar_recuperacion_password("persona@example.com", token)
+
+    assert len(enviados) == 1
+    mensaje = enviados[0]
+    assert f"https://app.mediturnos.example/reset-password?token={token}" in mensaje.texto
+    assert "45 minutos" in mensaje.texto
+    assert "45 minutos" in mensaje.html
+    assert "MediTurnos" in mensaje.asunto
+
+
+def test_fallo_provider_no_deja_token_utilizable(client, monkeypatch):
+    usuario = crear_usuario()
+
+    def fallar(*args):
+        raise email_service.EmailDeliveryError("error sanitizado")
+
+    monkeypatch.setattr(auth_service, "enviar_recuperacion_password", fallar)
+    respuesta = client.post("/auth/forgot-password", json={"email": usuario.email})
+
+    assert respuesta.status_code == 200
+    assert respuesta.json() == {"mensaje": auth_service.MENSAJE_FORGOT}
+    with SessionTest() as db:
+        assert db.query(PasswordResetToken).count() == 0
+
+
+def test_error_inesperado_provider_tambien_es_sanitizado(client, monkeypatch):
+    crear_usuario()
+
+    class ProviderFalso:
+        def enviar(self, mensaje):
+            raise RuntimeError("detalle-interno-del-proveedor")
+
+    monkeypatch.setattr(email_service, "obtener_email_provider", lambda: ProviderFalso())
+    respuesta = client.post(
+        "/auth/forgot-password",
+        json={"email": "profesional@example.com"},
+    )
+
+    assert respuesta.status_code == 200
+    assert "detalle-interno" not in respuesta.text
+    with SessionTest() as db:
+        assert db.query(PasswordResetToken).count() == 0
+
+
+def test_resend_envia_payload_sin_exponer_secretos(monkeypatch, caplog):
+    api_key = "resend-secret-no-loguear"
+    capturado = {}
+
+    class Respuesta:
+        status_code = 202
+
+    def post(url, **kwargs):
+        capturado.update({"url": url, **kwargs})
+        return Respuesta()
+
+    monkeypatch.setattr(email_service.requests, "post", post)
+    provider = email_service.ResendEmailProvider(api_key, "MediTurnos <no-reply@example.com>")
+    provider.enviar(email_service.TransactionalEmail(
+        destinatario="persona@example.com",
+        asunto="Asunto",
+        html="<p>Contenido</p>",
+        texto="Contenido",
+    ))
+
+    assert capturado["url"] == email_service.RESEND_API_URL
+    assert capturado["timeout"] == email_service.RESEND_TIMEOUT_SECONDS
+    assert capturado["headers"]["Authorization"] == f"Bearer {api_key}"
+    assert capturado["json"]["to"] == ["persona@example.com"]
+    assert api_key not in caplog.text
+
+
+def test_error_resend_es_sanitizado(monkeypatch, caplog):
+    secreto = "resend-secret-no-filtrar"
+
+    def fallar(*args, **kwargs):
+        raise requests.RequestException(f"falló con {secreto}")
+
+    monkeypatch.setattr(email_service.requests, "post", fallar)
+    provider = email_service.ResendEmailProvider(secreto, "no-reply@example.com")
+    with pytest.raises(email_service.EmailDeliveryError) as error:
+        provider.enviar(email_service.TransactionalEmail("persona@example.com", "A", "H", "T"))
+
+    assert secreto not in str(error.value)
+    assert secreto not in caplog.text

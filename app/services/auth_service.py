@@ -16,7 +16,7 @@ from app.repositories.password_reset_repository import (
     invalidar_tokens_activos,
 )
 from app.repositories.usuario_repository import buscar_usuario_por_email
-from app.services.email_service import EmailServiceUnavailable, enviar_recuperacion_password
+from app.services.email_service import EmailDeliveryError, enviar_recuperacion_password
 
 
 MENSAJE_FORGOT = (
@@ -45,9 +45,10 @@ def solicitar_reset_password(db: Session, email: str) -> str:
         created_at=ahora,
     ))
     try:
+        db.flush()
         enviar_recuperacion_password(usuario.email, token_plano)
         db.commit()
-    except EmailServiceUnavailable:
+    except EmailDeliveryError:
         db.rollback()
     except Exception:
         db.rollback()

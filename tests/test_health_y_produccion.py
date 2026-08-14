@@ -19,6 +19,10 @@ def crear_configuracion_produccion(**cambios) -> Settings:
         "database_url": DATABASE_POSTGRES,
         "jwt_secret_key": JWT_SEGURO,
         "cors_allowed_origins": ["https://app.mediturnos.example"],
+        "frontend_url": "https://app.mediturnos.example",
+        "email_provider": "resend",
+        "resend_api_key": "resend-test-key",
+        "email_from": "MediTurnos <no-reply@mediturnos.example>",
     }
     valores.update(cambios)
 
@@ -194,3 +198,17 @@ def test_produccion_acepta_cors_https_publico():
     assert configuracion.cors_allowed_origins == [
         "https://app.mediturnos.example",
     ]
+
+
+@pytest.mark.parametrize(
+    ("cambios", "mensaje"),
+    [
+        ({"email_provider": "in_memory"}, "EMAIL_PROVIDER"),
+        ({"resend_api_key": None}, "RESEND_API_KEY"),
+        ({"email_from": None}, "EMAIL_FROM"),
+        ({"frontend_url": "http://localhost:5173"}, "FRONTEND_URL"),
+    ],
+)
+def test_produccion_exige_email_transaccional_configurado(cambios, mensaje):
+    with pytest.raises(ValidationError, match=mensaje):
+        crear_configuracion_produccion(**cambios)
