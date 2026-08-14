@@ -4,7 +4,7 @@ import Pacientes from "../src/components/Pacientes";
 import * as servicio from "../src/services/pacienteService";
 
 vi.mock("../src/services/pacienteService");
-const props={nombre:"Dra. Ada",onVolver:vi.fn(),onAbrirAgenda:vi.fn(),onAbrirDisponibilidad:vi.fn(),onAbrirPerfil:vi.fn(),onCerrarSesion:vi.fn()};
+const props={nombre:"Dra. Ada",onVolver:vi.fn(),onAbrirAgenda:vi.fn(),onAbrirDisponibilidad:vi.fn(),onAbrirPrestaciones:vi.fn(),onAbrirPerfil:vi.fn(),onCerrarSesion:vi.fn()};
 
 describe("Pacientes profesional",()=>{
   beforeEach(()=>{vi.clearAllMocks();vi.mocked(servicio.buscarPacientesProfesional).mockResolvedValue([])});

@@ -170,8 +170,8 @@ def crear_turno(
         prestacion.profesional_id != profesional_id_esperado
     ):
         raise HTTPException(
-            status_code=403,
-            detail="La prestación no pertenece al profesional autenticado.",
+            status_code=404,
+            detail="Prestación no encontrada.",
         )
 
     if not prestacion.profesional.activo:

@@ -14,6 +14,7 @@ import AgendaPropia from "./components/AgendaPropia";
 import MiDisponibilidad from "./components/MiDisponibilidad";
 import PerfilPropio from "./components/PerfilPropio";
 import DashboardProfesional from "./components/DashboardProfesional";
+import MisPrestaciones from "./components/MisPrestaciones";
 import {
   iniciarSesion,
   obtenerUsuarioActual,
@@ -173,6 +174,7 @@ function App() {
           onAbrirAgenda={() => setVista("turnos")}
           onAbrirPacientes={() => setVista("pacientes")}
           onAbrirDisponibilidad={() => setVista("disponibilidades")}
+          onAbrirPrestaciones={() => setVista("prestaciones")}
           onAbrirPerfil={() => setVista("perfil")}
           onCerrarSesion={cerrarSesion}
         />
@@ -188,6 +190,7 @@ function App() {
           }
           onAbrirAgenda={() => setVista("turnos")}
           onAbrirDisponibilidad={() => setVista("disponibilidades")}
+          onAbrirPrestaciones={() => setVista("prestaciones")}
           onAbrirPerfil={() => setVista("perfil")}
           onCerrarSesion={cerrarSesion}
         />
@@ -202,6 +205,7 @@ function App() {
           onVolver={() => setVista("dashboard")}
           onAbrirPacientes={() => setVista("pacientes")}
           onAbrirDisponibilidad={() => setVista("disponibilidades")}
+          onAbrirPrestaciones={() => setVista("prestaciones")}
           onAbrirPerfil={() => setVista("perfil")}
           onCerrarSesion={cerrarSesion}
         />;
@@ -225,6 +229,7 @@ function App() {
           onVolver={() => setVista("dashboard")}
           onAbrirAgenda={() => setVista("turnos")}
           onAbrirPacientes={() => setVista("pacientes")}
+          onAbrirPrestaciones={() => setVista("prestaciones")}
           onAbrirPerfil={() => setVista("perfil")}
           onCerrarSesion={cerrarSesion}
         />;
@@ -244,6 +249,7 @@ function App() {
         onAbrirAgenda={() => setVista("turnos")}
         onAbrirPacientes={() => setVista("pacientes")}
         onAbrirDisponibilidad={() => setVista("disponibilidades")}
+        onAbrirPrestaciones={() => setVista("prestaciones")}
         onAbrirPerfil={() => setVista("perfil")}
         onCerrarSesion={cerrarSesion}
       />;
@@ -272,6 +278,18 @@ function App() {
           }
         />
       );
+    }
+
+    if (vista === "prestaciones" && usuario.rol === "profesional") {
+      return <MisPrestaciones
+        nombre={usuario.nombre}
+        onVolver={() => setVista("dashboard")}
+        onAbrirAgenda={() => setVista("turnos")}
+        onAbrirPacientes={() => setVista("pacientes")}
+        onAbrirDisponibilidad={() => setVista("disponibilidades")}
+        onAbrirPerfil={() => setVista("perfil")}
+        onCerrarSesion={cerrarSesion}
+      />;
     }
 
     if (

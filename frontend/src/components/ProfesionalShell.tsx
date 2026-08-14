@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import "./ProfesionalShell.css";
 import Icono from "./Icono";
 
-type SeccionProfesional = "inicio" | "agenda" | "pacientes" | "disponibilidad" | "perfil";
+type SeccionProfesional = "inicio" | "agenda" | "pacientes" | "disponibilidad" | "prestaciones" | "perfil";
 
 type ProfesionalShellProps = {
   activo: SeccionProfesional;
@@ -14,6 +14,7 @@ type ProfesionalShellProps = {
   onAbrirAgenda: () => void;
   onAbrirPacientes: () => void;
   onAbrirDisponibilidad: () => void;
+  onAbrirPrestaciones: () => void;
   onAbrirPerfil: () => void;
   onCerrarSesion: () => void;
   accionTopbar?: ReactNode;
@@ -28,6 +29,7 @@ export default function ProfesionalShell({
   onAbrirAgenda,
   onAbrirPacientes,
   onAbrirDisponibilidad,
+  onAbrirPrestaciones,
   onAbrirPerfil,
   onCerrarSesion,
   accionTopbar,
@@ -40,6 +42,7 @@ export default function ProfesionalShell({
     { id: "agenda" as const, texto: "Mi agenda", icono: "agenda" as const, accion: onAbrirAgenda },
     { id: "pacientes" as const, texto: "Pacientes", icono: "usuario" as const, accion: onAbrirPacientes },
     { id: "disponibilidad" as const, texto: "Mi disponibilidad", icono: "reloj" as const, accion: onAbrirDisponibilidad },
+    { id: "prestaciones" as const, texto: "Mis prestaciones", icono: "check" as const, accion: onAbrirPrestaciones },
     { id: "perfil" as const, texto: "Mi perfil", icono: "perfil" as const, accion: onAbrirPerfil },
   ];
 

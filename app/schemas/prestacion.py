@@ -31,6 +31,22 @@ class PrestacionCrear(BaseModel):
     especialidad_id: int = Field(
         gt=0,
     )
+
+class PrestacionProfesionalCrear(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    nombre: str = Field(min_length=2, max_length=120)
+    duracion_minutos: int = Field(ge=10, le=240)
+    precio: Decimal = Field(ge=0, decimal_places=2)
+    modalidad: Literal["presencial", "virtual"] = "presencial"
+    especialidad_id: int = Field(gt=0)
+
+class PrestacionProfesionalActualizar(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    nombre: str | None = Field(default=None, min_length=2, max_length=120)
+    duracion_minutos: int | None = Field(default=None, ge=10, le=240)
+    precio: Decimal | None = Field(default=None, ge=0, decimal_places=2)
+    modalidad: Literal["presencial", "virtual"] | None = None
+    activa: bool | None = None
 class PrestacionActualizar(BaseModel):
     nombre: str | None = Field(
         default=None,

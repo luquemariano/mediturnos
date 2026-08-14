@@ -5,24 +5,19 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import NuevoTurnoProfesional from "../src/components/NuevoTurnoProfesional";
 import * as pacienteService from "../src/services/pacienteService";
 import * as prestacionService from "../src/services/prestacionService";
-import * as profesionalService from "../src/services/profesionalService";
 import * as turnoService from "../src/services/turnoService";
 import type { Turno } from "../src/types/turno";
 
 vi.mock("../src/services/pacienteService", () => ({ obtenerPacientesParaProfesional: vi.fn() }));
-vi.mock("../src/services/prestacionService", () => ({ obtenerPrestaciones: vi.fn() }));
-vi.mock("../src/services/profesionalService", () => ({ obtenerMiPerfilProfesional: vi.fn() }));
+vi.mock("../src/services/prestacionService", () => ({ obtenerMisPrestaciones: vi.fn(), obtenerPrestaciones: vi.fn() }));
 vi.mock("../src/services/turnoService", () => ({ crearMiTurnoProfesional: vi.fn(), obtenerHorariosLibres: vi.fn() }));
 
-const perfil = { id: 7, nombre: "Sofía", apellido: "Ramírez", matricula: "MP", telefono: null, email: null, activo: true, especialidades: [] };
 const propia = { id: 3, nombre: "Consulta", descripcion: null, duracion_minutos: 50, precio: 100, modalidad: "presencial" as const, activa: true, profesional_id: 7, especialidad_id: 1 };
-const ajena = { ...propia, id: 4, nombre: "Ajena", profesional_id: 8 };
 const creado: Turno = { id: 9, paciente_id: 2, paciente_nombre: "Ana López", prestacion_id: 3, prestacion_nombre: "Consulta", profesional_nombre: "Sofía Ramírez", especialidad_nombre: "Clínica", fecha_hora: "2030-01-07T12:00:00Z", fecha_fin: "2030-01-07T12:50:00Z", estado: "reservado", observaciones: null };
 
 function preparar() {
   vi.mocked(pacienteService.obtenerPacientesParaProfesional).mockResolvedValue([{ id: 2, nombre: "Ana", apellido: "López" }]);
-  vi.mocked(profesionalService.obtenerMiPerfilProfesional).mockResolvedValue(perfil);
-  vi.mocked(prestacionService.obtenerPrestaciones).mockResolvedValue([propia, ajena, { ...propia, id: 5, nombre: "Inactiva", activa: false }]);
+  vi.mocked(prestacionService.obtenerMisPrestaciones).mockResolvedValue([propia, { ...propia, id: 5, nombre: "Inactiva", activa: false }]);
 }
 
 async function completarHastaFecha() {
@@ -42,6 +37,7 @@ describe("nuevo turno profesional", () => {
     expect(screen.getByRole("option", { name: "Consulta · 50 min" })).toBeInTheDocument();
     expect(screen.queryByRole("option", { name: /Ajena/ })).not.toBeInTheDocument();
     expect(screen.queryByRole("option", { name: /Inactiva/ })).not.toBeInTheDocument();
+    expect(prestacionService.obtenerPrestaciones).not.toHaveBeenCalled();
   });
 
   it("consulta los slots del backend al elegir prestación y fecha", async () => {

@@ -33,6 +33,7 @@ type DashboardProfesionalProps = {
   onAbrirAgenda: () => void;
   onAbrirPacientes: () => void;
   onAbrirDisponibilidad: () => void;
+  onAbrirPrestaciones: () => void;
   onAbrirPerfil: () => void;
   onCerrarSesion: () => void;
 };
@@ -135,6 +136,7 @@ export default function DashboardProfesional({
   onAbrirAgenda,
   onAbrirPacientes,
   onAbrirDisponibilidad,
+  onAbrirPrestaciones,
   onAbrirPerfil,
   onCerrarSesion,
 }: DashboardProfesionalProps) {
@@ -320,6 +322,7 @@ export default function DashboardProfesional({
     onAbrirAgenda={onAbrirAgenda}
     onAbrirPacientes={onAbrirPacientes}
     onAbrirDisponibilidad={onAbrirDisponibilidad}
+    onAbrirPrestaciones={onAbrirPrestaciones}
     onAbrirPerfil={onAbrirPerfil}
     onCerrarSesion={onCerrarSesion}
     accionTopbar={<button type="button" className="prof-enlace-topbar" onClick={onAbrirAgenda}>Ver agenda completa <Icono nombre="flecha" /></button>}

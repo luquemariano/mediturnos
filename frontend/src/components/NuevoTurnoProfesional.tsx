@@ -4,8 +4,7 @@ import axios from "axios";
 
 import "./NuevoTurnoProfesional.css";
 import { obtenerPacientesParaProfesional } from "../services/pacienteService";
-import { obtenerPrestaciones } from "../services/prestacionService";
-import { obtenerMiPerfilProfesional } from "../services/profesionalService";
+import { obtenerMisPrestaciones } from "../services/prestacionService";
 import { crearMiTurnoProfesional, obtenerHorariosLibres } from "../services/turnoService";
 import type { PacienteSeleccion } from "../types/paciente";
 import type { Prestacion } from "../types/prestacion";
@@ -43,13 +42,12 @@ export default function NuevoTurnoProfesional({ onCerrar, onCreado }: Props) {
   useEffect(() => {
     async function cargar() {
       try {
-        const [pacientesDatos, perfil, prestacionesDatos] = await Promise.all([
+        const [pacientesDatos, prestacionesDatos] = await Promise.all([
           obtenerPacientesParaProfesional(),
-          obtenerMiPerfilProfesional(),
-          obtenerPrestaciones(),
+          obtenerMisPrestaciones(),
         ]);
         setPacientes(pacientesDatos);
-        setPrestaciones(prestacionesDatos.filter((item) => item.activa && item.profesional_id === perfil.id));
+        setPrestaciones(prestacionesDatos.filter((item) => item.activa));
       } catch (motivo) {
         setError(detalleError(motivo, "No pudimos cargar los datos para crear el turno."));
       } finally {

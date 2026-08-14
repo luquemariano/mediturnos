@@ -13,6 +13,7 @@ it("mantiene Pacientes en la navegación profesional desde cualquier sección", 
     onAbrirAgenda={accion}
     onAbrirPacientes={accion}
     onAbrirDisponibilidad={accion}
+    onAbrirPrestaciones={accion}
     onAbrirPerfil={accion}
     onCerrarSesion={accion}
   ><p>Contenido</p></ProfesionalShell>);

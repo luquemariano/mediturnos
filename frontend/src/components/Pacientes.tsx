@@ -19,6 +19,7 @@ type Props = {
   onVolver: () => void;
   onAbrirAgenda: () => void;
   onAbrirDisponibilidad: () => void;
+  onAbrirPrestaciones: () => void;
   onAbrirPerfil: () => void;
   onCerrarSesion: () => void;
 };
@@ -113,7 +114,7 @@ export default function Pacientes(props: Props) {
 
   return <ProfesionalShell activo="pacientes" nombre={props.nombre} tituloTopbar="Pacientes"
     onAbrirInicio={props.onVolver} onAbrirAgenda={props.onAbrirAgenda} onAbrirPacientes={() => undefined}
-    onAbrirDisponibilidad={props.onAbrirDisponibilidad} onAbrirPerfil={props.onAbrirPerfil} onCerrarSesion={props.onCerrarSesion}>
+    onAbrirDisponibilidad={props.onAbrirDisponibilidad} onAbrirPrestaciones={props.onAbrirPrestaciones} onAbrirPerfil={props.onAbrirPerfil} onCerrarSesion={props.onCerrarSesion}>
     <div className="pacientes-pagina">
       <header className="pacientes-cabecera">
         <div><span>Directorio profesional</span><h1>Pacientes</h1><p>Gestioná tus pacientes y consultá su historial de turnos.</p></div>

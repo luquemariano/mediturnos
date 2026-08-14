@@ -29,6 +29,7 @@ type AgendaPropiaProps = {
   onVolver: () => void;
   onAbrirPacientes?: () => void;
   onAbrirDisponibilidad?: () => void;
+  onAbrirPrestaciones?: () => void;
   onAbrirPerfil?: () => void;
   onCerrarSesion?: () => void;
 };
@@ -116,6 +117,7 @@ export default function AgendaPropia({
   onVolver,
   onAbrirPacientes = onVolver,
   onAbrirDisponibilidad = onVolver,
+  onAbrirPrestaciones = onVolver,
   onAbrirPerfil = onVolver,
   onCerrarSesion = onVolver,
 }: AgendaPropiaProps) {
@@ -233,6 +235,7 @@ export default function AgendaPropia({
     onAbrirAgenda={() => undefined}
     onAbrirPacientes={onAbrirPacientes}
     onAbrirDisponibilidad={onAbrirDisponibilidad}
+    onAbrirPrestaciones={onAbrirPrestaciones}
     onAbrirPerfil={onAbrirPerfil}
     onCerrarSesion={onCerrarSesion}
     accionTopbar={<button type="button" className="prof-enlace-topbar" onClick={onVolver}>Volver a inicio <Icono nombre="flecha" /></button>}

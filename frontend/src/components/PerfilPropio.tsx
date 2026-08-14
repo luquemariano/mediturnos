@@ -21,6 +21,7 @@ type PerfilProfesionalProps = {
   onAbrirAgenda: () => void;
   onAbrirPacientes: () => void;
   onAbrirDisponibilidad: () => void;
+  onAbrirPrestaciones: () => void;
   onAbrirPerfil: () => void;
   onCerrarSesion: () => void;
 };
@@ -115,6 +116,7 @@ function PerfilProfesional(props: PerfilProfesionalProps) {
     onAbrirAgenda={props.onAbrirAgenda}
     onAbrirPacientes={props.onAbrirPacientes}
     onAbrirDisponibilidad={props.onAbrirDisponibilidad}
+    onAbrirPrestaciones={props.onAbrirPrestaciones}
     onAbrirPerfil={props.onAbrirPerfil}
     onCerrarSesion={props.onCerrarSesion}
   >

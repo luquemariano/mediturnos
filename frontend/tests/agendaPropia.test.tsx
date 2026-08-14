@@ -20,7 +20,7 @@ vi.mock("../src/services/turnoService", () => ({
   reprogramarMiTurnoProfesional: vi.fn(),
 }));
 vi.mock("../src/services/pacienteService", () => ({ obtenerPacientesParaProfesional: vi.fn() }));
-vi.mock("../src/services/prestacionService", () => ({ obtenerPrestaciones: vi.fn() }));
+vi.mock("../src/services/prestacionService", () => ({ obtenerMisPrestaciones: vi.fn(), obtenerPrestaciones: vi.fn() }));
 vi.mock("../src/services/profesionalService", () => ({ obtenerMiPerfilProfesional: vi.fn() }));
 
 function turno(datos: Partial<Turno> = {}): Turno {
@@ -229,7 +229,7 @@ describe("agenda propia profesional Signature", () => {
     vi.mocked(servicio.obtenerMiAgendaProfesional).mockResolvedValue([]);
     vi.mocked(pacienteService.obtenerPacientesParaProfesional).mockResolvedValue([{ id: 10, nombre: "Ana", apellido: "López" }]);
     vi.mocked(profesionalService.obtenerMiPerfilProfesional).mockResolvedValue({ id: 7, nombre: "Sofía", apellido: "Ramírez", matricula: "MP", telefono: null, email: null, activo: true, especialidades: [] });
-    vi.mocked(prestacionService.obtenerPrestaciones).mockResolvedValue([{ id: 20, nombre: "Consulta clínica", descripcion: null, duracion_minutos: 50, precio: 100, modalidad: "presencial", activa: true, profesional_id: 7, especialidad_id: 1 }]);
+    vi.mocked(prestacionService.obtenerMisPrestaciones).mockResolvedValue([{ id: 20, nombre: "Consulta clínica", descripcion: null, duracion_minutos: 50, precio: 100, modalidad: "presencial", activa: true, profesional_id: 7, especialidad_id: 1 }]);
     vi.mocked(servicio.obtenerHorariosLibres).mockResolvedValue([{ fecha_hora: "2026-08-14T12:00:00Z" }]);
     vi.mocked(servicio.crearMiTurnoProfesional).mockResolvedValue(turno({ id: 8, fecha_hora: "2026-08-14T12:00:00Z" }));
     renderProfesional();

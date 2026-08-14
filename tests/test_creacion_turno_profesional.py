@@ -54,7 +54,7 @@ def test_profesional_no_puede_usar_prestacion_ajena(monkeypatch):
     preparar(monkeypatch, profesional_id=11)
     with pytest.raises(HTTPException) as error:
         turno_service.crear_turno_profesional(SimpleNamespace(), 10, datos_turno())
-    assert error.value.status_code == 403
+    assert error.value.status_code == 404
 
 
 @pytest.mark.parametrize(

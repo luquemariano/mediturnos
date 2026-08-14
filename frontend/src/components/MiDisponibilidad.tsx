@@ -19,6 +19,7 @@ type MiDisponibilidadProps = {
   onAbrirAgenda: () => void;
   onAbrirPacientes: () => void;
   onAbrirPerfil: () => void;
+  onAbrirPrestaciones: () => void;
   onCerrarSesion: () => void;
 };
 
@@ -54,6 +55,7 @@ export default function MiDisponibilidad({
   onVolver,
   onAbrirAgenda,
   onAbrirPacientes,
+  onAbrirPrestaciones,
   onAbrirPerfil,
   onCerrarSesion,
 }: MiDisponibilidadProps) {
@@ -243,6 +245,7 @@ export default function MiDisponibilidad({
     onAbrirAgenda={onAbrirAgenda}
     onAbrirPacientes={onAbrirPacientes}
     onAbrirDisponibilidad={() => undefined}
+    onAbrirPrestaciones={onAbrirPrestaciones}
     onAbrirPerfil={onAbrirPerfil}
     onCerrarSesion={onCerrarSesion}
     accionTopbar={<button type="button" className="prof-enlace-topbar" onClick={onVolver}>Volver a inicio <Icono nombre="flecha" /></button>}

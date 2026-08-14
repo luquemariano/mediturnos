@@ -53,6 +53,8 @@ def autenticar_como(usuario):
         "/turnos/1",
         "/pacientes/",
         "/pacientes/1",
+        "/prestaciones/",
+        "/prestaciones/1",
     ],
 )
 def test_profesional_no_accede_a_recursos_globales(
