@@ -18,7 +18,7 @@ export const PLANES = [
     descripcion: "Para profesionales que gestionan su propia consulta.",
     precio: "$34.900 / mes",
     accion: "Comenzar",
-    href: "/login",
+    href: "/registro",
     destacado: true,
     incluye: ["1 profesional", "Pacientes ilimitados*", "Agenda profesional", "Historia clínica y evoluciones", "Disponibilidad", "Prestaciones", "Perfil profesional", "Acceso multidispositivo", "Soporte"],
   },

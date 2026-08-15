@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, ForeignKey, String
+from sqlalchemy import Boolean, CheckConstraint, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database.connection import Base
@@ -15,6 +15,12 @@ if TYPE_CHECKING:
 
 class Profesional(Base):
     __tablename__ = "profesionales"
+    __table_args__ = (
+        CheckConstraint(
+            "onboarding_step IN ('perfil', 'prestaciones', 'disponibilidad', 'listo', 'completado')",
+            name="ck_profesionales_onboarding_step",
+        ),
+    )
 
     id: Mapped[int] = mapped_column(
         primary_key=True,
@@ -69,6 +75,11 @@ class Profesional(Base):
 
     usuario: Mapped["Usuario | None"] = relationship(
         back_populates="profesional",
+    )
+
+    onboarding_step: Mapped[str] = mapped_column(
+        String(30), nullable=False, default="completado",
+        server_default="completado",
     )
     pacientes_vinculados: Mapped[list["ProfesionalPaciente"]] = relationship(back_populates="profesional", cascade="all, delete-orphan")
     evoluciones: Mapped[list["EvolucionClinica"]] = relationship(back_populates="profesional")

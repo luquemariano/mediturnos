@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.database.connection import obtener_db
 from app.schemas.auth import (
     ChangePasswordDatos, ForgotPasswordDatos, LoginDatos, MensajeRespuesta,
+    RegistroProfesionalDatos, RegistroProfesionalRespuesta,
     ResetPasswordDatos, TokenRespuesta,
 )
 from app.services.auth_service import (
@@ -13,6 +14,8 @@ from app.services.auth_service import (
 from app.core.dependencies import obtener_usuario_actual
 from app.models.usuario import Usuario
 from app.schemas.usuario import UsuarioRespuesta
+from app.services.registro_service import registrar_profesional_publico
+from app.core.rate_limit import limitar_login, limitar_recuperacion, limitar_registro
 
 
 router = APIRouter(
@@ -22,12 +25,27 @@ router = APIRouter(
 
 
 @router.post(
+    "/register/profesional",
+    response_model=RegistroProfesionalRespuesta,
+    status_code=201,
+    summary="Registrar una cuenta profesional individual",
+)
+def registrar_cuenta_profesional(
+    datos: RegistroProfesionalDatos,
+    _: None = Depends(limitar_registro),
+    db: Session = Depends(obtener_db),
+):
+    return registrar_profesional_publico(db, datos)
+
+
+@router.post(
     "/login",
     response_model=TokenRespuesta,
     summary="Iniciar sesión",
 )
 def login(
     datos: LoginDatos,
+    _: None = Depends(limitar_login),
     db: Session = Depends(obtener_db),
 ):
     access_token = autenticar_usuario(
@@ -54,7 +72,11 @@ def obtener_mi_usuario(
 
 
 @router.post("/forgot-password", response_model=MensajeRespuesta)
-def forgot_password(datos: ForgotPasswordDatos, db: Session = Depends(obtener_db)):
+def forgot_password(
+    datos: ForgotPasswordDatos,
+    _: None = Depends(limitar_recuperacion),
+    db: Session = Depends(obtener_db),
+):
     solicitar_reset_password(db, datos.email)
     return MensajeRespuesta(mensaje=MENSAJE_FORGOT)
 

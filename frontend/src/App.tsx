@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import axios from "axios";
 
@@ -18,12 +18,17 @@ import DashboardProfesional from "./components/DashboardProfesional";
 import MisPrestaciones from "./components/MisPrestaciones";
 import "./responsiveAudit.css";
 import LandingPage from "./landing/LandingPage";
+import RegistroProfesional from "./components/RegistroProfesional";
+import OnboardingProfesional from "./components/OnboardingProfesional";
+import { rutaOnboarding } from "./utils/onboarding";
 import {
   iniciarSesion,
   obtenerUsuarioActual,
   restablecerPassword,
   solicitarRecuperacion,
 } from "./services/authService";
+import { obtenerOnboarding } from "./services/onboardingService";
+import type { RegistroProfesionalResponse, OnboardingStep } from "./types/auth";
 import type { UsuarioActual } from "./types/auth";
 import {
   EVENTO_SESION_NO_AUTORIZADA,
@@ -47,6 +52,7 @@ type VistaAcceso = "login" | "forgot" | "reset";
 
 function App() {
   const rutaInicial = window.location.pathname;
+  const [ruta, setRuta] = useState(rutaInicial);
   const [email, setEmail] =
     useState("");
 
@@ -72,6 +78,12 @@ function App() {
   const [vista, setVista] =
     useState<Vista>("dashboard");
 
+  const navegar = useCallback((destino: string) => {
+    if (window.location.pathname !== destino) window.history.pushState({}, "", destino);
+    setRuta(destino);
+  }, []);
+
+  const abrirDashboard = useCallback(() => { navegar("/app"); setVista("dashboard"); }, [navegar]);
 
   useEffect(() => {
     let activo = true;
@@ -89,10 +101,20 @@ function App() {
       cerrarSesionPor401,
     );
 
+    const manejarPopState = () => setRuta(window.location.pathname);
+    window.addEventListener("popstate", manejarPopState);
     void restaurarSesion(obtenerUsuarioActual).then(
-      (usuarioRestaurado) => {
+      async (usuarioRestaurado) => {
         if (activo) {
           setUsuario(usuarioRestaurado);
+          if (usuarioRestaurado?.rol === "profesional") {
+            try {
+              const estado = await obtenerOnboarding();
+              if (estado.onboarding_step !== "completado" && !window.location.pathname.startsWith("/onboarding/")) {
+                navegar(rutaOnboarding(estado.onboarding_step));
+              }
+            } catch { /* La sesión global manejará un eventual 401. */ }
+          }
           setValidandoSesion(false);
         }
       },
@@ -104,8 +126,13 @@ function App() {
         EVENTO_SESION_NO_AUTORIZADA,
         cerrarSesionPor401,
       );
+      window.removeEventListener("popstate", manejarPopState);
     };
-  }, []);
+  }, [navegar]);
+
+  useEffect(() => {
+    if (usuario && usuario.rol !== "profesional" && ruta.startsWith("/onboarding/")) navegar("/app");
+  }, [navegar, ruta, usuario]);
 
 
   async function manejarInicioSesion(
@@ -134,6 +161,10 @@ function App() {
 
       setUsuario(usuarioActual);
       setVista("dashboard");
+      if (usuarioActual.rol === "profesional") {
+        const estado = await obtenerOnboarding();
+        navegar(estado.onboarding_step === "completado" ? "/app" : rutaOnboarding(estado.onboarding_step));
+      } else navegar("/app");
     } catch (error) {
       localStorage.removeItem("access_token");
 
@@ -205,7 +236,7 @@ function App() {
   }
 
 
-  if (rutaInicial === "/") {
+  if (ruta === "/") {
     return <LandingPage />;
   }
 
@@ -227,7 +258,25 @@ function App() {
     setVista("dashboard");
     setPassword("");
     setMensaje("");
+    navegar("/login");
   }
+
+  async function manejarRegistroExitoso(respuesta: RegistroProfesionalResponse) {
+    localStorage.setItem("access_token", respuesta.access_token);
+    habilitarNotificacionDeSesion();
+    setUsuario(await obtenerUsuarioActual());
+    navegar("/onboarding/perfil");
+  }
+
+  const pasoRuta = ruta.startsWith("/onboarding/") ? ruta.split("/").pop() as OnboardingStep : null;
+
+  if (!usuario && ruta === "/registro") return <RegistroProfesional onRegistrado={manejarRegistroExitoso}/>;
+
+  if (usuario && usuario.rol === "profesional" && pasoRuta && ["perfil","prestaciones","disponibilidad","listo"].includes(pasoRuta)) {
+    return <OnboardingProfesional pasoRuta={pasoRuta} onNavegar={navegar} onCompletado={abrirDashboard}/>;
+  }
+
+  if (usuario && ruta.startsWith("/onboarding/")) return <main className="pagina-login"><p>Redirigiendo…</p></main>;
 
 
   if (usuario) {

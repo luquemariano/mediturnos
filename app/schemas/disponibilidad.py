@@ -21,6 +21,19 @@ class DisponibilidadCrear(BaseModel):
         return self
 
 
+class DisponibilidadPropiaCrear(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    dia_semana: int = Field(ge=0, le=6)
+    hora_inicio: time
+    hora_fin: time
+
+    @model_validator(mode="after")
+    def validar_horario(self):
+        if self.hora_fin <= self.hora_inicio:
+            raise ValueError("La hora de finalización debe ser posterior a la de inicio.")
+        return self
+
+
 class DisponibilidadActualizar(BaseModel):
     model_config = ConfigDict(extra="forbid")
 

@@ -29,6 +29,15 @@ def buscar_todas(
     return db.query(Especialidad).all()
 
 
+def buscar_activas_para_catalogo(db: Session) -> list[Especialidad]:
+    return (
+        db.query(Especialidad)
+        .filter(Especialidad.activa.is_(True))
+        .order_by(Especialidad.nombre)
+        .all()
+    )
+
+
 def buscar_por_id(
     db: Session,
     especialidad_id: int,

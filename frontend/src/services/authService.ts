@@ -8,6 +8,8 @@ import type {
   ForgotPasswordRequest,
   MensajeResponse,
   ResetPasswordRequest,
+  RegistroProfesionalRequest,
+  RegistroProfesionalResponse,
 } from "../types/auth";
 
 
@@ -30,6 +32,10 @@ Promise<UsuarioActual> {
   );
 
   return respuesta.data;
+}
+
+export async function registrarProfesional(datos: RegistroProfesionalRequest): Promise<RegistroProfesionalResponse> {
+  return (await api.post<RegistroProfesionalResponse>("/auth/register/profesional", datos)).data;
 }
 
 export async function solicitarRecuperacion(

@@ -5,6 +5,9 @@ from pydantic import (
     Field,
     field_validator,
 )
+from typing import Literal
+
+OnboardingStep = Literal["perfil", "prestaciones", "disponibilidad", "listo", "completado"]
 
 
 class EspecialidadProfesionalCrear(BaseModel):
@@ -50,6 +53,7 @@ class ProfesionalCrear(BaseModel):
 
 
 class ProfesionalActualizar(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     nombre: str | None = Field(
         default=None,
         min_length=2,
@@ -133,6 +137,7 @@ class ProfesionalRespuesta(BaseModel):
     telefono: str | None
     email: str | None
     activo: bool
+    onboarding_step: OnboardingStep
     especialidades: list[
         EspecialidadProfesionalRespuesta
     ] = Field(

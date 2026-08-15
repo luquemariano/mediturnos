@@ -79,6 +79,23 @@ class Settings(BaseSettings):
     demo_professional_email: str | None = None
     demo_professional_password: SecretStr | None = None
     demo_professional_reset_password: bool = False
+    trust_proxy_headers: bool = False
+    rate_limit_window_seconds: int = 60
+    rate_limit_register_attempts: int = 5
+    rate_limit_login_attempts: int = 15
+    rate_limit_password_reset_attempts: int = 3
+
+    @field_validator(
+        "rate_limit_window_seconds",
+        "rate_limit_register_attempts",
+        "rate_limit_login_attempts",
+        "rate_limit_password_reset_attempts",
+    )
+    @classmethod
+    def validar_rate_limit(cls, valor: int) -> int:
+        if valor <= 0:
+            raise ValueError("Los límites de solicitudes deben ser mayores que cero.")
+        return valor
 
     @field_validator("password_reset_expire_minutes")
     @classmethod

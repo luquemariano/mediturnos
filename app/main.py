@@ -4,6 +4,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import Settings, settings
 from app.routers import pagos
 from app.routers.auth import router as auth_router
+from app.routers.catalogo import router as catalogo_router
+from app.routers.onboarding import router as onboarding_router
 from app.routers.disponibilidades import router as disponibilidades_router
 from app.routers.especialidades import router as especialidades_router
 from app.routers.evoluciones_clinicas import router as evoluciones_clinicas_router
@@ -60,6 +62,8 @@ def crear_app(configuracion: Settings = settings) -> FastAPI:
     app.include_router(pagos.router)
     app.include_router(usuarios_router)
     app.include_router(auth_router)
+    app.include_router(catalogo_router)
+    app.include_router(onboarding_router)
 
     @app.get("/")
     def inicio():

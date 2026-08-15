@@ -52,6 +52,14 @@ export async function eliminarMiDisponibilidad(
   return respuesta.data;
 }
 
+export async function obtenerMisDisponibilidades(): Promise<Disponibilidad[]> {
+  return (await api.get<Disponibilidad[]>("/profesionales/me/disponibilidades")).data;
+}
+
+export async function crearMiDisponibilidad(datos: Omit<DisponibilidadCrear, "profesional_id">): Promise<Disponibilidad> {
+  return (await api.post<Disponibilidad>("/profesionales/me/disponibilidades", datos)).data;
+}
+
 export async function obtenerMisExcepciones(fechaDesde: string): Promise<DisponibilidadExcepcion[]> {
   const respuesta = await api.get<DisponibilidadExcepcion[]>("/profesionales/me/excepciones-disponibilidad", { params: { fecha_desde: fechaDesde } });
   return respuesta.data;

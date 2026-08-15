@@ -31,6 +31,16 @@ services:
         sync: false
       - key: EMAIL_FROM
         sync: false
+      - key: TRUST_PROXY_HEADERS
+        value: true
+      - key: RATE_LIMIT_WINDOW_SECONDS
+        value: 60
+      - key: RATE_LIMIT_REGISTER_ATTEMPTS
+        value: 5
+      - key: RATE_LIMIT_LOGIN_ATTEMPTS
+        value: 15
+      - key: RATE_LIMIT_PASSWORD_RESET_ATTEMPTS
+        value: 3
 
   - type: web
     name: mediturnos-frontend

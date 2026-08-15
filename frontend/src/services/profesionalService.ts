@@ -20,6 +20,10 @@ export async function obtenerMiPerfilProfesional(): Promise<Profesional> {
   return respuesta.data;
 }
 
+export async function actualizarMiPerfil(datos: ProfesionalActualizar): Promise<Profesional> {
+  return (await api.patch<Profesional>("/profesionales/me", datos)).data;
+}
+
 
 export async function crearProfesional(
   datos: ProfesionalCrear,

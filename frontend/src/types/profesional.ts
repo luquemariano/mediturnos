@@ -6,6 +6,7 @@ export interface Profesional {
   telefono: string | null;
   email: string | null;
   activo: boolean;
+  onboarding_step: import("./auth").OnboardingStep;
   especialidades: EspecialidadProfesional[];
 }
 
