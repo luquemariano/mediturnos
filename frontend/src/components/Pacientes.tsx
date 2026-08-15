@@ -5,13 +5,15 @@ import axios from "axios";
 import ProfesionalShell from "./ProfesionalShell";
 import Icono from "./Icono";
 import "./Pacientes.css";
-import type { PacienteSeleccion } from "../types/paciente";
+import type { EvolucionClinica, PacienteSeleccion } from "../types/paciente";
 import {
   buscarPacientesProfesional,
   crearPacienteProfesional,
   desactivarPacienteProfesional,
   editarPacienteProfesional,
   obtenerHistorialPaciente,
+  obtenerEvolucionesPaciente,
+  crearEvolucionPaciente,
 } from "../services/pacienteService";
 
 type Props = {
@@ -58,6 +60,12 @@ export default function Pacientes(props: Props) {
   const [historial, setHistorial] = useState<Historial[]>([]);
   const [cargandoHistorial, setCargandoHistorial] = useState(false);
   const [confirmar, setConfirmar] = useState(false);
+  const [evoluciones, setEvoluciones] = useState<EvolucionClinica[]>([]);
+  const [cargandoEvoluciones, setCargandoEvoluciones] = useState(false);
+  const [formEvolucion, setFormEvolucion] = useState(false);
+  const [contenidoEvolucion, setContenidoEvolucion] = useState("");
+  const [guardandoEvolucion, setGuardandoEvolucion] = useState(false);
+  const [errorEvolucion, setErrorEvolucion] = useState("");
 
   const cargar = useCallback(async (termino = "") => {
     setCargando(true); setError("");
@@ -91,10 +99,26 @@ export default function Pacientes(props: Props) {
   }
 
   async function ver(paciente: PacienteSeleccion) {
-    setSeleccion(paciente); setConfirmar(false); setHistorial([]); setCargandoHistorial(true);
-    try { setHistorial(await obtenerHistorialPaciente(paciente.id)); }
+    setSeleccion(paciente); setConfirmar(false); setHistorial([]); setEvoluciones([]); setFormEvolucion(false); setContenidoEvolucion(""); setErrorEvolucion(""); setCargandoHistorial(true); setCargandoEvoluciones(true);
+    try {
+      const [turnos, registros] = await Promise.all([obtenerHistorialPaciente(paciente.id), obtenerEvolucionesPaciente(paciente.id)]);
+      setHistorial(turnos); setEvoluciones(registros);
+    }
     catch (e) { setError(detalleError(e)); }
-    finally { setCargandoHistorial(false); }
+    finally { setCargandoHistorial(false); setCargandoEvoluciones(false); }
+  }
+
+  async function guardarEvolucion(evento: FormEvent) {
+    evento.preventDefault();
+    if (!seleccion || guardandoEvolucion || !contenidoEvolucion.trim()) return;
+    setGuardandoEvolucion(true); setErrorEvolucion("");
+    try {
+      const nueva = await crearEvolucionPaciente(seleccion.id, contenidoEvolucion);
+      setEvoluciones((actuales) => [nueva, ...actuales]);
+      setContenidoEvolucion(""); setFormEvolucion(false);
+      setMensaje("Evolución guardada correctamente.");
+    } catch (e) { setErrorEvolucion(detalleError(e)); }
+    finally { setGuardandoEvolucion(false); }
   }
 
   function editar() {
@@ -139,6 +163,16 @@ export default function Pacientes(props: Props) {
         <div className="detalle-acciones"><button type="button" className="pacientes-boton secundario" onClick={editar}>Editar</button><button type="button" className="pacientes-boton destructivo" onClick={() => setConfirmar(true)}>Desactivar paciente</button></div>
         <section className="detalle-historial"><header><span>Actividad</span><h3>Historial de turnos</h3></header>
           {cargandoHistorial ? <p>Cargando historial...</p> : historial.length ? <ol>{historial.map((turno) => <li key={turno.id}><time dateTime={turno.fecha_hora}>{fechaHistorial(turno.fecha_hora)}</time><div><strong>{turno.prestacion_nombre}</strong><span className={`historial-estado estado-${turno.estado}`}>{etiquetaEstado(turno.estado)}</span></div></li>)}</ol> : <p>Sin turnos registrados.</p>}
+        </section>
+        <section className="detalle-evoluciones">
+          <header><div><span>Información clínica</span><h3>Evoluciones</h3></div>{!formEvolucion && <button type="button" className="pacientes-boton primario" onClick={() => setFormEvolucion(true)}>Nueva evolución</button>}</header>
+          {formEvolucion && <form className="evolucion-formulario" onSubmit={guardarEvolucion}>
+            <label htmlFor="contenido-evolucion">Nueva evolución</label>
+            <textarea id="contenido-evolucion" value={contenidoEvolucion} onChange={(e) => setContenidoEvolucion(e.target.value)} rows={6} autoFocus placeholder="Registrá la evolución clínica del paciente." />
+            {errorEvolucion && <p role="alert" className="evolucion-error">{errorEvolucion}</p>}
+            <div><button type="button" className="pacientes-boton secundario" onClick={() => { setFormEvolucion(false); setErrorEvolucion(""); }}>Cancelar</button><button className="pacientes-boton primario" disabled={guardandoEvolucion || !contenidoEvolucion.trim()}>{guardandoEvolucion ? "Guardando…" : "Guardar"}</button></div>
+          </form>}
+          {cargandoEvoluciones ? <p>Cargando evoluciones...</p> : evoluciones.length ? <ol>{evoluciones.map((evolucion) => <li key={evolucion.id}><header><time dateTime={evolucion.created_at}>{fechaHistorial(evolucion.created_at)}</time><strong>{evolucion.profesional_nombre}</strong></header><p>{evolucion.contenido}</p></li>)}</ol> : <div className="evoluciones-vacio"><p>Todavía no hay evoluciones registradas para este paciente.</p>{!formEvolucion && <button type="button" className="pacientes-boton enlace" onClick={() => setFormEvolucion(true)}>Crear la primera evolución</button>}</div>}
         </section>
       </aside></>}
 

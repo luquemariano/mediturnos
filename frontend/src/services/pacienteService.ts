@@ -3,6 +3,7 @@ import type {
   Paciente,
   PacienteCrear,
   PacienteSeleccion,
+  EvolucionClinica,
 } from "../types/paciente";
 
 export async function obtenerPacientes():
@@ -54,4 +55,12 @@ export async function desactivarPacienteProfesional(id: number): Promise<void> {
 
 export async function obtenerHistorialPaciente(id: number) {
   return (await api.get<Array<{id:number; fecha_hora:string; prestacion_nombre:string; estado:string; observaciones:string|null}>>(`/profesionales/me/pacientes/${id}/turnos`)).data;
+}
+
+export async function obtenerEvolucionesPaciente(id: number): Promise<EvolucionClinica[]> {
+  return (await api.get<EvolucionClinica[]>(`/pacientes/${id}/evoluciones`)).data;
+}
+
+export async function crearEvolucionPaciente(id: number, contenido: string): Promise<EvolucionClinica> {
+  return (await api.post<EvolucionClinica>(`/pacientes/${id}/evoluciones`, { contenido })).data;
 }

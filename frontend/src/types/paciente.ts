@@ -31,3 +31,12 @@ export interface PacienteSeleccion {
   email: string | null;
   fecha_nacimiento: string | null;
 }
+
+export interface EvolucionClinica {
+  id: number;
+  paciente_id: number;
+  profesional_id: number;
+  profesional_nombre: string;
+  contenido: string;
+  created_at: string;
+}

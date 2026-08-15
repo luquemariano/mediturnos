@@ -6,6 +6,7 @@ from app.routers import pagos
 from app.routers.auth import router as auth_router
 from app.routers.disponibilidades import router as disponibilidades_router
 from app.routers.especialidades import router as especialidades_router
+from app.routers.evoluciones_clinicas import router as evoluciones_clinicas_router
 from app.routers.health import router as health_router
 from app.routers.pacientes import router as pacientes_router
 from app.routers.prestaciones import router as prestaciones_router
@@ -53,6 +54,7 @@ def crear_app(configuracion: Settings = settings) -> FastAPI:
     app.include_router(profesionales_router)
     app.include_router(prestaciones_router)
     app.include_router(pacientes_router)
+    app.include_router(evoluciones_clinicas_router)
     app.include_router(turnos_router)
     app.include_router(disponibilidades_router)
     app.include_router(pagos.router)
