@@ -14,3 +14,7 @@
 
 @media(max-width:860px){.landing-header__inner{min-height:76px}.landing-logo img{width:190px}.landing-nav{top:76px}.showcase__grid,.showcase--reverse .showcase__grid{grid-template-columns:1fr}.security .product-image{width:100%;max-width:700px;justify-self:start}}
 @media(max-width:600px){.landing-logo img{width:178px}.security__list{column-gap:0;row-gap:17px;margin-top:24px}.security__list span{gap:14px}.dark-cta--final .button-row .button{width:100%}}
+
+/* Encuadres específicos y equilibrio de los planes comerciales. */
+.product-image--prestaciones img,.product-image--security img{object-fit:contain;object-position:center}.product-image--security{display:flex;align-items:center;justify-content:center}.security .product-image{width:100%;justify-self:center}.plan:not(.plan--featured) .plan__status{background:var(--warm);color:var(--accent)}.plan__price{font-size:clamp(1.35rem,2vw,1.65rem);white-space:nowrap}.plan ul{min-height:0}.pricing__note{margin-top:18px!important;color:var(--muted);font-size:.88rem}
+@media(max-width:860px){.security .product-image{justify-self:center}}

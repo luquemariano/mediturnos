@@ -26,7 +26,7 @@ function LineIcon({ name }: { name: string }) {
   return <svg className="landing-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">{paths[name]}</svg>;
 }
 
-function ProductImage({ asset, label }: { asset: string; label: string }) {
+function ProductImage({ asset, label, variant }: { asset: string; label: string; variant?: "prestaciones" | "security" }) {
   const [disponible, setDisponible] = useState(true);
 
   if (!disponible) {
@@ -39,7 +39,7 @@ function ProductImage({ asset, label }: { asset: string; label: string }) {
   }
 
   return (
-    <figure className="product-image">
+    <figure className={`product-image${variant ? ` product-image--${variant}` : ""}`}>
       <img src={asset} alt={label} loading="lazy" onError={() => setDisponible(false)} />
     </figure>
   );
@@ -71,11 +71,11 @@ function LandingHeader() {
   </header>;
 }
 
-function Showcase({ id, eyebrow, title, text, bullets, asset, reverse = false }: { id?: string; eyebrow: string; title: string; text: string; bullets: string[]; asset: string; reverse?: boolean }) {
+function Showcase({ id, eyebrow, title, text, bullets, asset, reverse = false, imageVariant }: { id?: string; eyebrow: string; title: string; text: string; bullets: string[]; asset: string; reverse?: boolean; imageVariant?: "prestaciones" }) {
   return <section id={id} className={`landing-section showcase ${reverse ? "showcase--reverse" : ""}`}>
     <div className="landing-container showcase__grid">
       <div className="showcase__copy"><p className="eyebrow">{eyebrow}</p><h2>{title}</h2><p>{text}</p><ul>{bullets.map(item => <li key={item}>{item}</li>)}</ul></div>
-      <ProductImage asset={asset} label={`Pantalla real de ${eyebrow.toLowerCase()} en Turnelia`} />
+      <ProductImage asset={asset} label={`Pantalla real de ${eyebrow.toLowerCase()} en Turnelia`} variant={imageVariant} />
     </div>
   </section>;
 }
@@ -95,12 +95,12 @@ export default function LandingPage() {
       <section className="benefits" aria-label="Ventajas de Turnelia"><div className="landing-container benefits__grid">{[["En la nube", "Accedé desde cualquier lugar."], ["En cualquier dispositivo", "Computadora, tablet o celular."], ["Acceso protegido", "Cada profesional trabaja con su propia cuenta."]].map(([title, text], index) => <article key={title}><LineIcon name={index === 1 ? "devices" : index === 2 ? "shield" : "clock"}/><div><h2>{title}</h2><p>{text}</p></div></article>)}</div></section>
       <section id="funciones" className="landing-section features"><div className="landing-container"><div className="section-heading"><p className="eyebrow">Funciones</p><h2>Todo lo que necesitás para organizar tu consulta</h2></div><div className="features__grid">{funciones.map(([title, text], index) => <article key={title}><LineIcon name={iconos[index]}/><h3>{title}</h3><p>{text}</p></article>)}</div></div></section>
       <Showcase eyebrow="Agenda" title="Tu día, claro desde el primer vistazo" text="Al ingresar a Turnelia sabés qué pacientes tenés, a qué hora llegan y cómo está organizada tu jornada." bullets={["Próximos turnos", "Estado de cada atención", "Acceso rápido a la agenda", "Disponibilidad del día"]} asset={LANDING_ASSETS.dashboard}/>
-      <Showcase eyebrow="Pacientes" title="Tus pacientes, siempre a mano" text="Buscá rápidamente a cada paciente y accedé a la información necesaria para gestionar su atención." bullets={["Búsqueda por nombre, DNI o teléfono", "Información accesible para gestionar la atención"]} asset={LANDING_ASSETS.pacientes} reverse/>
+      <Showcase eyebrow="Pacientes" title="Tus pacientes, siempre a mano" text="Buscá rápidamente a cada paciente y accedé a la información necesaria para gestionar su atención." bullets={["Búsqueda por nombre, DNI o teléfono", "Información accesible para gestionar la atención", "Historia clínica y evoluciones"]} asset={LANDING_ASSETS.pacientes} reverse/>
       <Showcase eyebrow="Disponibilidad" title="Tus horarios se adaptan a tu forma de trabajar" text="Definí cuándo atendés y Turnelia organiza la disponibilidad alrededor de tu práctica profesional." bullets={["Días de atención", "Franjas horarias", "Excepciones", "Vacaciones y días no laborables"]} asset={LANDING_ASSETS.disponibilidad}/>
-      <Showcase eyebrow="Prestaciones" title="Organizá los servicios que ofrecés" text="Configurá las prestaciones de tu consulta para que la agenda represente realmente la manera en que trabajás." bullets={["Servicios de tu consulta", "Actividad profesional organizada"]} asset={LANDING_ASSETS.prestaciones} reverse/>
+      <Showcase eyebrow="Prestaciones" title="Organizá los servicios que ofrecés" text="Configurá las prestaciones de tu consulta para que la agenda represente realmente la manera en que trabajás." bullets={["Servicios de tu consulta", "Actividad profesional organizada"]} asset={LANDING_ASSETS.prestaciones} reverse imageVariant="prestaciones"/>
       <section className="landing-section future"><div className="landing-container future__inner"><p className="eyebrow">En desarrollo</p><h2>La ficha del paciente también puede crecer con tu práctica</h2><p>Estamos desarrollando herramientas para centralizar el seguimiento de cada paciente y sus consultas.</p></div></section>
-      <section className="landing-section security"><div className="landing-container showcase__grid"><div className="showcase__copy"><p className="eyebrow">Seguridad</p><h2>Tu información profesional, protegida</h2><div className="security__list">{["Cuenta personal", "Autenticación protegida", "Permisos según usuario", "Recuperación de acceso", "Conexión HTTPS", "Infraestructura cloud"].map(item => <span key={item}><LineIcon name="shield"/>{item}</span>)}</div></div><ProductImage asset={LANDING_ASSETS.loginSecurity} label="Pantalla real de acceso a Turnelia" /></div></section>
-      <section id="precios" className="landing-section pricing"><div className="landing-container"><div className="section-heading"><p className="eyebrow">Precios</p><h2>Planes simples para crecer con Turnelia</h2><p>Elegí la opción que mejor se adapte a tu forma de trabajar.</p></div><div className="pricing__grid">{PLANES.map(plan => <article className={plan.destacado ? "plan plan--featured" : "plan"} key={plan.nombre}><span className="plan__status">{plan.estado}</span><h3>{plan.nombre}</h3><p>{plan.descripcion}</p>{"detalle" in plan && <strong className="plan__detail">{plan.detalle}</strong>}<p className="plan__price">{plan.precio}</p>{plan.incluye.length > 0 && <ul>{plan.incluye.map(item => <li key={item}>{item}</li>)}</ul>}{plan.href ? <a className="button button--outline" href={plan.href}>{plan.accion}</a> : <button className="button button--outline" disabled>{plan.accion}</button>}</article>)}</div></div></section>
+      <section className="landing-section security"><div className="landing-container showcase__grid"><div className="showcase__copy"><p className="eyebrow">Seguridad</p><h2>Tu información profesional, protegida</h2><div className="security__list">{["Cuenta personal", "Autenticación protegida", "Permisos según usuario", "Recuperación de acceso", "Conexión HTTPS", "Infraestructura cloud"].map(item => <span key={item}><LineIcon name="shield"/>{item}</span>)}</div></div><ProductImage asset={LANDING_ASSETS.loginSecurity} label="Pantalla real de acceso a Turnelia" variant="security" /></div></section>
+      <section id="precios" className="landing-section pricing"><div className="landing-container"><div className="section-heading"><p className="eyebrow">Precios</p><h2>Planes simples para crecer con Turnelia</h2><p>Elegí la opción que mejor se adapte a tu forma de trabajar.</p></div><div className="pricing__grid">{PLANES.map(plan => <article className={plan.destacado ? "plan plan--featured" : "plan"} key={plan.nombre}><span className="plan__status">{plan.estado}</span><h3>{plan.nombre}</h3><p>{plan.descripcion}</p><p className="plan__price">{plan.precio}</p><ul>{plan.incluye.map(item => <li key={item}>{item}</li>)}</ul><a className="button button--outline" href={plan.href}>{plan.accion}</a></article>)}</div><p className="pricing__note">*Sujeto a política de uso razonable.</p></div></section>
       <section id="demo" className="dark-cta"><div className="landing-container dark-cta__inner"><div><p className="eyebrow">Demo</p><h2>Conocé Turnelia funcionando</h2><p>Recorré una demostración con pacientes y turnos de ejemplo y conocé cómo se organiza una jornada de trabajo.</p></div><a className="button button--light" href="/login">Ver demo</a></div></section>
       <section id="profesionales" className="landing-section audience"><div className="landing-container"><div className="section-heading"><p className="eyebrow">Para quién es</p><h2>Pensado para profesionales que gestionan su propia consulta</h2></div><div className="audience__list">{["Médicos", "Psicólogos", "Psiquiatras", "Psicopedagogos", "Nutricionistas", "Kinesiólogos", "Otros profesionales independientes"].map(item => <span key={item}>{item}</span>)}</div></div></section>
       <section id="contacto" className="dark-cta dark-cta--final"><div className="landing-container dark-cta__inner"><div><h2>Menos tiempo organizando. Más tiempo para tus pacientes.</h2><p>Empezá a ordenar tu consulta con Turnelia.</p></div><div className="button-row"><a className="button button--light" href="#demo">Probar Turnelia</a>{WHATSAPP_URL ? <a className="button button--dark-outline" href={WHATSAPP_URL}>Hablar por WhatsApp</a> : <button className="button button--dark-outline" disabled title="Canal de WhatsApp pendiente de configurar">Hablar por WhatsApp</button>}</div></div></section>
