@@ -6,7 +6,7 @@ export const LANDING_ASSETS = {
   prestaciones: "/landing/prestaciones.webp",
   login: "/landing/login.webp",
   loginMobile: "/landing/login-mobile.webp",
-  loginSecurity: "/landing/login-security.webp",
+  loginSecurity: "/landing/login.webp",
 } as const;
 
 export const WHATSAPP_URL = "";
