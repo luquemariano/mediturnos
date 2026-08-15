@@ -46,6 +46,15 @@ function fechaHistorial(fecha: string): string {
   }).format(new Date(fecha));
 }
 
+function fechaEvolucion(fecha: string): string {
+  const partes = new Intl.DateTimeFormat("es-AR", {
+    timeZone: ZONA_HORARIA, day: "2-digit", month: "2-digit", year: "numeric",
+    hour: "2-digit", minute: "2-digit", hour12: false,
+  }).formatToParts(new Date(fecha));
+  const valor = (tipo: Intl.DateTimeFormatPartTypes) => partes.find((parte) => parte.type === tipo)?.value ?? "";
+  return `${valor("day")}/${valor("month")}/${valor("year")} · ${valor("hour")}:${valor("minute")}`;
+}
+
 export default function Pacientes(props: Props) {
   const [pacientes, setPacientes] = useState<PacienteSeleccion[]>([]);
   const [q, setQ] = useState("");
@@ -172,7 +181,7 @@ export default function Pacientes(props: Props) {
             {errorEvolucion && <p role="alert" className="evolucion-error">{errorEvolucion}</p>}
             <div><button type="button" className="pacientes-boton secundario" onClick={() => { setFormEvolucion(false); setErrorEvolucion(""); }}>Cancelar</button><button className="pacientes-boton primario" disabled={guardandoEvolucion || !contenidoEvolucion.trim()}>{guardandoEvolucion ? "Guardando…" : "Guardar"}</button></div>
           </form>}
-          {cargandoEvoluciones ? <p>Cargando evoluciones...</p> : evoluciones.length ? <ol>{evoluciones.map((evolucion) => <li key={evolucion.id}><header><time dateTime={evolucion.created_at}>{fechaHistorial(evolucion.created_at)}</time><strong>{evolucion.profesional_nombre}</strong></header><p>{evolucion.contenido}</p></li>)}</ol> : <div className="evoluciones-vacio"><p>Todavía no hay evoluciones registradas para este paciente.</p>{!formEvolucion && <button type="button" className="pacientes-boton enlace" onClick={() => setFormEvolucion(true)}>Crear la primera evolución</button>}</div>}
+          {cargandoEvoluciones ? <p>Cargando evoluciones...</p> : evoluciones.length ? <ol>{evoluciones.map((evolucion) => <li key={evolucion.id}><header><time dateTime={evolucion.created_at}>{fechaEvolucion(evolucion.created_at)}</time><strong>{evolucion.profesional_nombre}</strong></header><p>{evolucion.contenido}</p></li>)}</ol> : <div className="evoluciones-vacio"><p>Todavía no hay evoluciones registradas para este paciente.</p>{!formEvolucion && <button type="button" className="pacientes-boton enlace" onClick={() => setFormEvolucion(true)}>Crear la primera evolución</button>}</div>}
         </section>
       </aside></>}
 
