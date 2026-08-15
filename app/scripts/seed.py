@@ -13,6 +13,7 @@ from app.core.config import settings
 from app.database.connection import SessionLocal
 from app.models.disponibilidad import Disponibilidad
 from app.models.especialidad import Especialidad
+from app.models.evolucion_clinica import EvolucionClinica
 from app.models.paciente import Paciente
 from app.models.pago import Pago
 from app.models.prestacion import Prestacion
@@ -27,6 +28,7 @@ from app.core.security import generar_hash_password
 
 
 MARCA_TURNO_DEMO = "[DEMO_MEDI_TURNOS]"
+MARCA_EVOLUCION_DEMO = "[DEMO_TURNELIA_EVOLUCION]"
 NOMBRE_ADMIN_DEMO = "Administrador Demo"
 NOMBRE_PROFESIONAL_DEMO = "Profesional Demo"
 MATRICULA_PROFESIONAL_DEMO = "MP-DEMO-PSIQ-001"
@@ -610,6 +612,40 @@ def eliminar_turnos_demo(
     db.flush()
 
 
+def crear_evolucion_demo(
+    db: Session,
+    paciente: Paciente,
+    profesional: Profesional,
+    dias_desde_hoy: int,
+    hora: int,
+    minuto: int,
+    contenido: str,
+) -> EvolucionClinica:
+    evolucion = EvolucionClinica(
+        paciente_id=paciente.id,
+        profesional_id=profesional.id,
+        contenido=f"{MARCA_EVOLUCION_DEMO} {contenido}",
+        created_at=construir_fecha(dias_desde_hoy, hora, minuto),
+    )
+    db.add(evolucion)
+    return evolucion
+
+
+def eliminar_evoluciones_demo(db: Session) -> None:
+    evoluciones_demo = (
+        db.query(EvolucionClinica)
+        .filter(
+            EvolucionClinica.contenido.like(
+                f"{MARCA_EVOLUCION_DEMO}%",
+            )
+        )
+        .all()
+    )
+    for evolucion in evoluciones_demo:
+        db.delete(evolucion)
+    db.flush()
+
+
 def _cargar_datos_demo(
     db: Session,
 ) -> None:
@@ -1149,6 +1185,42 @@ def _cargar_datos_demo(
             descripcion_demo=descripcion,
         )
 
+    print("Recreando evoluciones clínicas demo...")
+
+    eliminar_evoluciones_demo(db)
+
+    evoluciones_demo = [
+        (juan_perez, -3, 10, 15, "Consulta de seguimiento ficticia. Evolución general favorable para demostración."),
+        (juan_perez, -10, 16, 30, "Control programado demo. Sin novedades relevantes desde el registro anterior."),
+        (juan_perez, -22, 9, 45, "Registro ficticio para comprobar la continuidad del historial clínico."),
+        (juan_perez, -39, 11, 0, "Seguimiento de prueba. Se mantiene el esquema periódico de controles demo."),
+        (juan_perez, -61, 15, 20, "Primera anotación simulada del historial. Contenido sin datos clínicos reales."),
+        (silvina_perez, -1, 14, 10, "Evolución demo reciente para validar el orden cronológico descendente."),
+        (silvina_perez, -8, 9, 20, "Consulta ficticia de seguimiento. Sin cambios relevantes para la demostración."),
+        (silvina_perez, -19, 17, 5, "Control de prueba registrado para visualizar varias consultas del paciente."),
+        (silvina_perez, -35, 10, 40, "Seguimiento demo. Se programa una nueva revisión ficticia."),
+        (silvina_perez, -56, 12, 0, "Registro inicial simulado, creado exclusivamente para el entorno demo."),
+        (ana_lopez, -5, 8, 50, "Consulta de demostración. Evolución estable sin información médica real."),
+        (ana_lopez, -17, 13, 35, "Seguimiento ficticio para probar lectura y separación entre registros."),
+        (ana_lopez, -31, 10, 5, "Control programado de prueba. No se registran novedades en este ejemplo."),
+        (ana_lopez, -48, 16, 15, "Anotación demo anterior para completar la secuencia cronológica."),
+        (roberto_sanchez, -6, 11, 25, "Registro ficticio breve utilizado para probar un historial corto."),
+        (roberto_sanchez, -28, 15, 45, "Consulta demo previa. Se conserva seguimiento periódico de ejemplo."),
+        (mateo_castro, -4, 9, 10, "Control ficticio de demostración, sin datos clínicos ni personales reales."),
+        (mateo_castro, -24, 14, 30, "Registro de prueba anterior para visualizar un historial breve."),
+    ]
+
+    for paciente, dias, hora, minuto, contenido in evoluciones_demo:
+        crear_evolucion_demo(
+            db=db,
+            paciente=paciente,
+            profesional=sofia_ramirez,
+            dias_desde_hoy=dias,
+            hora=hora,
+            minuto=minuto,
+            contenido=contenido,
+        )
+
 
 
 def imprimir_resumen_seed() -> None:
@@ -1160,6 +1232,7 @@ def imprimir_resumen_seed() -> None:
     print("Prestaciones: 7")
     print("Pacientes demo disponibles: 8")
     print("Turnos demo recreados: 21")
+    print("Evoluciones demo recreadas: 18")
     print("")
     print("Credenciales de acceso demo")
     print("---------------------------")
