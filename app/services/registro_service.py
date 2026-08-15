@@ -7,6 +7,7 @@ from app.core.security import generar_hash_password
 from app.models.profesional import Profesional
 from app.models.profesional_especialidad import ProfesionalEspecialidad
 from app.models.usuario import Usuario
+from app.services.cuenta_service import crear_cuenta_individual_con_trial
 from app.repositories.especialidad_repository import buscar_por_id
 from app.repositories.usuario_repository import buscar_usuario_por_email
 from app.schemas.auth import RegistroProfesionalDatos, RegistroProfesionalRespuesta
@@ -33,8 +34,14 @@ def registrar_profesional_publico(
         password_hash=generar_hash_password(datos.password),
         rol="profesional",
     )
+    try:
+        cuenta = crear_cuenta_individual_con_trial(usuario.nombre, usuario)
+    except Exception:
+        db.rollback()
+        raise
     profesional = Profesional(
         usuario=usuario,
+        cuenta=cuenta,
         nombre=datos.nombre.strip(),
         apellido=datos.apellido.strip(),
         matricula=datos.matricula.strip(),

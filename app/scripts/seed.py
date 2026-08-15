@@ -24,6 +24,9 @@ from app.models.profesional_especialidad import (
 from app.models.profesional_paciente import ProfesionalPaciente
 from app.models.turno import Turno
 from app.models.usuario import Usuario
+from app.models.cuenta import Cuenta
+from app.models.cuenta_usuario import CuentaUsuario
+from app.models.suscripcion import Suscripcion
 from app.core.security import generar_hash_password
 
 
@@ -325,9 +328,13 @@ def obtener_o_crear_profesional(
         profesional.email = email
         profesional.activo = True
 
+        asegurar_cuenta_profesional_demo(db, profesional)
         return profesional
 
+    cuenta = Cuenta(nombre=f"{nombre} {apellido}", tipo="individual")
+    cuenta.suscripcion = Suscripcion(plan_code="profesional", status="active")
     profesional = Profesional(
+        cuenta=cuenta,
         nombre=nombre,
         apellido=apellido,
         matricula=matricula,
@@ -340,6 +347,32 @@ def obtener_o_crear_profesional(
     db.flush()
 
     return profesional
+
+
+def asegurar_cuenta_profesional_demo(db: Session, profesional: Profesional) -> Cuenta:
+    if profesional.cuenta is None:
+        profesional.cuenta = Cuenta(
+            nombre=f"{profesional.nombre} {profesional.apellido}", tipo="individual",
+            suscripcion=Suscripcion(plan_code="profesional", status="active"),
+        )
+        db.flush()
+    elif profesional.cuenta.suscripcion is None:
+        profesional.cuenta.suscripcion = Suscripcion(plan_code="profesional", status="active")
+    else:
+        profesional.cuenta.suscripcion.plan_code = "profesional"
+        profesional.cuenta.suscripcion.status = "active"
+        profesional.cuenta.suscripcion.trial_started_at = None
+        profesional.cuenta.suscripcion.trial_ends_at = None
+    return profesional.cuenta
+
+
+def asegurar_membresia_propietario_demo(db: Session, profesional: Profesional, usuario: Usuario) -> None:
+    cuenta = asegurar_cuenta_profesional_demo(db, profesional)
+    membresia = db.get(CuentaUsuario, (cuenta.id, usuario.id))
+    if membresia is None:
+        db.add(CuentaUsuario(cuenta=cuenta, usuario=usuario, rol_cuenta="propietario"))
+    else:
+        membresia.rol_cuenta = "propietario"
 
 
 def obtener_o_crear_disponibilidad_demo(
@@ -744,9 +777,12 @@ def _cargar_datos_demo(
 
     print("Cargando usuario profesional demo...")
 
-    obtener_o_crear_usuario_profesional_demo(
+    usuario_profesional_demo = obtener_o_crear_usuario_profesional_demo(
         db=db,
         profesional=sofia_ramirez,
+    )
+    asegurar_membresia_propietario_demo(
+        db, sofia_ramirez, usuario_profesional_demo,
     )
 
     print(

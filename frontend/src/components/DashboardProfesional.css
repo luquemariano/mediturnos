@@ -2,6 +2,7 @@
 .prof-saludo { min-height: 70px; display: flex; align-items: end; justify-content: flex-start; gap: 24px; margin-bottom: 20px; }
 .prof-saludo h1 { font-family: Manrope, sans-serif; font-size: clamp(28px, 2.3vw, 31px); font-weight: 600; letter-spacing: -.025em; line-height: 1.16; }
 .prof-saludo div p { margin-top: 5px; color: var(--prof-text-secondary); font-size: 15px; }
+.prof-saludo .prof-suscripcion { display: inline-flex; margin-top: 10px; padding: 5px 10px; border: 1px solid rgba(23, 111, 106, .2); border-radius: 999px; background: #f2f8f6; color: var(--prof-primary); font-size: 13px; font-weight: 700; }
 .prof-resumen-textual { display: flex; align-items: center; flex-wrap: wrap; justify-content: flex-start; gap: 6px; margin-bottom: 1px; color: var(--prof-text-secondary); font-size: 13px; }
 .prof-resumen-textual strong { color: var(--prof-text); font-weight: 600; }
 .prof-resumen-textual i { width: 1px; height: 14px; margin: 0 3px; background: var(--prof-border); }

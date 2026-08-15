@@ -11,6 +11,9 @@ import type { Especialidad } from "../types/especialidad";
 import type { Paciente } from "../types/paciente";
 import type { Profesional } from "../types/profesional";
 import { cambiarPassword } from "../services/authService";
+import { obtenerCuentaActual } from "../services/cuentaService";
+import type { CuentaActual } from "../types/cuenta";
+import { etiquetaPlan, etiquetaSuscripcion, fechaTrial } from "../utils/suscripcion";
 
 type PerfilPacienteProps = {
   tipo: "paciente";
@@ -72,6 +75,7 @@ function SkeletonPerfilProfesional() {
 
 function PerfilProfesional(props: PerfilProfesionalProps) {
   const [perfil, setPerfil] = useState<Profesional | null>(null);
+  const [cuenta, setCuenta] = useState<CuentaActual | null>(null);
   const [especialidades, setEspecialidades] = useState<Especialidad[]>([]);
   const [cargandoPerfil, setCargandoPerfil] = useState(true);
   const [cargandoEspecialidades, setCargandoEspecialidades] = useState(true);
@@ -113,6 +117,7 @@ function PerfilProfesional(props: PerfilProfesionalProps) {
   useEffect(() => {
     void cargarPerfil();
     void cargarEspecialidades();
+    void obtenerCuentaActual().then(setCuenta).catch(() => setCuenta(null));
   }, [cargarEspecialidades, cargarPerfil]);
 
   const nombreShell = perfil ? `${perfil.nombre} ${perfil.apellido}` : props.nombre;
@@ -203,6 +208,15 @@ function PerfilProfesional(props: PerfilProfesionalProps) {
             <div><dt>Teléfono</dt><dd>{perfil.telefono ?? "No informado"}</dd></div>
           </dl>
         </section>
+
+        {cuenta && <section className="perfil-profesional-plan" aria-labelledby="perfil-plan-titulo">
+          <div><p>Cuenta</p><h3 id="perfil-plan-titulo">Plan y suscripción</h3></div>
+          <dl>
+            <div><dt>Plan</dt><dd>Plan {etiquetaPlan(cuenta.plan)}</dd></div>
+            <div><dt>Estado</dt><dd>{etiquetaSuscripcion(cuenta.subscription_status)}</dd></div>
+            {cuenta.subscription_status === "trial" && cuenta.trial_ends_at && <div><dt>Vigencia</dt><dd>Finaliza el {fechaTrial(cuenta.trial_ends_at)}</dd></div>}
+          </dl>
+        </section>}
 
         <section className="perfil-profesional-actividad" aria-labelledby="perfil-actividad-titulo">
           <h3 id="perfil-actividad-titulo">Actividad profesional</h3>

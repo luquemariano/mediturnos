@@ -15,6 +15,7 @@ from app.routers.prestaciones import router as prestaciones_router
 from app.routers.profesionales import router as profesionales_router
 from app.routers.turnos import router as turnos_router
 from app.routers.usuarios import router as usuarios_router
+from app.routers.cuentas import router as cuentas_router
 
 
 def crear_app(configuracion: Settings = settings) -> FastAPI:
@@ -64,6 +65,7 @@ def crear_app(configuracion: Settings = settings) -> FastAPI:
     app.include_router(auth_router)
     app.include_router(catalogo_router)
     app.include_router(onboarding_router)
+    app.include_router(cuentas_router)
 
     @app.get("/")
     def inicio():

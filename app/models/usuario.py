@@ -7,6 +7,7 @@ from app.database.connection import Base
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from app.models.cuenta_usuario import CuentaUsuario
     from app.models.paciente import Paciente
     from app.models.password_reset_token import PasswordResetToken
     from app.models.profesional import Profesional
@@ -67,6 +68,10 @@ class Usuario(Base):
     password_reset_tokens: Mapped[list["PasswordResetToken"]] = relationship(
         back_populates="usuario",
         cascade="all, delete-orphan",
+    )
+
+    membresias_cuenta: Mapped[list["CuentaUsuario"]] = relationship(
+        back_populates="usuario", cascade="all, delete-orphan",
     )
 
 

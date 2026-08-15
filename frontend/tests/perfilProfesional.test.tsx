@@ -7,6 +7,7 @@ import * as especialidadService from "../src/services/especialidadService";
 import * as pacienteService from "../src/services/pacienteService";
 import * as profesionalService from "../src/services/profesionalService";
 import * as authService from "../src/services/authService";
+import * as cuentaService from "../src/services/cuentaService";
 import type { Especialidad } from "../src/types/especialidad";
 import type { Paciente } from "../src/types/paciente";
 import type { Profesional } from "../src/types/profesional";
@@ -15,6 +16,7 @@ vi.mock("../src/services/especialidadService", () => ({ obtenerEspecialidades: v
 vi.mock("../src/services/pacienteService", () => ({ obtenerMiPerfilPaciente: vi.fn() }));
 vi.mock("../src/services/profesionalService", () => ({ obtenerMiPerfilProfesional: vi.fn() }));
 vi.mock("../src/services/authService", () => ({ cambiarPassword: vi.fn() }));
+vi.mock("../src/services/cuentaService", () => ({ obtenerCuentaActual: vi.fn() }));
 
 const perfil: Profesional = {
   id: 7,
@@ -73,6 +75,7 @@ function renderizarProfesional() {
 }
 
 function preparar(perfilActual: Profesional = perfil) {
+  vi.mocked(cuentaService.obtenerCuentaActual).mockResolvedValue({ cuenta_id: 1, plan: "profesional", subscription_status: "trial", trial_started_at: "2026-08-15T18:00:00Z", trial_ends_at: "2026-08-29T18:00:00Z", trial_days_remaining: 14 });
   vi.mocked(profesionalService.obtenerMiPerfilProfesional).mockResolvedValue(perfilActual);
   vi.mocked(especialidadService.obtenerEspecialidades).mockResolvedValue(especialidades);
 }
@@ -99,6 +102,10 @@ describe("perfil profesional Salud Humana Signature", () => {
     expect(screen.getByRole("navigation", { name: "Navegación profesional" })).toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: "Mi perfil" })[0]).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("navigation", { name: "Navegación principal" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Plan y suscripción" })).toBeInTheDocument();
+    expect(screen.getByText("Plan Profesional")).toBeInTheDocument();
+    expect(screen.getByText("Prueba gratuita")).toBeInTheDocument();
+    expect(screen.getByText("Finaliza el 29/08/2026")).toBeInTheDocument();
   });
 
   it("representa el perfil inactivo sin badge", async () => {

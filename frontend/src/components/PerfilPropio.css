@@ -115,6 +115,13 @@
   line-height: 1.45;
 }
 
+.perfil-profesional-plan { margin: 0 38px; padding: 27px 0 30px; border-top: 1px solid var(--prof-border); }
+.perfil-profesional-plan > div p { margin: 0 0 3px; color: var(--prof-primary); font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+.perfil-profesional-plan h3 { margin: 0; color: var(--prof-text); font-family: Manrope, sans-serif; font-size: 20px; }
+.perfil-profesional-plan dl { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; margin: 20px 0 0; }
+.perfil-profesional-plan dt { margin-bottom: 4px; color: var(--prof-text-secondary); font-size: 13px; font-weight: 600; }
+.perfil-profesional-plan dd { margin: 0; color: var(--prof-text); font-size: 16px; font-weight: 600; }
+
 .perfil-profesional-actividad {
   padding: 27px 38px 29px;
   background: var(--prof-surface-warm);
@@ -225,6 +232,8 @@
   .perfil-profesional-contacto { margin: 0 24px; padding-block: 24px 26px; }
   .perfil-profesional-contacto dl { grid-template-columns: 1fr; gap: 20px; margin-top: 17px; }
   .perfil-profesional-contacto dd { font-size: 16px; }
+  .perfil-profesional-plan { margin: 0 24px; padding-block: 24px 26px; }
+  .perfil-profesional-plan dl { grid-template-columns: 1fr; gap: 16px; }
   .perfil-contacto-titulo { align-items: flex-start; flex-direction: column; }
   .perfil-profesional-actividad { padding: 24px; }
   .perfil-profesional-actividad li { grid-template-columns: 1fr; gap: 3px; padding: 14px 0; }

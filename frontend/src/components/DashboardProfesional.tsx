@@ -9,6 +9,9 @@ import type { Profesional } from "../types/profesional";
 import type { Turno } from "../types/turno";
 import { obtenerDisponibilidadesProfesional } from "../services/disponibilidadService";
 import { obtenerMiPerfilProfesional } from "../services/profesionalService";
+import { obtenerCuentaActual } from "../services/cuentaService";
+import { etiquetaSuscripcion } from "../utils/suscripcion";
+import type { CuentaActual } from "../types/cuenta";
 import {
   finalizarMiTurno,
   marcarAusenteMiTurno,
@@ -142,6 +145,7 @@ export default function DashboardProfesional({
 }: DashboardProfesionalProps) {
   const [ahora] = useState(() => new Date());
   const [perfil, setPerfil] = useState<Profesional | null>(null);
+  const [cuenta, setCuenta] = useState<CuentaActual | null>(null);
   const [turnos, setTurnos] = useState<Turno[]>([]);
   const [disponibilidades, setDisponibilidades] = useState<Disponibilidad[]>([]);
   const [cargandoAgenda, setCargandoAgenda] = useState(true);
@@ -185,6 +189,7 @@ export default function DashboardProfesional({
   useEffect(() => {
     void cargarAgenda();
     void cargarPerfilYDisponibilidad();
+    void obtenerCuentaActual().then(setCuenta).catch(() => setCuenta(null));
   }, [cargarAgenda, cargarPerfilYDisponibilidad]);
 
   const hoy = fechaActualNegocio(ahora);
@@ -329,7 +334,9 @@ export default function DashboardProfesional({
   >
       <div className="prof-contenido">
         <section className="prof-saludo">
-          <div><h1>{saludo(ahora)}, {perfil?.nombre ?? nombre}</h1><p>{fechaLarga(ahora)}</p></div>
+          <div><h1>{saludo(ahora)}, {perfil?.nombre ?? nombre}</h1><p>{fechaLarga(ahora)}</p>
+            {cuenta && <p className="prof-suscripcion" aria-label="Estado de suscripción">{etiquetaSuscripcion(cuenta.subscription_status)}{cuenta.subscription_status === "trial" && ` · ${cuenta.trial_days_remaining} días restantes`}</p>}
+          </div>
           {!cargandoAgenda && !errorAgenda && <p className="prof-resumen-textual" aria-label="Resumen de la jornada">
             <strong>{turnosHoy.length}</strong> turnos <i /> <strong>{resumen.confirmados}</strong> confirmados <i /> <strong>{resumen.pendientes}</strong> pendiente{resumen.pendientes === 1 ? "" : "s"} <i /> <strong>{resumen.resueltos}</strong> resueltos
           </p>}

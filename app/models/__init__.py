@@ -11,3 +11,6 @@ from app.models.turno import Turno
 from app.models.pago import Pago
 from app.models.password_reset_token import PasswordResetToken
 from app.models.usuario import Usuario
+from app.models.cuenta import Cuenta
+from app.models.cuenta_usuario import CuentaUsuario
+from app.models.suscripcion import Suscripcion

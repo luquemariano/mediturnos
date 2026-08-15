@@ -18,6 +18,9 @@ from app.models.profesional import Profesional
 from app.models.profesional_paciente import ProfesionalPaciente
 from app.models.turno import Turno
 from app.models.usuario import Usuario
+from app.models.cuenta import Cuenta
+from app.models.cuenta_usuario import CuentaUsuario
+from app.models.suscripcion import Suscripcion
 from app.scripts.seed import (
     CuentaAdminNoDemoError,
     CuentaProfesionalNoDemoError,
@@ -477,6 +480,10 @@ def test_seed_es_idempotente_en_registros_principales(db):
     assert db.query(Turno).count() == 21
     assert db.query(Disponibilidad).count() == 2
     assert db.query(ProfesionalPaciente).count() == 8
+    assert db.query(Cuenta).count() == 5
+    assert db.query(Suscripcion).count() == 5
+    assert db.query(CuentaUsuario).count() == 1
+    assert all(item.status == "active" for item in db.query(Suscripcion).all())
 
 
 def test_seed_vincula_y_reactiva_pacientes_demo_con_sofia(db):

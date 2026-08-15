@@ -7,6 +7,7 @@ from app.database.connection import Base
 
 
 if TYPE_CHECKING:
+    from app.models.cuenta import Cuenta
     from app.models.evolucion_clinica import EvolucionClinica
     from app.models.profesional_paciente import ProfesionalPaciente
     from app.models.profesional_especialidad import ProfesionalEspecialidad
@@ -32,6 +33,10 @@ class Profesional(Base):
         unique=True,
         nullable=True,
         index=True,
+    )
+
+    cuenta_id: Mapped[int] = mapped_column(
+        ForeignKey("cuentas.id"), nullable=False, index=True,
     )
 
     nombre: Mapped[str] = mapped_column(
@@ -76,6 +81,8 @@ class Profesional(Base):
     usuario: Mapped["Usuario | None"] = relationship(
         back_populates="profesional",
     )
+
+    cuenta: Mapped["Cuenta"] = relationship(back_populates="profesionales")
 
     onboarding_step: Mapped[str] = mapped_column(
         String(30), nullable=False, default="completado",

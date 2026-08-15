@@ -5,6 +5,7 @@ import DashboardProfesional from "../src/components/DashboardProfesional";
 import * as disponibilidadService from "../src/services/disponibilidadService";
 import * as profesionalService from "../src/services/profesionalService";
 import * as turnoService from "../src/services/turnoService";
+import * as cuentaService from "../src/services/cuentaService";
 import type { Turno } from "../src/types/turno";
 
 vi.mock("../src/services/disponibilidadService", () => ({
@@ -18,6 +19,7 @@ vi.mock("../src/services/turnoService", () => ({
   finalizarMiTurno: vi.fn(),
   marcarAusenteMiTurno: vi.fn(),
 }));
+vi.mock("../src/services/cuentaService", () => ({ obtenerCuentaActual: vi.fn() }));
 
 const perfil = {
   id: 7,
@@ -57,6 +59,7 @@ const jornada: Turno[] = [
 ];
 
 function prepararDatos(turnos: Turno[] = jornada) {
+  vi.mocked(cuentaService.obtenerCuentaActual).mockResolvedValue({ cuenta_id: 1, plan: "profesional", subscription_status: "active", trial_started_at: null, trial_ends_at: null, trial_days_remaining: 0 });
   vi.mocked(profesionalService.obtenerMiPerfilProfesional).mockResolvedValue(perfil);
   vi.mocked(disponibilidadService.obtenerDisponibilidadesProfesional).mockResolvedValue([
     { id: 1, profesional_id: 7, dia_semana: 2, hora_inicio: "08:00:00", hora_fin: "12:00:00", activa: true },
@@ -102,6 +105,28 @@ describe("dashboard profesional Signature", () => {
     expect(screen.getByLabelText("Resumen de la jornada")).toHaveTextContent("2 confirmados");
     expect(screen.getByLabelText("Resumen de la jornada")).toHaveTextContent("1 pendiente");
     expect(screen.getByLabelText("Resumen de la jornada")).toHaveTextContent("3 resueltos");
+  });
+
+  it("muestra el trial y los días calculados por backend", async () => {
+    prepararDatos([]);
+    vi.mocked(cuentaService.obtenerCuentaActual).mockResolvedValue({ cuenta_id: 1, plan: "profesional", subscription_status: "trial", trial_started_at: "2026-08-15T18:00:00Z", trial_ends_at: "2026-08-29T18:00:00Z", trial_days_remaining: 13 });
+    renderizar();
+    expect(await screen.findByLabelText("Estado de suscripción")).toHaveTextContent("Prueba gratuita · 13 días restantes");
+  });
+
+  it.each([["active", "Activo"], ["expired", "Prueba finalizada"]] as const)("traduce estado %s", async (estado, texto) => {
+    prepararDatos([]);
+    vi.mocked(cuentaService.obtenerCuentaActual).mockResolvedValue({ cuenta_id: 1, plan: "profesional", subscription_status: estado, trial_started_at: null, trial_ends_at: null, trial_days_remaining: 0 });
+    renderizar();
+    expect(await screen.findByLabelText("Estado de suscripción")).toHaveTextContent(texto);
+  });
+
+  it("un error comercial no rompe el dashboard", async () => {
+    prepararDatos([]);
+    vi.mocked(cuentaService.obtenerCuentaActual).mockRejectedValue(new Error("red"));
+    renderizar();
+    expect(await screen.findByRole("heading", { name: "Tu agenda está libre hoy" })).toBeInTheDocument();
+    expect(screen.queryByLabelText("Estado de suscripción")).not.toBeInTheDocument();
   });
 
   it("muestra en agenda sólo períodos con turnos y conserva toda la disponibilidad en Tu jornada", async () => {
