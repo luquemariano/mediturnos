@@ -12,7 +12,7 @@ vi.mock("../src/utils/sesion", () => ({ restaurarSesion: vi.fn().mockResolvedVal
 
 beforeEach(() => {
   vi.clearAllMocks();
-  window.history.replaceState({}, "", "/");
+  window.history.replaceState({}, "", "/login");
 });
 
 describe("recuperación de contraseña", () => {

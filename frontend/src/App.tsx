@@ -17,6 +17,7 @@ import AuthBrand from "./components/AuthBrand";
 import DashboardProfesional from "./components/DashboardProfesional";
 import MisPrestaciones from "./components/MisPrestaciones";
 import "./responsiveAudit.css";
+import LandingPage from "./landing/LandingPage";
 import {
   iniciarSesion,
   obtenerUsuarioActual,
@@ -45,6 +46,7 @@ type VistaAcceso = "login" | "forgot" | "reset";
 
 
 function App() {
+  const rutaInicial = window.location.pathname;
   const [email, setEmail] =
     useState("");
 
@@ -57,7 +59,7 @@ function App() {
   const [cargando, setCargando] =
     useState(false);
   const [vistaAcceso, setVistaAcceso] = useState<VistaAcceso>(
-    window.location.pathname === "/reset-password" ? "reset" : "login",
+    rutaInicial === "/reset-password" ? "reset" : rutaInicial === "/forgot-password" ? "forgot" : "login",
   );
   const [repetirPassword, setRepetirPassword] = useState("");
 
@@ -195,13 +197,17 @@ function App() {
   }
 
   function volverAlLogin() {
-    window.history.replaceState({}, "", "/");
+    window.history.replaceState({}, "", "/login");
     setVistaAcceso("login");
     setPassword("");
     setRepetirPassword("");
     setMensaje("");
   }
 
+
+  if (rutaInicial === "/") {
+    return <LandingPage />;
+  }
 
   if (validandoSesion) {
     return (
@@ -484,7 +490,7 @@ function App() {
           </div>
 
           <button type="button" className="boton-enlace olvide-password" onClick={() => {
-            setVistaAcceso("forgot"); setMensaje("");
+            window.history.pushState({}, "", "/forgot-password"); setVistaAcceso("forgot"); setMensaje("");
           }}>¿Olvidaste tu contraseña?</button>
 
           <button
