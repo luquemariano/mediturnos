@@ -26,7 +26,11 @@ def guardar_especialidad(
 def buscar_todas(
     db: Session,
 ) -> list[Especialidad]:
-    return db.query(Especialidad).all()
+    return (
+        db.query(Especialidad)
+        .order_by(Especialidad.nombre)
+        .all()
+    )
 
 
 def buscar_activas_para_catalogo(db: Session) -> list[Especialidad]:

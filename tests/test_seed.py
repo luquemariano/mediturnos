@@ -473,7 +473,7 @@ def test_seed_es_idempotente_en_registros_principales(db):
     cargar_datos_demo(db)
 
     assert db.query(Usuario).count() == 2
-    assert db.query(Especialidad).count() == 4
+    assert db.query(Especialidad).count() == 36
     assert db.query(Profesional).count() == 5
     assert db.query(Prestacion).count() == 7
     assert db.query(Paciente).count() == 8

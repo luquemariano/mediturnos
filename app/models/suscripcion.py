@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import CheckConstraint, DateTime, ForeignKey, String
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.datetime_utils import ahora_utc
@@ -16,6 +16,7 @@ class Suscripcion(Base):
     __table_args__ = (
         CheckConstraint("plan_code IN ('profesional', 'consultorio', 'centro')", name="ck_suscripciones_plan"),
         CheckConstraint("status IN ('trial', 'active', 'past_due', 'cancelled', 'expired')", name="ck_suscripciones_status"),
+        UniqueConstraint("cuenta_id", name="uq_suscripciones_cuenta_id"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)

@@ -728,6 +728,25 @@ def _cargar_datos_demo(
         duracion_turno_minutos=50,
     )
 
+    catalogo_adicional = [
+        "Medicina General", "Ginecología", "Obstetricia", "Dermatología",
+        "Traumatología", "Neurología", "Oftalmología", "Otorrinolaringología",
+        "Gastroenterología", "Endocrinología", "Urología", "Neumonología",
+        "Reumatología", "Infectología", "Nefrología", "Hematología",
+        "Oncología", "Cirugía General", "Medicina Familiar", "Medicina Laboral",
+        "Medicina del Deporte", "Psicología", "Psicopedagogía",
+        "Terapia Ocupacional", "Kinesiología", "Fisioterapia",
+        "Fonoaudiología", "Nutrición", "Odontología", "Enfermería",
+        "Podología", "Estética",
+    ]
+    for nombre in catalogo_adicional:
+        obtener_o_crear_especialidad(
+            db=db,
+            nombre=nombre,
+            descripcion=f"Atención profesional en {nombre.lower()}.",
+            duracion_turno_minutos=30,
+        )
+
     print("Cargando profesionales...")
 
     carlos_perez = obtener_o_crear_profesional(
@@ -1263,7 +1282,7 @@ def imprimir_resumen_seed() -> None:
     print("")
     print("Datos demo cargados correctamente.")
     print("----------------------------------")
-    print("Especialidades: 4")
+    print("Especialidades: 36")
     print("Profesionales: 5")
     print("Prestaciones: 7")
     print("Pacientes demo disponibles: 8")

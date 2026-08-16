@@ -79,6 +79,13 @@ def test_catalogo_publico_solo_lista_activas(client):
     assert respuesta.status_code == 200 and len(respuesta.json()) == 1
 
 
+def test_catalogo_publico_ordena_alfabeticamente_sin_otro(client):
+    especialidad(True, "Psicología")
+    especialidad(True, "Cardiología")
+    nombres = [item["nombre"] for item in client.get("/catalogo/especialidades").json()]
+    assert nombres == ["Cardiología", "Psicología"]
+
+
 def test_onboarding_avanza_sin_retroceder_y_completa_idempotente(client):
     body = registrar(client).json(); headers={"Authorization":f"Bearer {body['access_token']}"}
     assert client.get("/onboarding/me", headers=headers).json()["onboarding_step"] == "perfil"
