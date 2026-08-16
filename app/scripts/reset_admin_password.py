@@ -26,6 +26,14 @@ class ResetAdminError(RuntimeError):
     """Error seguro y esperado del procedimiento administrativo."""
 
 
+class AdminNoEncontradoError(ResetAdminError):
+    pass
+
+
+class UsuarioNoAdministradorError(ResetAdminError):
+    pass
+
+
 def _normalizar_email(valor: str | None) -> str:
     return (valor or "").strip().casefold()
 
@@ -53,9 +61,9 @@ def resetear_password_admin(
             .one_or_none()
         )
         if usuario is None:
-            raise ResetAdminError("No existe un usuario con ese email.")
+            raise AdminNoEncontradoError("No existe un usuario con ese email.")
         if usuario.rol != "administrador":
-            raise ResetAdminError("El usuario identificado no es administrador global.")
+            raise UsuarioNoAdministradorError("El usuario identificado no es administrador global.")
 
         usuario.password_hash = (generar_hash or generar_hash_password)(password)
         db.flush()

@@ -17,6 +17,7 @@ from app.routers.turnos import router as turnos_router
 from app.routers.usuarios import router as usuarios_router
 from app.routers.cuentas import router as cuentas_router
 from app.routers.admin_cuentas import router as admin_cuentas_router
+from app.routers.internal_admin import router as internal_admin_router
 
 
 def crear_app(configuracion: Settings = settings) -> FastAPI:
@@ -68,6 +69,7 @@ def crear_app(configuracion: Settings = settings) -> FastAPI:
     app.include_router(onboarding_router)
     app.include_router(cuentas_router)
     app.include_router(admin_cuentas_router)
+    app.include_router(internal_admin_router)
 
     @app.get("/")
     def inicio():

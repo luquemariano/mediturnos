@@ -84,6 +84,7 @@ class Settings(BaseSettings):
     rate_limit_register_attempts: int = 5
     rate_limit_login_attempts: int = 15
     rate_limit_password_reset_attempts: int = 3
+    reset_admin_token: SecretStr | None = None
 
     @field_validator(
         "rate_limit_window_seconds",

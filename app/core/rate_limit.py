@@ -74,3 +74,9 @@ limitar_recuperacion = limitar(
     settings.rate_limit_password_reset_attempts,
     settings.rate_limit_window_seconds,
 )
+
+limitar_reset_admin = limitar(
+    "reset_admin_interno",
+    3,
+    60,
+)
