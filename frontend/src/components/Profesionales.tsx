@@ -33,6 +33,7 @@ function Profesionales({
   onVolver,
   rol,
 }: ProfesionalesProps) {
+  const modoLectura = rol === "administrador";
   const [profesionales, setProfesionales] =
     useState<Profesional[]>([]);
 
@@ -192,7 +193,7 @@ function Profesionales({
               </p>
             </div>
 
-            {rol === "administrador" && (
+            {!modoLectura && rol === "administrador" && (
               <button
                 type="button"
                 className="boton-primario"
@@ -398,7 +399,7 @@ function Profesionales({
                             </span>
                           </td>
 
-                          {rol === "administrador" && (
+                          {!modoLectura && rol === "administrador" && (
                             <td>
                               <button
                                 type="button"

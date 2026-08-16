@@ -20,6 +20,7 @@ import "./responsiveAudit.css";
 import LandingPage from "./landing/LandingPage";
 import RegistroProfesional from "./components/RegistroProfesional";
 import OnboardingProfesional from "./components/OnboardingProfesional";
+import CuentasAdmin from "./components/CuentasAdmin";
 import { rutaOnboarding } from "./utils/onboarding";
 import {
   iniciarSesion,
@@ -45,7 +46,8 @@ type Vista =
   | "profesionales"
   | "turnos"
   | "disponibilidades"
-  | "perfil";
+  | "perfil"
+  | "cuentas";
 
 type VistaAcceso = "login" | "forgot" | "reset";
 
@@ -393,6 +395,10 @@ function App() {
       );
     }
 
+    if (vista === "cuentas" && usuario.rol === "administrador") {
+      return <CuentasAdmin onVolver={() => setVista("dashboard")} />;
+    }
+
     if (vista === "prestaciones" && usuario.rol === "profesional") {
       return <MisPrestaciones
         nombre={usuario.nombre}
@@ -441,6 +447,7 @@ function App() {
           setVista("disponibilidades")
         }
         onAbrirPerfil={() => setVista("perfil")}
+        onAbrirCuentas={() => setVista("cuentas")}
         onCerrarSesion={cerrarSesion}
       />
     );

@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import type {
   ChangeEvent,
   FormEvent,
@@ -90,6 +91,20 @@ function ModalEspecialidad({
     useState(false);
   const [mensajeError, setMensajeError] =
     useState("");
+
+  useEffect(() => {
+    const posicionScroll = window.scrollY;
+    const overflowAnterior = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = overflowAnterior;
+      try {
+        window.scrollTo(0, posicionScroll);
+      } catch {
+        // jsdom does not implement scrollTo; browsers restore the position above.
+      }
+    };
+  }, []);
 
 
   function manejarCambio(
@@ -196,10 +211,13 @@ function ModalEspecialidad({
   }
 
 
-  return (
+  return createPortal((
     <div
-      className="modal-fondo"
+      className="modal-overlay modal-overlay-especialidad"
       role="presentation"
+      onMouseDown={(evento) => {
+        if (evento.target === evento.currentTarget && !guardando) onCerrar();
+      }}
     >
       <section
         className="modal-especialidad"
@@ -346,7 +364,7 @@ function ModalEspecialidad({
         </form>
       </section>
     </div>
-  );
+  ), document.body);
 }
 
 export default ModalEspecialidad;
