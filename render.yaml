@@ -22,9 +22,9 @@ services:
       - key: PASSWORD_RESET_EXPIRE_MINUTES
         value: 60
       - key: CORS_ALLOWED_ORIGINS
-        sync: false
+        value: '["https://turnelia.com.ar","https://www.turnelia.com.ar","https://mediturnos-frontend-711v.onrender.com"]'
       - key: FRONTEND_URL
-        sync: false
+        value: https://turnelia.com.ar
       - key: EMAIL_PROVIDER
         value: resend
       - key: RESEND_API_KEY
@@ -50,7 +50,7 @@ services:
     staticPublishPath: ./dist
     envVars:
       - key: VITE_API_URL
-        sync: false
+        value: https://api.turnelia.com.ar
     routes:
       - type: rewrite
         source: /*

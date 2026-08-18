@@ -247,8 +247,8 @@ Configurá en el backend:
 | `JWT_SECRET_KEY` | Sí | Generada de forma segura por Render. |
 | `JWT_ALGORITHM` | Sí | Definida como `HS256`. |
 | `JWT_EXPIRE_MINUTES` | Sí | Definida como `60`; puede ajustarse. |
-| `CORS_ALLOWED_ORIGINS` | Sí | Lista JSON con la URL HTTPS exacta del Static Site, sin `/` final. |
-| `FRONTEND_URL` | Sí | URL HTTPS pública del Static Site, sin `/` final. |
+| `CORS_ALLOWED_ORIGINS` | Sí | Definida con los dominios públicos de Turnelia y, temporalmente, el Static Site de Render. |
+| `FRONTEND_URL` | Sí | Definida como `https://turnelia.com.ar`. |
 | `PASSWORD_RESET_EXPIRE_MINUTES` | Sí | Definida como `60`; puede ajustarse. |
 | `EMAIL_PROVIDER` | Sí | Definida como `resend`. |
 | `RESEND_API_KEY` | Sí | Secreto cargado desde el Dashboard de Render. |
@@ -256,9 +256,9 @@ Configurá en el backend:
 | `MERCADO_PAGO_ACCESS_TOKEN` | No | Sólo cuando se habiliten pagos reales. |
 | `MERCADO_PAGO_WEBHOOK_SECRET` | No | Sólo cuando se habiliten webhooks reales. |
 
-En el frontend, `VITE_API_URL` es obligatoria durante el build y debe contener
-la URL HTTPS pública del Web Service, sin `/` final. Vite incorpora este valor
-al bundle: si cambia la URL de la API, hay que reconstruir el Static Site.
+En el frontend, `VITE_API_URL` es obligatoria durante el build y está definida
+como `https://api.turnelia.com.ar`. Vite incorpora este valor al bundle: si
+cambia la URL de la API, hay que reconstruir el Static Site.
 
 Las variables `DEMO_SEED_ENABLED`, `DEMO_ADMIN_*` y
 `DEMO_PROFESSIONAL_*` no se configuran en este despliegue porque el seed está
@@ -299,20 +299,29 @@ remitente: para enviar emails a usuarios externos, Resend requiere un dominio
 verificado. Su remitente de prueba sólo sirve bajo las limitaciones documentadas
 en la sección anterior.
 
-Cuando estén disponibles `turnelia.com.ar` y `api.turnelia.com.ar`, agregalos
-como Custom Domains del Static Site y del Web Service respectivamente, seguí
-las instrucciones DNS que muestre Render y actualizá:
+Los Custom Domains activos son `turnelia.com.ar` para el Static Site y
+`api.turnelia.com.ar` para el Web Service. La configuración productiva es:
 
 ```text
 FRONTEND_URL=https://turnelia.com.ar
-CORS_ALLOWED_ORIGINS=["https://turnelia.com.ar"]
+CORS_ALLOWED_ORIGINS=["https://turnelia.com.ar","https://www.turnelia.com.ar","https://mediturnos-frontend-711v.onrender.com"]
 VITE_API_URL=https://api.turnelia.com.ar
 ```
 
+El origen `https://mediturnos-frontend-711v.onrender.com` se conserva
+temporalmente para que el frontend técnico de Render siga pudiendo llamar a la
+API. La URL `https://mediturnos-api-14d3.onrender.com` también puede permanecer
+activa como alias del backend, pero no debe usarse como `VITE_API_URL`: CORS
+valida el origen del frontend, no la URL del backend. Cuando se decida retirar
+el acceso por la URL técnica del frontend, se puede quitar únicamente ese
+origen de `CORS_ALLOWED_ORIGINS`.
+
 El cambio de dominio no requiere modificar la aplicación. Render administra el
 certificado TLS; el Static Site debe reconstruirse porque Vite incorpora
-`VITE_API_URL` durante el build. Si se usa el dominio para enviar emails, también
-debe verificarse en Resend y actualizarse `EMAIL_FROM` desde el entorno.
+`VITE_API_URL` durante el build. En servicios de Render ya creados, verificá
+manualmente los tres valores anteriores en **Environment** y desplegá de nuevo
+el backend y el frontend. Si se usa el dominio para enviar emails, también debe
+verificarse en Resend y actualizarse `EMAIL_FROM` desde el entorno.
 
 El plan gratuito es sólo para esta prueba: el Web Service puede suspenderse por
 inactividad y tener un arranque lento. PostgreSQL gratuito está limitado a 1 GB,
