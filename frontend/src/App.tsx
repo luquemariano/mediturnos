@@ -36,6 +36,7 @@ import {
   habilitarNotificacionDeSesion,
 } from "./api/manejoSesion";
 import { restaurarSesion } from "./utils/sesion";
+import { aplicarMetadatosSeo } from "./seo/routeMetadata";
 
 
 type Vista =
@@ -79,6 +80,10 @@ function App() {
 
   const [vista, setVista] =
     useState<Vista>("dashboard");
+
+  useEffect(() => {
+    aplicarMetadatosSeo(window.location.pathname);
+  }, [ruta, vistaAcceso]);
 
   const navegar = useCallback((destino: string) => {
     if (window.location.pathname !== destino) window.history.pushState({}, "", destino);
@@ -231,6 +236,7 @@ function App() {
 
   function volverAlLogin() {
     window.history.replaceState({}, "", "/login");
+    setRuta("/login");
     setVistaAcceso("login");
     setPassword("");
     setRepetirPassword("");
@@ -546,7 +552,7 @@ function App() {
           </div>
 
           <button type="button" className="boton-enlace olvide-password" onClick={() => {
-            window.history.pushState({}, "", "/forgot-password"); setVistaAcceso("forgot"); setMensaje("");
+            navegar("/forgot-password"); setVistaAcceso("forgot"); setMensaje("");
           }}>¿Olvidaste tu contraseña?</button>
 
           <button

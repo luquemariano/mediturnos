@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://turnelia.com.ar/sitemap.xml

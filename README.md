@@ -20,6 +20,30 @@
 
 El alcance fue pensado para portfolio: presenta un recorrido funcional, visualmente atractivo y técnicamente escalable, sin pretender reemplazar un producto médico listo para producción.
 
+## Estado productivo actual
+
+- **Frontend productivo:** [https://turnelia.com.ar](https://turnelia.com.ar)
+- **Backend productivo:** [https://api.turnelia.com.ar](https://api.turnelia.com.ar)
+- **Hosting:** Render.
+- **DNS:** Cloudflare.
+- **Base de datos:** Render PostgreSQL.
+- **Email transaccional:** Resend.
+- **Dominio de envío verificado:** `mail.turnelia.com.ar`.
+- **Remitente productivo:** `Turnelia <no-reply@mail.turnelia.com.ar>`.
+- **Recuperación de contraseña:** implementada y validada de punta a punta.
+- **Administrador global:** existe un administrador global real configurado en producción.
+- **Seed demo:** no se ejecuta en producción.
+- **Catálogo:** 36 especialidades activas, sin la opción "Otro".
+
+### Nota operativa
+
+El flujo normal de recuperación de contraseña debe utilizarse también para los
+administradores. `app/scripts/bootstrap_admin.py` sirve exclusivamente para
+crear el primer administrador cuando todavía no existe ninguno, mientras que
+`app/scripts/reset_admin_password.py` queda disponible como herramienta CLI de
+emergencia. No se debe reintroducir un endpoint HTTP interno para restablecer la
+contraseña administrativa.
+
 ## Funcionalidades destacadas
 
 - Inicio de sesión con autenticación JWT.
