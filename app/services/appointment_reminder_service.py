@@ -1,4 +1,5 @@
 from datetime import UTC, datetime, timedelta
+from zoneinfo import ZoneInfo
 
 from pydantic import EmailStr, TypeAdapter, ValidationError
 from sqlalchemy.exc import IntegrityError
@@ -158,6 +159,7 @@ def send_claimed_reminder(
     db: Session,
     reminder: AppointmentReminder,
     ahora: datetime | None = None,
+    config=None,
 ) -> str:
     ahora = _utc(ahora or ahora_utc())
     motivo = validate_reminder(db, reminder, ahora)
@@ -173,9 +175,11 @@ def send_claimed_reminder(
         especialidad=reminder.specialty_name_snapshot,
         prestacion=reminder.service_name_snapshot,
         fecha_hora=_utc(reminder.appointment_datetime_snapshot),
+        zona=ZoneInfo(config.app_timezone) if config is not None else None,
     )
     try:
-        resultado = obtener_email_provider().enviar(mensaje)
+        provider = obtener_email_provider() if config is None else obtener_email_provider(config)
+        resultado = provider.enviar(mensaje)
     except EmailDeliveryError as error:
         return schedule_retry(db, reminder, str(error), ahora)
     except Exception:

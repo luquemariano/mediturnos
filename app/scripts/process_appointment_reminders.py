@@ -5,7 +5,8 @@ import logging
 from datetime import datetime
 
 from app.core.datetime_utils import ahora_utc
-from app.database.connection import SessionLocal
+from app.core.worker_config import load_worker_settings
+from app.database.worker_connection import create_worker_session_factory
 from app.services.appointment_reminder_service import (
     claim_due_reminders,
     generate_upcoming_reminders,
@@ -15,6 +16,7 @@ from app.services.appointment_reminder_service import (
 
 logger = logging.getLogger("mediturnos.appointment_reminders")
 BATCH_SIZE = 50
+SessionLocal = None
 
 
 @dataclass
@@ -28,7 +30,7 @@ class ProcessingSummary:
     skipped: int = 0
 
 
-def process_once(db, ahora: datetime | None = None) -> ProcessingSummary:
+def process_once(db, ahora: datetime | None = None, config=None) -> ProcessingSummary:
     ahora = ahora or ahora_utc()
     resumen = ProcessingSummary()
     logger.info("appointment_reminders.start")
@@ -43,7 +45,10 @@ def process_once(db, ahora: datetime | None = None) -> ProcessingSummary:
     logger.info("appointment_reminders.claimed count=%d", resumen.claimed)
     for reminder in reclamados:
         try:
-            resultado = send_claimed_reminder(db, reminder, ahora)
+            if config is None:
+                resultado = send_claimed_reminder(db, reminder, ahora)
+            else:
+                resultado = send_claimed_reminder(db, reminder, ahora, config=config)
             if resultado == "sent":
                 resumen.sent += 1
             elif resultado == "pending":
@@ -65,9 +70,14 @@ def process_once(db, ahora: datetime | None = None) -> ProcessingSummary:
 
 
 def main() -> int:
-    db = SessionLocal()
+    config = load_worker_settings()
+    logger.info(
+        "appointment_reminders.config database_configured=%s email_provider=%s timezone=%s",
+        bool(config.database_url), config.email_provider, config.app_timezone,
+    )
+    db = (SessionLocal or create_worker_session_factory(config))()
     try:
-        process_once(db)
+        process_once(db, config=config)
         return 0
     except Exception:
         db.rollback()

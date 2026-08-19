@@ -1,18 +1,20 @@
 from datetime import UTC, date, datetime, time
+import os
 from zoneinfo import ZoneInfo
 
-from app.core.config import settings
+ZONA_NEGOCIO = ZoneInfo(os.getenv("APP_TIMEZONE", "America/Argentina/Buenos_Aires"))
 
 
-ZONA_NEGOCIO = ZoneInfo(settings.app_timezone)
+def _zona_negocio() -> ZoneInfo:
+    return ZONA_NEGOCIO
 
 
 def ahora_utc() -> datetime:
     return datetime.now(UTC)
 
 
-def ahora_negocio() -> datetime:
-    return ahora_utc().astimezone(ZONA_NEGOCIO)
+def ahora_negocio(zona: ZoneInfo | None = None) -> datetime:
+    return ahora_utc().astimezone(zona or _zona_negocio())
 
 
 def fecha_actual_negocio() -> date:
@@ -31,10 +33,10 @@ def fecha_hora_civil_a_utc(
     return fecha_hora.astimezone(UTC)
 
 
-def utc_a_zona_negocio(fecha_hora: datetime) -> datetime:
+def utc_a_zona_negocio(fecha_hora: datetime, zona: ZoneInfo | None = None) -> datetime:
     if fecha_hora.tzinfo is None:
         raise ValueError("La fecha y hora UTC debe incluir zona horaria.")
-    return fecha_hora.astimezone(ZONA_NEGOCIO)
+    return fecha_hora.astimezone(zona or _zona_negocio())
 
 
 def a_zona_negocio(fecha_hora: datetime) -> datetime:

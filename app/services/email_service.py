@@ -7,7 +7,6 @@ from urllib.parse import urlencode
 
 import requests
 
-from app.core.config import settings
 from app.core.datetime_utils import utc_a_zona_negocio
 
 
@@ -15,6 +14,13 @@ logger = logging.getLogger("mediturnos.email")
 development_email_outbox: dict[str, str] = {}
 RESEND_API_URL = "https://api.resend.com/emails"
 RESEND_TIMEOUT_SECONDS = 10
+
+
+def __getattr__(nombre: str):
+    if nombre == "settings":
+        from app.core.config import settings
+        return settings
+    raise AttributeError(nombre)
 
 
 class EmailDeliveryError(RuntimeError):
@@ -88,20 +94,24 @@ class ResendEmailProvider:
         return EmailDeliveryResult(provider="resend", message_id=message_id)
 
 
-def obtener_email_provider() -> EmailProvider:
-    if settings.email_provider == "resend":
-        if settings.resend_api_key is None or not settings.email_from:
+def obtener_email_provider(config=None) -> EmailProvider:
+    if config is None:
+        from app.core.config import settings
+        config = settings
+    if config.email_provider == "resend":
+        if config.resend_api_key is None or not config.email_from:
             raise EmailServiceUnavailable(
                 "El proveedor de email no está configurado."
             )
         return ResendEmailProvider(
-            settings.resend_api_key.get_secret_value(),
-            settings.email_from,
+            config.resend_api_key.get_secret_value(),
+            config.email_from,
         )
     return InMemoryEmailProvider()
 
 
 def construir_enlace_recuperacion(token: str) -> str:
+    from app.core.config import settings
     query = urlencode({"token": token})
     return f"{settings.frontend_url.rstrip('/')}/reset-password?{query}"
 
@@ -110,6 +120,7 @@ def construir_email_recuperacion(
     email: str,
     token: str,
 ) -> TransactionalEmail:
+    from app.core.config import settings
     enlace = construir_enlace_recuperacion(token)
     enlace_html = escape(enlace, quote=True)
     minutos = settings.password_reset_expire_minutes
@@ -164,8 +175,10 @@ def construir_email_recordatorio_turno(
     especialidad: str,
     prestacion: str | None,
     fecha_hora: datetime,
+    zona=None,
 ) -> TransactionalEmail:
-    fecha, hora = _fecha_hora_recordatorio(fecha_hora)
+    local = utc_a_zona_negocio(fecha_hora, zona)
+    fecha, hora = local.strftime("%d/%m/%Y"), local.strftime("%H:%M")
     paciente_html = escape(paciente)
     profesional_html = escape(profesional)
     especialidad_html = escape(especialidad)
