@@ -20,6 +20,7 @@ from app.services.email_service import (
     construir_email_recordatorio_turno,
     obtener_email_provider,
 )
+from app.services.appointment_action_token_service import generate_appointment_action_token
 
 ESTADOS_NOTIFICABLES = {"reservado", "confirmado"}
 MAX_INTENTOS = 3
@@ -176,6 +177,16 @@ def send_claimed_reminder(
         prestacion=reminder.service_name_snapshot,
         fecha_hora=_utc(reminder.appointment_datetime_snapshot),
         zona=ZoneInfo(config.app_timezone) if config is not None else None,
+        confirm_url=(
+            f"{config.public_api_url.rstrip('/')}/turnos/public/confirmar?token="
+            + generate_appointment_action_token(secret=config.appointment_action_secret.get_secret_value(), turno_id=reminder.turno_id, appointment_datetime_snapshot=_utc(reminder.appointment_datetime_snapshot), action_scope="confirm")
+            if config is not None and config.appointment_action_secret and config.public_api_url else None
+        ),
+        cancel_url=(
+            f"{config.public_api_url.rstrip('/')}/turnos/public/cancelar?token="
+            + generate_appointment_action_token(secret=config.appointment_action_secret.get_secret_value(), turno_id=reminder.turno_id, appointment_datetime_snapshot=_utc(reminder.appointment_datetime_snapshot), action_scope="cancel")
+            if config is not None and config.appointment_action_secret and config.public_api_url else None
+        ),
     )
     try:
         provider = obtener_email_provider() if config is None else obtener_email_provider(config)

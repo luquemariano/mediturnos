@@ -11,6 +11,7 @@ from pydantic import (
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy.engine import make_url
 from sqlalchemy.exc import ArgumentError
+from app.core.public_url import validar_public_api_url
 
 
 adaptador_origen_http = TypeAdapter(AnyHttpUrl)
@@ -69,6 +70,8 @@ class Settings(BaseSettings):
     jwt_expire_minutes: int = 60
     password_reset_expire_minutes: int = 60
     frontend_url: str = "http://localhost:5173"
+    public_api_url: str = "https://api.mediturnos.example"
+    appointment_action_secret: SecretStr | None = SecretStr("turnelia-local-appointment-action-secret")
     email_provider: Literal["in_memory", "resend"] = "in_memory"
     resend_api_key: SecretStr | None = None
     email_from: str | None = None
@@ -112,6 +115,11 @@ class Settings(BaseSettings):
         except ValueError as error:
             raise ValueError("FRONTEND_URL debe ser una URL HTTP o HTTPS válida.") from error
         return valor.rstrip("/")
+
+    @field_validator("public_api_url")
+    @classmethod
+    def validar_public_api(cls, valor: str) -> str:
+        return validar_public_api_url(valor, production=False)
 
     @field_validator("cors_allowed_origins")
     @classmethod
@@ -224,6 +232,9 @@ class Settings(BaseSettings):
             raise ValueError(
                 "En production con Resend, EMAIL_FROM es obligatorio."
             )
+        if not self.appointment_action_secret or len(self.appointment_action_secret.get_secret_value().strip()) < 32:
+            raise ValueError("En production, APPOINTMENT_ACTION_SECRET debe tener al menos 32 caracteres.")
+        self.public_api_url = validar_public_api_url(self.public_api_url, production=True)
         frontend_host = adaptador_origen_http.validate_python(
             self.frontend_url
         ).host

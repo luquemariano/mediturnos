@@ -58,3 +58,32 @@ def test_worker_requires_resend_credentials():
             email_provider="resend",
             email_from="verified@example.com",
         )
+
+
+@pytest.mark.parametrize("url", ["", "not-a-url", "http://localhost:8000", "http://127.0.0.1:8000", "https://api.example.com/path?x=1", "https://api.example.com/#fragment", "https://user:pass@api.example.com"])
+def test_worker_rejects_invalid_production_public_api_url(url):
+    with pytest.raises(ValidationError):
+        AppointmentReminderWorkerSettings(
+            _env_file=None,
+            database_url="postgresql+psycopg://user:pass@db.example.com/app",
+            app_env="production",
+            email_provider="resend",
+            resend_api_key="r" * 40,
+            email_from="Turnelia <no-reply@example.com>",
+            appointment_action_secret="a" * 40,
+            public_api_url=url,
+        )
+
+
+def test_worker_normalizes_valid_production_public_api_url():
+    settings = AppointmentReminderWorkerSettings(
+        _env_file=None,
+        database_url="postgresql+psycopg://user:pass@db.example.com/app",
+        app_env="production",
+        email_provider="resend",
+        resend_api_key="r" * 40,
+        email_from="Turnelia <no-reply@example.com>",
+        appointment_action_secret="a" * 40,
+        public_api_url="https://api.turnelia.com.ar/",
+    )
+    assert settings.public_api_url == "https://api.turnelia.com.ar"

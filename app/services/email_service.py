@@ -176,6 +176,8 @@ def construir_email_recordatorio_turno(
     prestacion: str | None,
     fecha_hora: datetime,
     zona=None,
+    confirm_url: str | None = None,
+    cancel_url: str | None = None,
 ) -> TransactionalEmail:
     local = utc_a_zona_negocio(fecha_hora, zona)
     fecha, hora = local.strftime("%d/%m/%Y"), local.strftime("%H:%M")
@@ -189,6 +191,14 @@ def construir_email_recordatorio_turno(
         if prestacion_html else ""
     )
     fila_prestacion_texto = f"Prestación: {prestacion}\n" if prestacion else ""
+    acciones_texto = ""
+    acciones_html = ""
+    if confirm_url and cancel_url:
+        acciones_texto = f"¿Vas a asistir?\n\nConfirmar turno:\n{confirm_url}\n\nCancelar turno:\n{cancel_url}\n\n"
+        acciones_html = f'''<p style="line-height:1.6">¿Vas a asistir? Confirmá o cancelá tu turno:</p>
+        <p><a href="{escape(confirm_url, quote=True)}" style="display:inline-block;padding:12px 18px;border-radius:7px;background:#176f6a;color:#fff;text-decoration:none;font-weight:700;margin:4px">Confirmar turno</a></p>
+        <p><a href="{escape(cancel_url, quote=True)}" style="display:inline-block;padding:12px 18px;border-radius:7px;background:#65716d;color:#fff;text-decoration:none;font-weight:700;margin:4px">Cancelar turno</a></p>
+        <p style="font-size:12px;word-break:break-all">Confirmar: {escape(confirm_url)}<br>Cancelar: {escape(cancel_url)}</p>'''
     asunto = "Recordatorio de tu turno — Turnelia"
     texto = (
         f"Hola, {paciente}.\n\n"
@@ -198,6 +208,7 @@ def construir_email_recordatorio_turno(
         f"{fila_prestacion_texto}"
         f"Fecha: {fecha}\n"
         f"Hora: {hora}\n\n"
+        f"{acciones_texto}"
         "Si necesitás modificar o cancelar tu turno,\n"
         "comunicate con el consultorio.\n\n"
         "Turnelia"
@@ -218,6 +229,7 @@ def construir_email_recordatorio_turno(
         <tr><td style="padding:8px 0;color:#65716d">Hora</td><td style="padding:8px 0;text-align:right;font-weight:700">{hora}</td></tr>
       </table>
       <p style="color:#65716d;line-height:1.6">Si necesitás modificar o cancelar tu turno, comunicate con el consultorio.</p>
+      {acciones_html}
       <p style="margin:24px 0 0;color:#65716d">Turnelia</p>
     </div>
   </div>
