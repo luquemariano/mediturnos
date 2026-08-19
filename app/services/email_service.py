@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from datetime import datetime
 from html import escape
 import logging
 from typing import Protocol
@@ -7,6 +8,7 @@ from urllib.parse import urlencode
 import requests
 
 from app.core.config import settings
+from app.core.datetime_utils import utc_a_zona_negocio
 
 
 logger = logging.getLogger("mediturnos.email")
@@ -31,14 +33,21 @@ class TransactionalEmail:
     texto: str
 
 
+@dataclass(frozen=True)
+class EmailDeliveryResult:
+    provider: str
+    message_id: str | None = None
+
+
 class EmailProvider(Protocol):
-    def enviar(self, email: TransactionalEmail) -> None: ...
+    def enviar(self, email: TransactionalEmail) -> EmailDeliveryResult: ...
 
 
 class InMemoryEmailProvider:
-    def enviar(self, email: TransactionalEmail) -> None:
+    def enviar(self, email: TransactionalEmail) -> EmailDeliveryResult:
         development_email_outbox[email.destinatario] = email.texto
         logger.info("Email transaccional generado en la salida local controlada.")
+        return EmailDeliveryResult(provider="in_memory")
 
 
 class ResendEmailProvider:
@@ -46,7 +55,7 @@ class ResendEmailProvider:
         self._api_key = api_key
         self._remitente = remitente
 
-    def enviar(self, email: TransactionalEmail) -> None:
+    def enviar(self, email: TransactionalEmail) -> EmailDeliveryResult:
         try:
             respuesta = requests.post(
                 RESEND_API_URL,
@@ -72,6 +81,11 @@ class ResendEmailProvider:
             raise EmailDeliveryError(
                 "El proveedor de email rechazó la entrega."
             )
+        try:
+            message_id = respuesta.json().get("id")
+        except (ValueError, AttributeError):
+            message_id = None
+        return EmailDeliveryResult(provider="resend", message_id=message_id)
 
 
 def obtener_email_provider() -> EmailProvider:
@@ -136,3 +150,63 @@ def enviar_recuperacion_password(email: str, token: str) -> None:
         raise EmailDeliveryError(
             "No se pudo entregar el email transaccional."
         ) from error
+
+
+def _fecha_hora_recordatorio(valor: datetime) -> tuple[str, str]:
+    local = utc_a_zona_negocio(valor)
+    return local.strftime("%d/%m/%Y"), local.strftime("%H:%M")
+
+
+def construir_email_recordatorio_turno(
+    destinatario: str,
+    paciente: str,
+    profesional: str,
+    especialidad: str,
+    prestacion: str | None,
+    fecha_hora: datetime,
+) -> TransactionalEmail:
+    fecha, hora = _fecha_hora_recordatorio(fecha_hora)
+    paciente_html = escape(paciente)
+    profesional_html = escape(profesional)
+    especialidad_html = escape(especialidad)
+    prestacion_html = escape(prestacion) if prestacion else None
+    fila_prestacion_html = (
+        f'<tr><td style="padding:8px 0;color:#65716d">Prestación</td>'
+        f'<td style="padding:8px 0;text-align:right;font-weight:700">{prestacion_html}</td></tr>'
+        if prestacion_html else ""
+    )
+    fila_prestacion_texto = f"Prestación: {prestacion}\n" if prestacion else ""
+    asunto = "Recordatorio de tu turno — Turnelia"
+    texto = (
+        f"Hola, {paciente}.\n\n"
+        "Te recordamos que tenés un turno programado.\n\n"
+        f"Profesional: {profesional}\n"
+        f"Especialidad: {especialidad}\n"
+        f"{fila_prestacion_texto}"
+        f"Fecha: {fecha}\n"
+        f"Hora: {hora}\n\n"
+        "Si necesitás modificar o cancelar tu turno,\n"
+        "comunicate con el consultorio.\n\n"
+        "Turnelia"
+    )
+    html = f"""<!doctype html>
+<html lang="es"><body style="margin:0;background:#f6f5f0;color:#1d2927;font-family:Arial,sans-serif">
+  <div style="max-width:560px;margin:0 auto;padding:24px 16px">
+    <div style="background:#fff;border:1px solid #d9e0dc;border-radius:10px;padding:28px">
+      <p style="margin:0 0 20px;color:#176f6a;font-size:18px;font-weight:700">Turnelia</p>
+      <h1 style="margin:0 0 12px;color:#153e3b;font-size:25px">Recordatorio de turno</h1>
+      <p style="line-height:1.6">Hola, {paciente_html}.</p>
+      <p style="line-height:1.6">Te recordamos que tenés un turno programado.</p>
+      <table style="width:100%;border-collapse:collapse;margin:20px 0">
+        <tr><td style="padding:8px 0;color:#65716d">Profesional</td><td style="padding:8px 0;text-align:right;font-weight:700">{profesional_html}</td></tr>
+        <tr><td style="padding:8px 0;color:#65716d">Especialidad</td><td style="padding:8px 0;text-align:right;font-weight:700">{especialidad_html}</td></tr>
+        {fila_prestacion_html}
+        <tr><td style="padding:8px 0;color:#65716d">Fecha</td><td style="padding:8px 0;text-align:right;font-weight:700">{fecha}</td></tr>
+        <tr><td style="padding:8px 0;color:#65716d">Hora</td><td style="padding:8px 0;text-align:right;font-weight:700">{hora}</td></tr>
+      </table>
+      <p style="color:#65716d;line-height:1.6">Si necesitás modificar o cancelar tu turno, comunicate con el consultorio.</p>
+      <p style="margin:24px 0 0;color:#65716d">Turnelia</p>
+    </div>
+  </div>
+</body></html>"""
+    return TransactionalEmail(destinatario, asunto, html, texto)

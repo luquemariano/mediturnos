@@ -1,4 +1,35 @@
 services:
+  - type: cron
+    name: turnelia-appointment-reminders
+    runtime: docker
+    schedule: "*/15 * * * *"
+    dockerCommand: python -m app.scripts.process_appointment_reminders
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: APP_TIMEZONE
+        value: America/Argentina/Buenos_Aires
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: JWT_ALGORITHM
+        value: HS256
+      - key: JWT_EXPIRE_MINUTES
+        value: 60
+      - key: PASSWORD_RESET_EXPIRE_MINUTES
+        value: 60
+      - key: CORS_ALLOWED_ORIGINS
+        value: '["https://turnelia.com.ar"]'
+      - key: FRONTEND_URL
+        value: https://turnelia.com.ar
+      - key: EMAIL_PROVIDER
+        value: resend
+      - key: RESEND_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+
   - type: web
     name: mediturnos-api
     runtime: docker
@@ -8,9 +39,7 @@ services:
       - key: APP_ENV
         value: production
       - key: DATABASE_URL
-        fromDatabase:
-          name: mediturnos-db
-          property: connectionString
+        sync: false
       - key: APP_TIMEZONE
         value: America/Argentina/Buenos_Aires
       - key: JWT_SECRET_KEY
@@ -55,9 +84,3 @@ services:
       - type: rewrite
         source: /*
         destination: /index.html
-
-databases:
-  - name: mediturnos-db
-    plan: free
-    databaseName: mediturnos
-    user: mediturnos
