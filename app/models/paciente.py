@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from app.models.evolucion_clinica import EvolucionClinica
     from app.models.clinical_profile import ClinicalProfile
     from app.models.patient_document import PatientDocument
+    from app.models.study_request import StudyRequest
     from app.models.profesional_paciente import ProfesionalPaciente
     from app.models.usuario import Usuario
 

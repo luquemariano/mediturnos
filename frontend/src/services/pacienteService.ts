@@ -8,6 +8,8 @@ import type {
   ClinicalProfileUpdate,
   PatientDocument,
   PatientDocumentCategory,
+  StudyRequest,
+  StudyRequestStatus,
 } from "../types/paciente";
 
 export async function obtenerPacientes():
@@ -75,3 +77,7 @@ export async function crearIntentDocumento(patientId: number, payload: { filenam
 export async function confirmarDocumento(patientId: number, documentId: number): Promise<PatientDocument> { return (await api.post<PatientDocument>(`/pacientes/${patientId}/documents/${documentId}/confirm`)).data; }
 export async function obtenerUrlDocumento(patientId: number, documentId: number): Promise<string> { return (await api.post<{ download_url: string }>(`/pacientes/${patientId}/documents/${documentId}/download-url`)).data.download_url; }
 export async function eliminarDocumento(patientId: number, documentId: number): Promise<void> { await api.delete(`/pacientes/${patientId}/documents/${documentId}`); }
+export async function listarStudyRequests(patientId: number, status?: StudyRequestStatus): Promise<StudyRequest[]> { return (await api.get<StudyRequest[]>(`/pacientes/${patientId}/study-requests`, { params: status ? { status } : {} })).data; }
+export async function crearStudyRequest(patientId: number, payload: { title: string; instructions: string | null; turno_id: number | null; expires_at: string | null }): Promise<StudyRequest> { return (await api.post<StudyRequest>(`/pacientes/${patientId}/study-requests`, payload)).data; }
+export async function cancelarStudyRequest(patientId: number, requestId: number): Promise<StudyRequest> { return (await api.post<StudyRequest>(`/pacientes/${patientId}/study-requests/${requestId}/cancel`)).data; }
+export async function cerrarStudyRequest(patientId: number, requestId: number): Promise<StudyRequest> { return (await api.post<StudyRequest>(`/pacientes/${patientId}/study-requests/${requestId}/close`)).data; }

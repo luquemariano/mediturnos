@@ -6,6 +6,7 @@ import ProfesionalShell from "./ProfesionalShell";
 import Icono from "./Icono";
 import "./Pacientes.css";
 import PatientDocuments from "./pacientes/PatientDocuments";
+import PatientStudyRequests from "./pacientes/PatientStudyRequests";
 import type { ClinicalProfile, ClinicalProfileUpdate, EvolucionClinica, PacienteSeleccion } from "../types/paciente";
 import {
   buscarPacientesProfesional,

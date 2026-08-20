@@ -44,3 +44,5 @@ export interface ClinicalProfile { id: number | null; paciente_id: number; antec
 export type ClinicalProfileUpdate = Omit<ClinicalProfile, "id" | "paciente_id" | "updated_at" | "updated_by_profesional_id">;
 export type PatientDocumentCategory = "laboratory" | "imaging" | "order" | "report" | "prescription" | "other";
 export interface PatientDocument { id: number; paciente_id: number; original_filename: string; mime_type: string; size_bytes: number | null; category: PatientDocumentCategory; status: "available"; created_at: string; available_at: string | null; uploaded_by_profesional_id: number | null; }
+export type StudyRequestStatus = "pending" | "submitted" | "reviewed" | "closed" | "cancelled";
+export interface StudyRequest { id: number; paciente_id: number; profesional_id: number; turno_id: number | null; title: string; instructions: string | null; status: StudyRequestStatus; requested_at: string; expires_at: string | null; submitted_at: string | null; reviewed_at: string | null; closed_at: string | null; cancelled_at: string | null; created_at: string; updated_at: string; }

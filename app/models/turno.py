@@ -19,6 +19,7 @@ if TYPE_CHECKING:
     from app.models.paciente import Paciente
     from app.models.prestacion import Prestacion
     from app.models.profesional import Profesional
+    from app.models.study_request import StudyRequest
 
 
 class Turno(Base):
