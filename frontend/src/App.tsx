@@ -22,6 +22,7 @@ import RegistroProfesional from "./components/RegistroProfesional";
 import OnboardingProfesional from "./components/OnboardingProfesional";
 import CuentasAdmin from "./components/CuentasAdmin";
 import { rutaOnboarding } from "./utils/onboarding";
+import StudyUploadAccess from "./pages/StudyUploadAccess";
 import {
   iniciarSesion,
   obtenerUsuarioActual,
@@ -246,6 +247,16 @@ function App() {
 
   if (ruta === "/") {
     return <LandingPage />;
+  }
+
+  if (ruta === "/estudios/enviar") return <StudyUploadAccess />;
+
+  if (ruta === "/suscripcion/retorno") {
+    return <RetornoSuscripcion
+      autenticada={Boolean(usuario)}
+      onIngresar={() => { setVistaAcceso("login"); navegar("/login"); }}
+      onVolver={() => navegar("/app/suscripcion")}
+    />;
   }
 
   if (validandoSesion) {

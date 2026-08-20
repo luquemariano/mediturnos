@@ -72,6 +72,8 @@ class Settings(BaseSettings):
     frontend_url: str = "http://localhost:5173"
     public_api_url: str = "https://api.mediturnos.example"
     appointment_action_secret: SecretStr | None = SecretStr("turnelia-local-appointment-action-secret")
+    study_access_secret: SecretStr | None = SecretStr("turnelia-local-study-access-secret")
+    study_access_token_ttl_seconds: int = 2592000
     email_provider: Literal["in_memory", "resend"] = "in_memory"
     resend_api_key: SecretStr | None = None
     email_from: str | None = None
@@ -121,6 +123,13 @@ class Settings(BaseSettings):
         if minutos <= 0:
             raise ValueError("PASSWORD_RESET_EXPIRE_MINUTES debe ser mayor que cero.")
         return minutos
+
+    @field_validator("study_access_token_ttl_seconds")
+    @classmethod
+    def validar_ttl_study_access(cls, valor: int) -> int:
+        if valor <= 0:
+            raise ValueError("STUDY_ACCESS_TOKEN_TTL_SECONDS debe ser mayor que cero.")
+        return valor
 
     @field_validator("frontend_url")
     @classmethod
@@ -249,6 +258,8 @@ class Settings(BaseSettings):
             )
         if not self.appointment_action_secret or len(self.appointment_action_secret.get_secret_value().strip()) < 32:
             raise ValueError("En production, APPOINTMENT_ACTION_SECRET debe tener al menos 32 caracteres.")
+        if not self.study_access_secret or len(self.study_access_secret.get_secret_value().strip()) < 32:
+            raise ValueError("En production, STUDY_ACCESS_SECRET debe tener al menos 32 caracteres.")
         self.public_api_url = validar_public_api_url(self.public_api_url, production=True)
         frontend_host = adaptador_origen_http.validate_python(
             self.frontend_url

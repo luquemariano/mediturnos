@@ -38,3 +38,11 @@ def cerrar_solicitud(db: Session, paciente_id: int, request_id: int, profesional
     if request.status == "closed": return request
     if request.status != "pending": raise HTTPException(409, "La solicitud no puede cerrarse en su estado actual.")
     ahora = datetime.now(timezone.utc); request.status = "closed"; request.closed_at = ahora; request.updated_at = ahora; db.commit(); db.refresh(request); return request
+
+def obtener_solicitud_para_access(db: Session, paciente_id: int, request_id: int, profesional_id: int) -> StudyRequest:
+    request = _owned(db, paciente_id, request_id, profesional_id)
+    if request.status != "pending":
+        raise HTTPException(409, "La solicitud no está disponible para generar un enlace.")
+    if request.expires_at is not None and datetime.now(timezone.utc) >= request.expires_at:
+        raise HTTPException(409, "La solicitud ya venció.")
+    return request

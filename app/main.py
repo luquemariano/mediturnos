@@ -11,7 +11,7 @@ from app.routers.especialidades import router as especialidades_router
 from app.routers.evoluciones_clinicas import router as evoluciones_clinicas_router
 from app.routers.clinical_profiles import router as clinical_profiles_router
 from app.routers.patient_documents import router as patient_documents_router
-from app.routers.study_requests import router as study_requests_router
+from app.routers.study_requests import router as study_requests_router, public_router as public_study_requests_router
 from app.routers.health import router as health_router
 from app.routers.pacientes import router as pacientes_router
 from app.routers.prestaciones import router as prestaciones_router
@@ -66,6 +66,7 @@ def crear_app(configuracion: Settings = settings) -> FastAPI:
     app.include_router(clinical_profiles_router)
     app.include_router(patient_documents_router)
     app.include_router(study_requests_router)
+    app.include_router(public_study_requests_router)
     app.include_router(turnos_router)
     app.include_router(appointment_actions_router)
     app.include_router(disponibilidades_router)
