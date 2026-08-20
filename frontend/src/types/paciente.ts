@@ -42,3 +42,5 @@ export interface EvolucionClinica {
 }
 export interface ClinicalProfile { id: number | null; paciente_id: number; antecedentes: string | null; alergias: string | null; medicacion_habitual: string | null; condiciones_relevantes: string | null; observaciones: string | null; updated_at: string | null; updated_by_profesional_id: number | null; }
 export type ClinicalProfileUpdate = Omit<ClinicalProfile, "id" | "paciente_id" | "updated_at" | "updated_by_profesional_id">;
+export type PatientDocumentCategory = "laboratory" | "imaging" | "order" | "report" | "prescription" | "other";
+export interface PatientDocument { id: number; paciente_id: number; original_filename: string; mime_type: string; size_bytes: number | null; category: PatientDocumentCategory; status: "available"; created_at: string; available_at: string | null; uploaded_by_profesional_id: number | null; }

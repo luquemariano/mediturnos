@@ -5,6 +5,7 @@ import axios from "axios";
 import ProfesionalShell from "./ProfesionalShell";
 import Icono from "./Icono";
 import "./Pacientes.css";
+import PatientDocuments from "./pacientes/PatientDocuments";
 import type { ClinicalProfile, ClinicalProfileUpdate, EvolucionClinica, PacienteSeleccion } from "../types/paciente";
 import {
   buscarPacientesProfesional,
@@ -185,6 +186,7 @@ export default function Pacientes(props: Props) {
           {cargandoHistorial ? <p>Cargando historial...</p> : historial.length ? <ol>{historial.map((turno) => <li key={turno.id}><time dateTime={turno.fecha_hora}>{fechaHistorial(turno.fecha_hora)}</time><div><strong>{turno.prestacion_nombre}</strong><span className={`historial-estado estado-${turno.estado}`}>{etiquetaEstado(turno.estado)}</span></div></li>)}</ol> : <p>Sin turnos registrados.</p>}
         </section>
         <section className="detalle-clinical-profile"><header><div><span>Información clínica</span><h3>Resumen clínico</h3></div>{!editandoPerfil && <button type="button" className="pacientes-boton secundario" onClick={iniciarEdicionPerfil}>Editar</button>}</header>{editandoPerfil ? <form className="perfil-clinico-formulario" onSubmit={guardarPerfil}>{([['antecedentes','Antecedentes'],['alergias','Alergias'],['medicacion_habitual','Medicación habitual'],['condiciones_relevantes','Condiciones relevantes'],['observaciones','Observaciones']] as const).map(([campo, etiqueta]) => <label key={campo}><span>{etiqueta}</span><textarea rows={3} value={formPerfil[campo] ?? ''} onChange={(e) => setFormPerfil({ ...formPerfil, [campo]: e.target.value })} /></label>)}{errorPerfil && <p role="alert" className="evolucion-error">{errorPerfil}</p>}<div><button type="button" className="pacientes-boton secundario" onClick={() => setEditandoPerfil(false)}>Cancelar</button><button className="pacientes-boton primario" disabled={guardandoPerfil}>{guardandoPerfil ? 'Guardando…' : 'Guardar'}</button></div></form> : perfilClinico && <dl className="perfil-clinico-lectura">{([['antecedentes','Antecedentes'],['alergias','Alergias'],['medicacion_habitual','Medicación habitual'],['condiciones_relevantes','Condiciones relevantes'],['observaciones','Observaciones']] as const).map(([campo, etiqueta]) => <div key={campo}><dt>{etiqueta}</dt><dd>{perfilClinico[campo] || 'No informado'}</dd></div>)}</dl>}</section>
+        <PatientDocuments patientId={seleccion.id} />
         <section className="detalle-evoluciones">
           <header><div><span>Información clínica</span><h3>Evoluciones</h3></div>{!formEvolucion && <button type="button" className="pacientes-boton primario" onClick={() => setFormEvolucion(true)}>Nueva evolución</button>}</header>
           {formEvolucion && <form className="evolucion-formulario" onSubmit={guardarEvolucion}>

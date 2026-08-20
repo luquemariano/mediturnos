@@ -6,6 +6,8 @@ import type {
   EvolucionClinica,
   ClinicalProfile,
   ClinicalProfileUpdate,
+  PatientDocument,
+  PatientDocumentCategory,
 } from "../types/paciente";
 
 export async function obtenerPacientes():
@@ -68,3 +70,8 @@ export async function crearEvolucionPaciente(id: number, contenido: string): Pro
 }
 export async function getClinicalProfile(patientId: number): Promise<ClinicalProfile> { return (await api.get<ClinicalProfile>(`/pacientes/${patientId}/clinical-profile`)).data; }
 export async function updateClinicalProfile(patientId: number, payload: ClinicalProfileUpdate): Promise<ClinicalProfile> { return (await api.put<ClinicalProfile>(`/pacientes/${patientId}/clinical-profile`, payload)).data; }
+export async function listarDocumentosPaciente(patientId: number): Promise<PatientDocument[]> { return (await api.get<PatientDocument[]>(`/pacientes/${patientId}/documents`)).data; }
+export async function crearIntentDocumento(patientId: number, payload: { filename: string; mime_type: string; size_bytes: number; category: PatientDocumentCategory }) { return (await api.post<{ document_id: number; upload_url: string; expires_in_seconds: number; required_content_type: string }>(`/pacientes/${patientId}/documents/upload-intents`, payload)).data; }
+export async function confirmarDocumento(patientId: number, documentId: number): Promise<PatientDocument> { return (await api.post<PatientDocument>(`/pacientes/${patientId}/documents/${documentId}/confirm`)).data; }
+export async function obtenerUrlDocumento(patientId: number, documentId: number): Promise<string> { return (await api.post<{ download_url: string }>(`/pacientes/${patientId}/documents/${documentId}/download-url`)).data.download_url; }
+export async function eliminarDocumento(patientId: number, documentId: number): Promise<void> { await api.delete(`/pacientes/${patientId}/documents/${documentId}`); }
