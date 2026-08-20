@@ -4,6 +4,8 @@ import type {
   PacienteCrear,
   PacienteSeleccion,
   EvolucionClinica,
+  ClinicalProfile,
+  ClinicalProfileUpdate,
 } from "../types/paciente";
 
 export async function obtenerPacientes():
@@ -64,3 +66,5 @@ export async function obtenerEvolucionesPaciente(id: number): Promise<EvolucionC
 export async function crearEvolucionPaciente(id: number, contenido: string): Promise<EvolucionClinica> {
   return (await api.post<EvolucionClinica>(`/pacientes/${id}/evoluciones`, { contenido })).data;
 }
+export async function getClinicalProfile(patientId: number): Promise<ClinicalProfile> { return (await api.get<ClinicalProfile>(`/pacientes/${patientId}/clinical-profile`)).data; }
+export async function updateClinicalProfile(patientId: number, payload: ClinicalProfileUpdate): Promise<ClinicalProfile> { return (await api.put<ClinicalProfile>(`/pacientes/${patientId}/clinical-profile`, payload)).data; }

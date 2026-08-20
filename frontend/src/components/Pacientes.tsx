@@ -5,7 +5,7 @@ import axios from "axios";
 import ProfesionalShell from "./ProfesionalShell";
 import Icono from "./Icono";
 import "./Pacientes.css";
-import type { EvolucionClinica, PacienteSeleccion } from "../types/paciente";
+import type { ClinicalProfile, ClinicalProfileUpdate, EvolucionClinica, PacienteSeleccion } from "../types/paciente";
 import {
   buscarPacientesProfesional,
   crearPacienteProfesional,
@@ -14,6 +14,8 @@ import {
   obtenerHistorialPaciente,
   obtenerEvolucionesPaciente,
   crearEvolucionPaciente,
+  getClinicalProfile,
+  updateClinicalProfile,
 } from "../services/pacienteService";
 
 type Props = {
@@ -75,6 +77,11 @@ export default function Pacientes(props: Props) {
   const [contenidoEvolucion, setContenidoEvolucion] = useState("");
   const [guardandoEvolucion, setGuardandoEvolucion] = useState(false);
   const [errorEvolucion, setErrorEvolucion] = useState("");
+  const [perfilClinico, setPerfilClinico] = useState<ClinicalProfile | null>(null);
+  const [editandoPerfil, setEditandoPerfil] = useState(false);
+  const [guardandoPerfil, setGuardandoPerfil] = useState(false);
+  const [errorPerfil, setErrorPerfil] = useState("");
+  const [formPerfil, setFormPerfil] = useState<ClinicalProfileUpdate>({ antecedentes: null, alergias: null, medicacion_habitual: null, condiciones_relevantes: null, observaciones: null });
 
   const cargar = useCallback(async (termino = "") => {
     setCargando(true); setError("");
@@ -108,14 +115,18 @@ export default function Pacientes(props: Props) {
   }
 
   async function ver(paciente: PacienteSeleccion) {
-    setSeleccion(paciente); setConfirmar(false); setHistorial([]); setEvoluciones([]); setFormEvolucion(false); setContenidoEvolucion(""); setErrorEvolucion(""); setCargandoHistorial(true); setCargandoEvoluciones(true);
+    setSeleccion(paciente); setConfirmar(false); setHistorial([]); setEvoluciones([]); setPerfilClinico(null); setEditandoPerfil(false); setFormEvolucion(false); setContenidoEvolucion(""); setErrorEvolucion(""); setErrorPerfil(""); setCargandoHistorial(true); setCargandoEvoluciones(true);
     try {
       const [turnos, registros] = await Promise.all([obtenerHistorialPaciente(paciente.id), obtenerEvolucionesPaciente(paciente.id)]);
       setHistorial(turnos); setEvoluciones(registros);
-    }
-    catch (e) { setError(detalleError(e)); }
+    } catch (e) { setError(detalleError(e)); }
+    try { setPerfilClinico(await getClinicalProfile(paciente.id)); }
+    catch (e) { setErrorPerfil(detalleError(e)); }
     finally { setCargandoHistorial(false); setCargandoEvoluciones(false); }
   }
+
+  function iniciarEdicionPerfil() { if (!perfilClinico) return; setFormPerfil({ antecedentes: perfilClinico.antecedentes, alergias: perfilClinico.alergias, medicacion_habitual: perfilClinico.medicacion_habitual, condiciones_relevantes: perfilClinico.condiciones_relevantes, observaciones: perfilClinico.observaciones }); setEditandoPerfil(true); }
+  async function guardarPerfil(evento: FormEvent) { evento.preventDefault(); if (!seleccion || guardandoPerfil) return; setGuardandoPerfil(true); setErrorPerfil(""); try { setPerfilClinico(await updateClinicalProfile(seleccion.id, formPerfil)); setEditandoPerfil(false); setMensaje("Resumen clínico guardado correctamente."); } catch (e) { setErrorPerfil(detalleError(e)); } finally { setGuardandoPerfil(false); } }
 
   async function guardarEvolucion(evento: FormEvent) {
     evento.preventDefault();
@@ -173,6 +184,7 @@ export default function Pacientes(props: Props) {
         <section className="detalle-historial"><header><span>Actividad</span><h3>Historial de turnos</h3></header>
           {cargandoHistorial ? <p>Cargando historial...</p> : historial.length ? <ol>{historial.map((turno) => <li key={turno.id}><time dateTime={turno.fecha_hora}>{fechaHistorial(turno.fecha_hora)}</time><div><strong>{turno.prestacion_nombre}</strong><span className={`historial-estado estado-${turno.estado}`}>{etiquetaEstado(turno.estado)}</span></div></li>)}</ol> : <p>Sin turnos registrados.</p>}
         </section>
+        <section className="detalle-clinical-profile"><header><div><span>Información clínica</span><h3>Resumen clínico</h3></div>{!editandoPerfil && <button type="button" className="pacientes-boton secundario" onClick={iniciarEdicionPerfil}>Editar</button>}</header>{editandoPerfil ? <form className="perfil-clinico-formulario" onSubmit={guardarPerfil}>{([['antecedentes','Antecedentes'],['alergias','Alergias'],['medicacion_habitual','Medicación habitual'],['condiciones_relevantes','Condiciones relevantes'],['observaciones','Observaciones']] as const).map(([campo, etiqueta]) => <label key={campo}><span>{etiqueta}</span><textarea rows={3} value={formPerfil[campo] ?? ''} onChange={(e) => setFormPerfil({ ...formPerfil, [campo]: e.target.value })} /></label>)}{errorPerfil && <p role="alert" className="evolucion-error">{errorPerfil}</p>}<div><button type="button" className="pacientes-boton secundario" onClick={() => setEditandoPerfil(false)}>Cancelar</button><button className="pacientes-boton primario" disabled={guardandoPerfil}>{guardandoPerfil ? 'Guardando…' : 'Guardar'}</button></div></form> : perfilClinico && <dl className="perfil-clinico-lectura">{([['antecedentes','Antecedentes'],['alergias','Alergias'],['medicacion_habitual','Medicación habitual'],['condiciones_relevantes','Condiciones relevantes'],['observaciones','Observaciones']] as const).map(([campo, etiqueta]) => <div key={campo}><dt>{etiqueta}</dt><dd>{perfilClinico[campo] || 'No informado'}</dd></div>)}</dl>}</section>
         <section className="detalle-evoluciones">
           <header><div><span>Información clínica</span><h3>Evoluciones</h3></div>{!formEvolucion && <button type="button" className="pacientes-boton primario" onClick={() => setFormEvolucion(true)}>Nueva evolución</button>}</header>
           {formEvolucion && <form className="evolucion-formulario" onSubmit={guardarEvolucion}>

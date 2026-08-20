@@ -9,6 +9,7 @@ from app.database.connection import Base
 
 if TYPE_CHECKING:
     from app.models.evolucion_clinica import EvolucionClinica
+    from app.models.clinical_profile import ClinicalProfile
     from app.models.profesional_paciente import ProfesionalPaciente
     from app.models.usuario import Usuario
 
@@ -80,3 +81,4 @@ class Paciente(Base):
     )
     profesionales_vinculados: Mapped[list["ProfesionalPaciente"]] = relationship(back_populates="paciente", cascade="all, delete-orphan")
     evoluciones: Mapped[list["EvolucionClinica"]] = relationship(back_populates="paciente", cascade="all, delete-orphan")
+    clinical_profile: Mapped["ClinicalProfile | None"] = relationship(back_populates="paciente", uselist=False, cascade="all, delete-orphan")

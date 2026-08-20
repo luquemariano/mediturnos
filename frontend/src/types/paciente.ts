@@ -40,3 +40,5 @@ export interface EvolucionClinica {
   contenido: string;
   created_at: string;
 }
+export interface ClinicalProfile { id: number | null; paciente_id: number; antecedentes: string | null; alergias: string | null; medicacion_habitual: string | null; condiciones_relevantes: string | null; observaciones: string | null; updated_at: string | null; updated_by_profesional_id: number | null; }
+export type ClinicalProfileUpdate = Omit<ClinicalProfile, "id" | "paciente_id" | "updated_at" | "updated_by_profesional_id">;

@@ -9,6 +9,7 @@ from app.routers.onboarding import router as onboarding_router
 from app.routers.disponibilidades import router as disponibilidades_router
 from app.routers.especialidades import router as especialidades_router
 from app.routers.evoluciones_clinicas import router as evoluciones_clinicas_router
+from app.routers.clinical_profiles import router as clinical_profiles_router
 from app.routers.health import router as health_router
 from app.routers.pacientes import router as pacientes_router
 from app.routers.prestaciones import router as prestaciones_router
@@ -60,6 +61,7 @@ def crear_app(configuracion: Settings = settings) -> FastAPI:
     app.include_router(prestaciones_router)
     app.include_router(pacientes_router)
     app.include_router(evoluciones_clinicas_router)
+    app.include_router(clinical_profiles_router)
     app.include_router(turnos_router)
     app.include_router(appointment_actions_router)
     app.include_router(disponibilidades_router)
