@@ -3,7 +3,7 @@ import axios from "axios";
 import type { PatientDocument, PatientDocumentCategory } from "../../types/paciente";
 import { confirmarDocumento, crearIntentDocumento, eliminarDocumento, listarDocumentosPaciente, obtenerUrlDocumento } from "../../services/pacienteService";
 import "./PatientDocuments.css";
-const CATEGORIES: Array<[PatientDocumentCategory, string]> = [["laboratory", "Laboratorio"], ["imaging", "Imágenes"], ["order", "Orden"], ["report", "Informe"], ["prescription", "Receta / Prescripción"], ["other", "Otro"]];
+const CATEGORIES: Array<[PatientDocumentCategory, string]> = [["laboratory", "Laboratorio"], ["imaging", "Imágenes"], ["order", "Orden"], ["report", "Informe"], ["prescription", "Receta / Prescripción"], ["other", "Otro"], ["study_result", "Resultado de estudio"]];
 const MAX_SIZE = 10 * 1024 * 1024;
 function errorText(error: unknown) { return axios.isAxiosError(error) && typeof error.response?.data?.detail === "string" ? error.response.data.detail : "No se pudo completar la operación."; }
 function sizeText(size: number | null) { return size == null ? "Tamaño no informado" : `${(size / 1024 / 1024).toFixed(2)} MB`; }

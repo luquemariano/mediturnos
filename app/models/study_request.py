@@ -7,6 +7,7 @@ if TYPE_CHECKING:
     from app.models.paciente import Paciente
     from app.models.profesional import Profesional
     from app.models.turno import Turno
+    from app.models.patient_document import PatientDocument
 
 class StudyRequest(Base):
     __tablename__ = "study_requests"
@@ -29,3 +30,4 @@ class StudyRequest(Base):
     paciente: Mapped["Paciente"] = relationship(back_populates="study_requests")
     profesional: Mapped["Profesional"] = relationship(back_populates="study_requests")
     turno: Mapped["Turno | None"] = relationship(back_populates="study_requests")
+    patient_documents: Mapped[list["PatientDocument"]] = relationship(back_populates="study_request")

@@ -11,7 +11,7 @@ from app.repositories.paciente_repository import buscar_por_id as buscar_pacient
 from app.schemas.patient_document import PatientDocumentUploadIntentRequest
 from app.core.config import settings
 
-CATEGORIES = {"laboratory", "imaging", "order", "report", "prescription", "other"}
+CATEGORIES = {"laboratory", "imaging", "order", "report", "prescription", "other", "study_result"}
 
 def _acceso(db: Session, paciente_id: int, profesional_id: int | None) -> None:
     if profesional_id is None:

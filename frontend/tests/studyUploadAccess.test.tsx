@@ -1,12 +1,13 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-const service = vi.hoisted(() => ({ get: vi.fn() }));
-vi.mock("../src/services/studyAccessService", () => ({ obtenerStudyRequestPublica: service.get }));
+const service = vi.hoisted(() => ({ get: vi.fn(), intent: vi.fn(), upload: vi.fn(), confirm: vi.fn(), remove: vi.fn(), submit: vi.fn() }));
+vi.mock("../src/services/studyAccessService", () => ({ obtenerStudyRequestPublica: service.get, crearPublicStudyUploadIntent: service.intent, subirAStorage: service.upload, confirmarPublicStudyDocumento: service.confirm, removerPublicStudyDocumento: service.remove, finalizarPublicStudy: service.submit }));
 import StudyUploadAccess from "../src/pages/StudyUploadAccess";
 
 describe("StudyUploadAccess", () => {
   beforeEach(() => { vi.clearAllMocks(); window.history.replaceState({}, "", "/estudios/enviar?token=abc"); });
   it("muestra estado inválido sin token", async () => { window.history.replaceState({}, "", "/estudios/enviar"); render(<StudyUploadAccess />); expect(await screen.findByText("Enlace no disponible")).toBeInTheDocument(); expect(service.get).not.toHaveBeenCalled(); });
   it("muestra loading y solicitud válida sin shell", async () => { let resolve!: (value: unknown) => void; service.get.mockReturnValue(new Promise((r) => { resolve = r; })); render(<StudyUploadAccess />); expect(screen.getByText("Cargando solicitud...")).toBeInTheDocument(); resolve({ study_request_id: 1, professional_name: "Sofía Ramírez", title: "Hemograma", instructions: "En ayunas", requested_at: "2026-08-20T12:00:00Z", expires_at: null, status: "pending" }); await waitFor(() => expect(screen.getByText("Hemograma")).toBeInTheDocument()); expect(screen.queryByText("Iniciar sesión")).not.toBeInTheDocument(); expect(localStorage.getItem("access_token")).toBeNull(); });
+  it("sube, confirma y finaliza un resultado", async () => { service.get.mockResolvedValue({ study_request_id: 1, professional_name: "Sofía Ramírez", title: "Hemograma", instructions: null, requested_at: "2026-08-20T12:00:00Z", expires_at: null, status: "pending" }); service.intent.mockResolvedValue({ document_id: 4, upload_url: "https://storage.test/put", required_content_type: "application/pdf", expires_in_seconds: 600 }); render(<StudyUploadAccess />); await screen.findByText("Hemograma"); const input = document.querySelector('input[type="file"]')!; const file = new File(["pdf"], "resultado.pdf", { type: "application/pdf" }); Object.defineProperty(input, "files", { value: [file] }); fireEvent.change(input); await waitFor(() => expect(service.confirm).toHaveBeenCalledWith("abc", 4)); expect(service.upload).toHaveBeenCalled(); fireEvent.click(screen.getByRole("button", { name: "Finalizar envío" })); await waitFor(() => expect(service.submit).toHaveBeenCalledWith("abc")); });
   it("muestra error de red", async () => { service.get.mockRejectedValue(new Error("network")); render(<StudyUploadAccess />); expect(await screen.findByText("No pudimos cargar la solicitud")).toBeInTheDocument(); });
 });

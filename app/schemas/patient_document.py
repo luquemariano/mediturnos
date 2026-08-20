@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-DocumentCategory = Literal["laboratory", "imaging", "order", "report", "prescription", "other"]
+DocumentCategory = Literal["laboratory", "imaging", "order", "report", "prescription", "other", "study_result"]
 
 class PatientDocumentUploadIntentRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -28,6 +28,8 @@ class PatientDocumentResponse(BaseModel):
     created_at: datetime
     available_at: datetime | None
     uploaded_by_profesional_id: int | None
+    study_request_id: int | None = None
+    origin: str = "professional"
     model_config = ConfigDict(from_attributes=True)
 
 class PatientDocumentDownloadUrlResponse(BaseModel):
