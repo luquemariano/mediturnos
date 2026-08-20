@@ -8,6 +8,7 @@ from app.models.study_review import StudyReview
 from app.repositories.patient_document_repository import listar_disponibles_por_solicitud
 from app.repositories.paciente_repository import buscar_propio
 from app.schemas.study_review import StudyReviewCreate
+from app.services.study_email_service import notify_review_created
 
 DISPOSITION_LABELS = {"online_response": "respuesta online", "requires_in_person": "requiere consulta presencial", "requires_teleconsultation": "requiere teleconsulta"}
 
@@ -35,4 +36,5 @@ def crear_review(db: Session, paciente_id: int, request_id: int, profesional_id:
         db.commit(); db.refresh(review)
     except IntegrityError:
         db.rollback(); raise HTTPException(409, "La solicitud ya tiene una devolución registrada.") from None
+    notify_review_created(review)
     return review

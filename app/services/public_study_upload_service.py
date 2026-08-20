@@ -10,6 +10,7 @@ from app.models.study_request import StudyRequest
 from app.repositories.patient_document_repository import buscar_por_id
 from app.services.patient_document_service import _filename
 from app.services.study_access_token_service import PUBLIC_ERROR, StudyAccessTokenError, verify_study_access_token
+from app.services.study_email_service import notify_results_submitted
 
 MAX_ACTIVE_DOCUMENTS = 5
 
@@ -59,5 +60,5 @@ def submit(db: Session, token: str):
     documents = db.query(PatientDocument).filter(PatientDocument.study_request_id == request.id, PatientDocument.origin == "patient", PatientDocument.status.in_(["pending_upload", "available"])).all()
     available = [d for d in documents if d.status == "available"]
     if not available or any(d.status == "pending_upload" for d in documents): raise HTTPException(409, "Completá o eliminá los archivos pendientes antes de finalizar.")
-    now = datetime.now(timezone.utc); request.status = "submitted"; request.submitted_at = now; request.updated_at = now; db.commit()
+    now = datetime.now(timezone.utc); request.status = "submitted"; request.submitted_at = now; request.updated_at = now; db.commit(); notify_results_submitted(request, len(available), now)
     return request, available

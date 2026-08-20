@@ -6,6 +6,7 @@ from app.repositories.paciente_repository import buscar_por_id, buscar_propio
 from app.repositories.study_request_repository import buscar_por_id as buscar_solicitud, crear, listar_por_paciente, listar_pending_review_por_profesional
 from app.repositories.turno_repository import buscar_por_id as buscar_turno
 from app.schemas.study_request import StudyRequestCreate
+from app.services.study_email_service import notify_new_request
 
 def _acceso(db: Session, paciente_id: int, profesional_id: int | None) -> None:
     if profesional_id is None:
@@ -22,7 +23,7 @@ def crear_solicitud(db: Session, paciente_id: int, profesional_id: int, datos: S
     if datos.turno_id is not None:
         turno = buscar_turno(db, datos.turno_id)
         if turno is None or turno.paciente_id != paciente_id or turno.profesional_id != profesional_id: raise HTTPException(422, "El turno no corresponde al paciente y profesional.")
-    solicitud = crear(db, paciente_id=paciente_id, profesional_id=profesional_id, turno_id=datos.turno_id, title=datos.title, instructions=datos.instructions, status="pending", requested_at=ahora, expires_at=datos.expires_at, created_at=ahora, updated_at=ahora); db.commit(); db.refresh(solicitud); return solicitud
+    solicitud = crear(db, paciente_id=paciente_id, profesional_id=profesional_id, turno_id=datos.turno_id, title=datos.title, instructions=datos.instructions, status="pending", requested_at=ahora, expires_at=datos.expires_at, created_at=ahora, updated_at=ahora); db.commit(); db.refresh(solicitud); notify_new_request(solicitud); return solicitud
 def listar_solicitudes(db: Session, paciente_id: int, profesional_id: int | None, status: str | None = None):
     _acceso(db, paciente_id, profesional_id)
     if status is not None and status not in {"pending", "submitted", "reviewed", "closed", "cancelled"}: raise HTTPException(422, "Estado inválido.")
