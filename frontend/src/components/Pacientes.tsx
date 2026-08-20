@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import axios from "axios";
 
@@ -28,6 +28,7 @@ type Props = {
   onAbrirPrestaciones: () => void;
   onAbrirPerfil: () => void;
   onCerrarSesion: () => void;
+  pacienteIdInicial?: number;
 };
 
 type Historial = Awaited<ReturnType<typeof obtenerHistorialPaciente>>[number];
@@ -84,6 +85,7 @@ export default function Pacientes(props: Props) {
   const [guardandoPerfil, setGuardandoPerfil] = useState(false);
   const [errorPerfil, setErrorPerfil] = useState("");
   const [formPerfil, setFormPerfil] = useState<ClinicalProfileUpdate>({ antecedentes: null, alergias: null, medicacion_habitual: null, condiciones_relevantes: null, observaciones: null });
+  const pacienteInicialAbierto = useRef(false);
 
   const cargar = useCallback(async (termino = "") => {
     setCargando(true); setError("");
@@ -126,6 +128,12 @@ export default function Pacientes(props: Props) {
     catch (e) { setErrorPerfil(detalleError(e)); }
     finally { setCargandoHistorial(false); setCargandoEvoluciones(false); }
   }
+
+  useEffect(() => {
+    if (pacienteInicialAbierto.current || props.pacienteIdInicial == null) return;
+    const paciente = pacientes.find((item) => item.id === props.pacienteIdInicial);
+    if (paciente) { pacienteInicialAbierto.current = true; void ver(paciente); }
+  }, [pacientes, props.pacienteIdInicial]);
 
   function iniciarEdicionPerfil() { if (!perfilClinico) return; setFormPerfil({ antecedentes: perfilClinico.antecedentes, alergias: perfilClinico.alergias, medicacion_habitual: perfilClinico.medicacion_habitual, condiciones_relevantes: perfilClinico.condiciones_relevantes, observaciones: perfilClinico.observaciones }); setEditandoPerfil(true); }
   async function guardarPerfil(evento: FormEvent) { evento.preventDefault(); if (!seleccion || guardandoPerfil) return; setGuardandoPerfil(true); setErrorPerfil(""); try { setPerfilClinico(await updateClinicalProfile(seleccion.id, formPerfil)); setEditandoPerfil(false); setMensaje("Resumen clínico guardado correctamente."); } catch (e) { setErrorPerfil(detalleError(e)); } finally { setGuardandoPerfil(false); } }

@@ -3,7 +3,7 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from app.models.study_request import StudyRequest
 from app.repositories.paciente_repository import buscar_por_id, buscar_propio
-from app.repositories.study_request_repository import buscar_por_id as buscar_solicitud, crear, listar_por_paciente
+from app.repositories.study_request_repository import buscar_por_id as buscar_solicitud, crear, listar_por_paciente, listar_pending_review_por_profesional
 from app.repositories.turno_repository import buscar_por_id as buscar_turno
 from app.schemas.study_request import StudyRequestCreate
 
@@ -46,3 +46,15 @@ def obtener_solicitud_para_access(db: Session, paciente_id: int, request_id: int
     if request.expires_at is not None and datetime.now(timezone.utc) >= request.expires_at:
         raise HTTPException(409, "La solicitud ya venció.")
     return request
+
+def listar_pending_review(db: Session, profesional_id: int) -> dict:
+    items = [{
+        "id": request.id,
+        "paciente_id": request.paciente_id,
+        "patient_name": f"{nombre} {apellido}".strip(),
+        "title": request.title,
+        "requested_at": request.requested_at,
+        "submitted_at": request.submitted_at,
+        "documents_count": int(documents_count),
+    } for request, nombre, apellido, documents_count in listar_pending_review_por_profesional(db, profesional_id)]
+    return {"count": len(items), "items": items}

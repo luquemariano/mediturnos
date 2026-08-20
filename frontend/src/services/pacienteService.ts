@@ -10,6 +10,7 @@ import type {
   PatientDocumentCategory,
   StudyRequest,
   StudyRequestStatus,
+  PendingReviewResponse,
 } from "../types/paciente";
 
 export async function obtenerPacientes():
@@ -82,3 +83,4 @@ export async function crearStudyRequest(patientId: number, payload: { title: str
 export async function cancelarStudyRequest(patientId: number, requestId: number): Promise<StudyRequest> { return (await api.post<StudyRequest>(`/pacientes/${patientId}/study-requests/${requestId}/cancel`)).data; }
 export async function cerrarStudyRequest(patientId: number, requestId: number): Promise<StudyRequest> { return (await api.post<StudyRequest>(`/pacientes/${patientId}/study-requests/${requestId}/close`)).data; }
 export async function generarStudyAccessLink(patientId: number, requestId: number): Promise<{ url: string; expires_in_seconds: number }> { return (await api.post<{ url: string; expires_in_seconds: number }>(`/pacientes/${patientId}/study-requests/${requestId}/access-link`)).data; }
+export async function listarEstudiosPendientesRevision(): Promise<PendingReviewResponse> { return (await api.get<PendingReviewResponse>("/profesionales/me/study-requests/pending-review")).data; }

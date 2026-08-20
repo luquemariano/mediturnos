@@ -170,3 +170,11 @@
 @media (prefers-reduced-motion: reduce) {
   .prof-skeleton * { animation: none !important; transition: none !important; }
 }
+
+.prof-pending-review { margin-top: 24px; padding: 22px; border: 1px solid var(--prof-borde, #dfe7e5); border-radius: 18px; background: #fff; }
+.prof-pending-review > header { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; }
+.prof-pending-review h2 { margin: 4px 0 0; }
+.prof-pending-review ul { display: grid; gap: 10px; margin: 18px 0 0; padding: 0; list-style: none; }
+.prof-pending-review li button { display: grid; gap: 4px; width: 100%; padding: 14px; border: 1px solid #e4ecea; border-radius: 12px; background: #fbfdfc; text-align: left; cursor: pointer; }
+.prof-pending-review li button:hover, .prof-pending-review li button:focus-visible { border-color: #7fb3a7; }
+.prof-pending-review li span, .prof-pending-review li small { color: #5d6d69; }

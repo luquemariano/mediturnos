@@ -52,6 +52,8 @@ from app.services.profesional_service import (
     obtener_profesional_por_id,
     obtener_profesionales,
 )
+from app.services.study_request_service import listar_pending_review
+from app.schemas.study_request_pending_review import PendingReviewResponse
 from app.services.turno_service import (
     cancelar_turno_profesional,
     crear_turno_profesional,
@@ -80,6 +82,16 @@ router = APIRouter(
     prefix="/profesionales",
     tags=["Profesionales"],
 )
+
+@router.get("/me/study-requests/pending-review", response_model=PendingReviewResponse)
+def listar_mis_estudios_pendientes(
+    db: Session = Depends(obtener_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual),
+):
+    if usuario_actual.rol != "profesional":
+        raise HTTPException(status_code=403, detail="El usuario autenticado no es un profesional.")
+    profesional = obtener_mi_profesional(db, usuario_actual.id)
+    return listar_pending_review(db, profesional.id)
 
 
 @router.post(

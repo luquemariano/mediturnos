@@ -7,10 +7,12 @@ import ProfesionalShell from "./ProfesionalShell";
 import type { Disponibilidad } from "../types/disponibilidad";
 import type { Profesional } from "../types/profesional";
 import type { Turno } from "../types/turno";
+import type { PendingReviewItem } from "../types/paciente";
 import { obtenerDisponibilidadesProfesional } from "../services/disponibilidadService";
 import { obtenerMiPerfilProfesional } from "../services/profesionalService";
 import { obtenerCuentaActual } from "../services/cuentaService";
 import { etiquetaSuscripcion } from "../utils/suscripcion";
+import { listarEstudiosPendientesRevision } from "../services/pacienteService";
 import type { CuentaActual } from "../types/cuenta";
 import {
   finalizarMiTurno,
@@ -34,7 +36,7 @@ import {
 type DashboardProfesionalProps = {
   nombre: string;
   onAbrirAgenda: () => void;
-  onAbrirPacientes: () => void;
+  onAbrirPacientes: (patientId?: number) => void;
   onAbrirDisponibilidad: () => void;
   onAbrirPrestaciones: () => void;
   onAbrirPerfil: () => void;
@@ -155,6 +157,9 @@ export default function DashboardProfesional({
   const [errorAccion, setErrorAccion] = useState("");
   const [turnoActualizando, setTurnoActualizando] = useState<number | null>(null);
   const [turnoExpandido, setTurnoExpandido] = useState<number | null>(null);
+  const [pendingReview, setPendingReview] = useState<PendingReviewItem[]>([]);
+  const [pendingReviewLoading, setPendingReviewLoading] = useState(true);
+  const [pendingReviewError, setPendingReviewError] = useState(false);
 
   const cargarAgenda = useCallback(async () => {
     setCargandoAgenda(true);
@@ -190,6 +195,7 @@ export default function DashboardProfesional({
     void cargarAgenda();
     void cargarPerfilYDisponibilidad();
     void obtenerCuentaActual().then(setCuenta).catch(() => setCuenta(null));
+    void listarEstudiosPendientesRevision().then((data) => setPendingReview(data.items)).catch(() => setPendingReviewError(true)).finally(() => setPendingReviewLoading(false));
   }, [cargarAgenda, cargarPerfilYDisponibilidad]);
 
   const hoy = fechaActualNegocio(ahora);
@@ -375,6 +381,10 @@ export default function DashboardProfesional({
               <button type="button" onClick={onAbrirDisponibilidad}>Configurar horarios</button>
             </aside>
           </div>
+          <section className="prof-pending-review" aria-labelledby="pending-review-title">
+            <header><div><span>Resultados recibidos</span><h2 id="pending-review-title">Estudios pendientes de revisar</h2></div><strong>{pendingReviewLoading ? "…" : `${pendingReview.length} pendiente${pendingReview.length === 1 ? "" : "s"}`}</strong></header>
+            {pendingReviewError ? <p role="alert">No pudimos cargar los estudios pendientes.</p> : pendingReviewLoading ? <p>Cargando estudios pendientes...</p> : pendingReview.length === 0 ? <p>No tenés estudios pendientes de revisión.</p> : <ul>{pendingReview.map((item) => <li key={item.id}><button type="button" onClick={() => onAbrirPacientes(item.paciente_id)}><strong>{item.patient_name}</strong><span>{item.title}</span><small>{item.documents_count} {item.documents_count === 1 ? "archivo" : "archivos"} · {item.submitted_at ? new Intl.DateTimeFormat("es-AR", { timeZone: ZONA_HORARIA_NEGOCIO, dateStyle: "short", timeStyle: "short" }).format(new Date(item.submitted_at)) : "Fecha no disponible"}</small></button></li>)}</ul>}
+          </section>
         </>}
       </div>
   </ProfesionalShell>;

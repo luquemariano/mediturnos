@@ -6,6 +6,7 @@ import * as disponibilidadService from "../src/services/disponibilidadService";
 import * as profesionalService from "../src/services/profesionalService";
 import * as turnoService from "../src/services/turnoService";
 import * as cuentaService from "../src/services/cuentaService";
+import * as pacienteService from "../src/services/pacienteService";
 import type { Turno } from "../src/types/turno";
 
 vi.mock("../src/services/disponibilidadService", () => ({
@@ -20,6 +21,7 @@ vi.mock("../src/services/turnoService", () => ({
   marcarAusenteMiTurno: vi.fn(),
 }));
 vi.mock("../src/services/cuentaService", () => ({ obtenerCuentaActual: vi.fn() }));
+vi.mock("../src/services/pacienteService", () => ({ listarEstudiosPendientesRevision: vi.fn() }));
 
 const perfil = {
   id: 7,
@@ -67,11 +69,12 @@ function prepararDatos(turnos: Turno[] = jornada) {
     { id: 3, profesional_id: 7, dia_semana: 2, hora_inicio: "20:00:00", hora_fin: "22:00:00", activa: true },
   ]);
   vi.mocked(turnoService.obtenerMiAgendaProfesional).mockResolvedValue(turnos);
+  vi.mocked(pacienteService.listarEstudiosPendientesRevision).mockResolvedValue({ count: 0, items: [] });
 }
 
 function renderizar() {
-  const acciones = { agenda: vi.fn(), disponibilidad: vi.fn(), perfil: vi.fn(), salir: vi.fn() };
-  render(<DashboardProfesional nombre="Sofía" onAbrirAgenda={acciones.agenda} onAbrirDisponibilidad={acciones.disponibilidad} onAbrirPerfil={acciones.perfil} onCerrarSesion={acciones.salir} />);
+  const acciones = { agenda: vi.fn(), pacientes: vi.fn(), disponibilidad: vi.fn(), perfil: vi.fn(), salir: vi.fn() };
+  render(<DashboardProfesional nombre="Sofía" onAbrirAgenda={acciones.agenda} onAbrirPacientes={acciones.pacientes} onAbrirDisponibilidad={acciones.disponibilidad} onAbrirPerfil={acciones.perfil} onCerrarSesion={acciones.salir} />);
   return acciones;
 }
 
@@ -84,6 +87,17 @@ beforeEach(() => {
 afterEach(() => vi.useRealTimers());
 
 describe("dashboard profesional Signature", () => {
+  it("muestra la bandeja de estudios pendientes sin bloquear la agenda", async () => {
+    prepararDatos([]);
+    vi.mocked(pacienteService.listarEstudiosPendientesRevision).mockResolvedValue({ count: 1, items: [{ id: 9, paciente_id: 4, patient_name: "Juan Pérez", title: "Hemograma", requested_at: "2026-08-10T12:00:00Z", submitted_at: "2026-08-12T10:00:00Z", documents_count: 2 }] });
+    const acciones = renderizar();
+    expect(await screen.findByRole("heading", { name: "Estudios pendientes de revisar" })).toBeInTheDocument();
+    expect(screen.getByText("Juan Pérez")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Juan Pérez/ })).toHaveTextContent("2 archivos");
+    expect(screen.getByText("Tu agenda está libre hoy")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /Juan Pérez/ }));
+    expect(acciones.pacientes).toHaveBeenCalledWith(4);
+  });
   it.each([
     ["2026-08-13T11:30:00Z", "Buen día, Sofía"],
     ["2026-08-13T18:20:00Z", "Buenas tardes, Sofía"],
