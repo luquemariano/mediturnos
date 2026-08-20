@@ -87,6 +87,21 @@ class Settings(BaseSettings):
     rate_limit_register_attempts: int = 5
     rate_limit_login_attempts: int = 15
     rate_limit_password_reset_attempts: int = 3
+    object_storage_provider: Literal["fake", "r2"] = "fake"
+    r2_account_id: str | None = None
+    r2_access_key_id: str | None = None
+    r2_secret_access_key: SecretStr | None = None
+    r2_bucket_name: str | None = None
+    r2_endpoint: str | None = None
+    r2_presigned_upload_ttl_seconds: int = 600
+    r2_presigned_download_ttl_seconds: int = 300
+
+    @field_validator("r2_presigned_upload_ttl_seconds", "r2_presigned_download_ttl_seconds")
+    @classmethod
+    def validar_ttl_storage(cls, valor: int) -> int:
+        if valor <= 0:
+            raise ValueError("Los TTL de object storage deben ser mayores que cero.")
+        return valor
 
     @field_validator(
         "rate_limit_window_seconds",
