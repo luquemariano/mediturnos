@@ -84,6 +84,7 @@ function App() {
   const [vista, setVista] =
     useState<Vista>("dashboard");
   const [pacienteIdInicial, setPacienteIdInicial] = useState<number | undefined>();
+  const [studyRequestIdInicial, setStudyRequestIdInicial] = useState<number | undefined>();
 
   useEffect(() => {
     aplicarMetadatosSeo(window.location.pathname);
@@ -310,7 +311,7 @@ function App() {
         <DashboardProfesional
           nombre={usuario.nombre}
           onAbrirAgenda={() => setVista("turnos")}
-          onAbrirPacientes={(patientId) => { setPacienteIdInicial(patientId); setVista("pacientes"); }}
+          onAbrirPacientes={(patientId, studyRequestId) => { setPacienteIdInicial(patientId); setStudyRequestIdInicial(studyRequestId); setVista("pacientes"); }}
           onAbrirDisponibilidad={() => setVista("disponibilidades")}
           onAbrirPrestaciones={() => setVista("prestaciones")}
           onAbrirPerfil={() => setVista("perfil")}
@@ -328,6 +329,7 @@ function App() {
             setVista("dashboard")
           }
           pacienteIdInicial={pacienteIdInicial}
+          studyRequestIdInicial={studyRequestIdInicial}
           onAbrirAgenda={() => setVista("turnos")}
           onAbrirDisponibilidad={() => setVista("disponibilidades")}
           onAbrirPrestaciones={() => setVista("prestaciones")}

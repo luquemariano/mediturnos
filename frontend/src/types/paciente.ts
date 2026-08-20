@@ -50,6 +50,7 @@ export type StudyRequestStatus = "pending" | "submitted" | "reviewed" | "closed"
 export interface StudyRequest { id: number; paciente_id: number; profesional_id: number; turno_id: number | null; title: string; instructions: string | null; status: StudyRequestStatus; requested_at: string; expires_at: string | null; submitted_at: string | null; reviewed_at: string | null; closed_at: string | null; cancelled_at: string | null; created_at: string; updated_at: string; }
 export type StudyReviewDisposition = "online_response" | "requires_in_person" | "requires_teleconsultation";
 export interface StudyReview { id: number; study_request_id: number; review_text: string; disposition: StudyReviewDisposition; reviewed_at: string; professional_name: string; }
+export interface NotificationItem { id: number; type: string; title: string; message: string; entity_type: string; entity_id: number; read_at: string | null; created_at: string; }
 export interface PendingReviewItem { id: number; paciente_id: number; patient_name: string; title: string; requested_at: string; submitted_at: string | null; documents_count: number; }
 export interface PendingReviewResponse { count: number; items: PendingReviewItem[]; }
 export interface PublicStudyRequest { study_request_id: number; professional_name: string; title: string; instructions: string | null; requested_at: string; expires_at: string | null; status: string; }

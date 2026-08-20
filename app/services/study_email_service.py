@@ -9,9 +9,9 @@ from app.services.study_access_token_service import create_study_access_token
 logger = logging.getLogger("mediturnos.study_email")
 
 DISPOSITION_MESSAGES = {
-    "online_response": "Tu profesional revisó los resultados. Para conocer la devolución, comunicate con el consultorio.",
-    "requires_in_person": "Tu profesional recomienda una consulta presencial.",
-    "requires_teleconsultation": "Tu profesional recomienda una teleconsulta.",
+    "online_response": "Respuesta online",
+    "requires_in_person": "Requiere consulta presencial",
+    "requires_teleconsultation": "Requiere teleconsulta",
 }
 
 
@@ -72,7 +72,6 @@ def notify_review_created(review) -> bool:
     recipient = _patient_email(review.study_request.paciente)
     if not recipient:
         return False
-    disposition = DISPOSITION_MESSAGES.get(review.disposition, "Tu profesional revisó los resultados. Comunicate con el consultorio.")
-    body = f"Hola, {review.study_request.paciente.nombre}.\n\nTu profesional revisó los resultados del estudio {review.study_request.title}.\n\n{disposition}"
+    body = "Hola.\n\nTu profesional revisó los resultados que enviaste.\nLa devolución quedó registrada en Turnelia.\n\nPara conocer los próximos pasos, ingresá al sistema o comunicate con el consultorio."
     html, text = _layout("Tu profesional revisó los resultados", body)
     return _send(TransactionalEmail(recipient, "Turnelia — Tus resultados fueron revisados", html, text))

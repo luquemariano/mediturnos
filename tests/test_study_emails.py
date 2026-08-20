@@ -30,11 +30,25 @@ def test_submit_email_contains_count_without_documents_or_tokens(monkeypatch):
     message = provider.messages[0]; assert message.destinatario == "dra@example.com"; assert "2 archivo(s)" in message.texto; assert "storage_key" not in message.texto; assert "token=" not in message.texto
 
 
-def test_review_email_maps_disposition_without_review_text(monkeypatch):
+def test_review_email_is_a_privacy_safe_notification(monkeypatch):
     provider = Provider(); monkeypatch.setattr(study_email_service, "obtener_email_provider", lambda: provider)
-    review = SimpleNamespace(study_request=request(), disposition="requires_in_person", review_text="Texto clínico privado")
+    review = SimpleNamespace(study_request=request(), disposition="requires_in_person", review_text="sacar nuevo turno")
     assert study_email_service.notify_review_created(review) is True
-    message = provider.messages[0]; assert "consulta presencial" in message.texto; assert "Texto clínico privado" not in message.texto
+    message = provider.messages[0]
+    assert "revisó los resultados" in message.texto
+    assert "revisó los resultados" in message.html
+    assert "sacar nuevo turno" not in message.texto
+    assert "sacar nuevo turno" not in message.html
+
+
+def test_review_email_never_includes_sensitive_clinical_text(monkeypatch):
+    provider = Provider(); monkeypatch.setattr(study_email_service, "obtener_email_provider", lambda: provider)
+    sensitive = "Diagnóstico QA sensible que no debe enviarse por correo"
+    review = SimpleNamespace(study_request=request(), disposition="online_response", review_text=sensitive)
+    assert study_email_service.notify_review_created(review) is True
+    message = provider.messages[0]
+    assert sensitive not in message.texto
+    assert sensitive not in message.html
 
 
 def test_provider_failure_does_not_escape(monkeypatch):

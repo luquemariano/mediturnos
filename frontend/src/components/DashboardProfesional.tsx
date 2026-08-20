@@ -7,7 +7,7 @@ import ProfesionalShell from "./ProfesionalShell";
 import type { Disponibilidad } from "../types/disponibilidad";
 import type { Profesional } from "../types/profesional";
 import type { Turno } from "../types/turno";
-import type { PendingReviewItem } from "../types/paciente";
+import type { NotificationItem, PendingReviewItem } from "../types/paciente";
 import { obtenerDisponibilidadesProfesional } from "../services/disponibilidadService";
 import { obtenerMiPerfilProfesional } from "../services/profesionalService";
 import { obtenerCuentaActual } from "../services/cuentaService";
@@ -36,7 +36,7 @@ import {
 type DashboardProfesionalProps = {
   nombre: string;
   onAbrirAgenda: () => void;
-  onAbrirPacientes: (patientId?: number) => void;
+  onAbrirPacientes: (patientId?: number, studyRequestId?: number) => void;
   onAbrirDisponibilidad: () => void;
   onAbrirPrestaciones: () => void;
   onAbrirPerfil: () => void;
@@ -240,6 +240,23 @@ export default function DashboardProfesional({
     setTurnoExpandido((actual) => actual === turno.id ? null : turno.id);
   }
 
+  async function abrirNotificacion(item: NotificationItem) {
+    if (item.entity_type !== "study_request") {
+      onAbrirPacientes();
+      return;
+    }
+    let solicitud = pendingReview.find((value) => value.id === item.entity_id);
+    if (!solicitud) {
+      try {
+        const respuesta = await listarEstudiosPendientesRevision();
+        solicitud = respuesta.items.find((value) => value.id === item.entity_id);
+      } catch {
+        solicitud = undefined;
+      }
+    }
+    onAbrirPacientes(solicitud?.paciente_id, item.entity_id);
+  }
+
   function manejarTeclado(evento: React.KeyboardEvent<HTMLElement>, turno: Turno) {
     if (evento.key === "Enter" || evento.key === " ") {
       evento.preventDefault();
@@ -338,6 +355,7 @@ export default function DashboardProfesional({
     onAbrirPrestaciones={onAbrirPrestaciones}
     onAbrirPerfil={onAbrirPerfil}
     onCerrarSesion={onCerrarSesion}
+    onAbrirNotificacion={(item) => void abrirNotificacion(item)}
     accionTopbar={<button type="button" className="prof-enlace-topbar" onClick={onAbrirAgenda}>Ver agenda completa <Icono nombre="flecha" /></button>}
   >
       <div className="prof-contenido">

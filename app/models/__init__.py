@@ -23,3 +23,4 @@ from app.models.cobro_suscripcion import CobroSuscripcion
 from app.models.notificacion_mercadopago_suscripcion import NotificacionMercadoPagoSuscripcion
 from app.models.appointment_reminder import AppointmentReminder
 from app.models.study_review import StudyReview
+from app.models.notification import Notification

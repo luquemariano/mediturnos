@@ -23,6 +23,7 @@ from app.routers.usuarios import router as usuarios_router
 from app.routers.cuentas import router as cuentas_router
 from app.routers.admin_cuentas import router as admin_cuentas_router
 from app.routers.suscripciones import router as suscripciones_router, webhook_router as suscripciones_webhook_router
+from app.routers.notifications import router as notifications_router
 
 
 def crear_app(configuracion: Settings = settings) -> FastAPI:
@@ -82,6 +83,7 @@ def crear_app(configuracion: Settings = settings) -> FastAPI:
     app.include_router(admin_cuentas_router)
     app.include_router(suscripciones_router)
     app.include_router(suscripciones_webhook_router)
+    app.include_router(notifications_router)
 
     @app.get("/")
     def inicio():

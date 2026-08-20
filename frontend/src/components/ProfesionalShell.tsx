@@ -2,6 +2,8 @@ import type { ReactNode } from "react";
 
 import "./ProfesionalShell.css";
 import Icono from "./Icono";
+import NotificationCenter from "./NotificationCenter";
+import type { NotificationItem } from "../types/paciente";
 
 type SeccionProfesional = "inicio" | "agenda" | "pacientes" | "disponibilidad" | "prestaciones" | "perfil";
 
@@ -18,6 +20,7 @@ type ProfesionalShellProps = {
   onAbrirPerfil: () => void;
   onCerrarSesion: () => void;
   accionTopbar?: ReactNode;
+  onAbrirNotificacion?: (item: NotificationItem) => void;
 };
 
 export default function ProfesionalShell({
@@ -33,6 +36,7 @@ export default function ProfesionalShell({
   onAbrirPerfil,
   onCerrarSesion,
   accionTopbar,
+  onAbrirNotificacion,
 }: ProfesionalShellProps) {
   const iniciales = nombre.split(" ").slice(0, 2)
     .map((parte) => parte.charAt(0)).join("").toUpperCase();
@@ -72,6 +76,7 @@ export default function ProfesionalShell({
       <header className="prof-topbar">
         <div className="prof-marca-movil"><img className="prof-marca-simbolo" src="/brand/mediturnos-symbol.svg" alt="" aria-hidden="true" /><strong>Turnelia</strong></div>
         <span className="prof-topbar-titulo">{tituloTopbar}</span>
+        <NotificationCenter onOpen={onAbrirNotificacion} />
         {accionTopbar}
         <button type="button" className="prof-avatar prof-avatar-movil" onClick={onAbrirPerfil} aria-label="Abrir mi perfil">{iniciales || "P"}</button>
       </header>
