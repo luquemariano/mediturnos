@@ -9,7 +9,7 @@ export const LANDING_ASSETS = {
   loginSecurity: "/landing/login.webp",
 } as const;
 
-export const WHATSAPP_URL = "";
+export const WHATSAPP_URL = "https://wa.me/5493512277416";
 
 export const PLANES = [
   {

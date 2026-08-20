@@ -12,6 +12,7 @@
 
 /* Ajustes finales de escala y legibilidad comercial. */
 .landing-header__inner{min-height:84px}.landing-logo img{width:220px}.showcase__grid{grid-template-columns:minmax(0,.82fr) minmax(0,1.18fr);gap:64px}.showcase--reverse .showcase__grid{grid-template-columns:minmax(0,1.18fr) minmax(0,.82fr)}.security__list{column-gap:32px;row-gap:19px;margin-top:28px}.security__list span{gap:15px;line-height:1.35}.security__list .landing-icon{width:22px;height:22px}.dark-cta--final .button-row .button{width:210px;min-height:50px;padding:12px 24px;border-radius:8px}.hero-device--phone img{object-position:center top}
+.landing-contacto{display:flex;flex-wrap:wrap;gap:8px 20px;margin-top:20px}.landing-contacto a{color:#d6e2de;text-decoration:underline;text-underline-offset:3px}.landing-contacto a:hover{color:#fff}
 
 @media(max-width:860px){.landing-header__inner{min-height:76px}.landing-logo img{width:190px}.landing-nav{top:76px}.showcase__grid,.showcase--reverse .showcase__grid{grid-template-columns:1fr}}
 @media(max-width:600px){.landing-logo img{width:178px}.security__list{column-gap:0;row-gap:17px;margin-top:24px}.security__list span{gap:14px}.dark-cta--final .button-row .button{width:100%}}
