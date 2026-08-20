@@ -11,6 +11,7 @@ import type {
   StudyRequest,
   StudyRequestStatus,
   PendingReviewResponse,
+  StudyReview, StudyReviewDisposition,
 } from "../types/paciente";
 
 export async function obtenerPacientes():
@@ -84,3 +85,6 @@ export async function cancelarStudyRequest(patientId: number, requestId: number)
 export async function cerrarStudyRequest(patientId: number, requestId: number): Promise<StudyRequest> { return (await api.post<StudyRequest>(`/pacientes/${patientId}/study-requests/${requestId}/close`)).data; }
 export async function generarStudyAccessLink(patientId: number, requestId: number): Promise<{ url: string; expires_in_seconds: number }> { return (await api.post<{ url: string; expires_in_seconds: number }>(`/pacientes/${patientId}/study-requests/${requestId}/access-link`)).data; }
 export async function listarEstudiosPendientesRevision(): Promise<PendingReviewResponse> { return (await api.get<PendingReviewResponse>("/profesionales/me/study-requests/pending-review")).data; }
+export async function listarDocumentosDeStudyRequest(patientId: number, requestId: number): Promise<PatientDocument[]> { return (await api.get<PatientDocument[]>(`/pacientes/${patientId}/study-requests/${requestId}/documents`)).data; }
+export async function obtenerStudyReview(patientId: number, requestId: number): Promise<StudyReview> { return (await api.get<StudyReview>(`/pacientes/${patientId}/study-requests/${requestId}/review`)).data; }
+export async function crearStudyReview(patientId: number, requestId: number, payload: { review_text: string; disposition: StudyReviewDisposition }): Promise<StudyReview> { return (await api.post<StudyReview>(`/pacientes/${patientId}/study-requests/${requestId}/review`, payload)).data; }

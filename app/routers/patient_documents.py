@@ -4,7 +4,7 @@ from app.core.dependencies import obtener_usuario_actual
 from app.database.connection import obtener_db
 from app.models.usuario import Usuario
 from app.schemas.patient_document import PatientDocumentDownloadUrlResponse, PatientDocumentResponse, PatientDocumentUploadIntentRequest, PatientDocumentUploadIntentResponse
-from app.services.patient_document_service import confirmar, crear_intent, download_url, eliminar, listar
+from app.services.patient_document_service import confirmar, crear_intent, download_url, eliminar, listar, listar_por_solicitud
 from app.services.profesional_service import obtener_mi_profesional
 router = APIRouter(prefix="/pacientes", tags=["Patient documents"])
 def _profesional(usuario: Usuario, db: Session):
@@ -21,6 +21,10 @@ def confirm(paciente_id: int, document_id: int, db: Session = Depends(obtener_db
 def list_documents(paciente_id: int, db: Session = Depends(obtener_db), usuario: Usuario = Depends(obtener_usuario_actual)):
     profesional_id = None if usuario.rol == "administrador" else _profesional(usuario, db)
     return listar(db, paciente_id, profesional_id)
+@router.get("/{paciente_id}/study-requests/{request_id}/documents", response_model=list[PatientDocumentResponse])
+def list_request_documents(paciente_id: int, request_id: int, db: Session = Depends(obtener_db), usuario: Usuario = Depends(obtener_usuario_actual)):
+    profesional_id = None if usuario.rol == "administrador" else _profesional(usuario, db)
+    return listar_por_solicitud(db, paciente_id, request_id, profesional_id)
 @router.post("/{paciente_id}/documents/{document_id}/download-url", response_model=PatientDocumentDownloadUrlResponse)
 def get_download_url(paciente_id: int, document_id: int, db: Session = Depends(obtener_db), usuario: Usuario = Depends(obtener_usuario_actual)):
     profesional_id = None if usuario.rol == "administrador" else _profesional(usuario, db)

@@ -22,5 +22,7 @@ class EvolucionClinicaRespuesta(BaseModel):
     profesional_nombre: str
     contenido: str
     created_at: datetime
+    tipo: str = "manual"
+    study_review_id: int | None = None
 
     model_config = ConfigDict(from_attributes=True)

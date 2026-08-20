@@ -12,6 +12,8 @@ from app.services.study_request_service import obtener_solicitud_para_access
 from app.schemas.study_access import StudyAccessLinkResponse, PublicStudyRequestResponse
 from app.services.study_access_token_service import PUBLIC_ERROR, StudyAccessTokenError, create_study_access_token, verify_study_access_token
 from app.core.config import settings
+from app.schemas.study_review import StudyReviewCreate, StudyReviewResponse
+from app.services.study_review_service import crear_review, obtener_review
 router = APIRouter(prefix="/pacientes", tags=["Study requests"])
 public_router = APIRouter(prefix="/public/study-requests", tags=["Public study requests"])
 PUBLIC_HEADERS = {"Cache-Control": "no-store", "Referrer-Policy": "no-referrer"}
@@ -36,6 +38,12 @@ def cancel_request(paciente_id: int, request_id: int, db: Session = Depends(obte
 @router.post("/{paciente_id}/study-requests/{request_id}/close", response_model=StudyRequestResponse)
 def close_request(paciente_id: int, request_id: int, db: Session = Depends(obtener_db), usuario: Usuario = Depends(obtener_usuario_actual)):
     return cerrar_solicitud(db, paciente_id, request_id, _prof(usuario, db))
+@router.get("/{paciente_id}/study-requests/{request_id}/review", response_model=StudyReviewResponse)
+def get_review(paciente_id: int, request_id: int, db: Session = Depends(obtener_db), usuario: Usuario = Depends(obtener_usuario_actual)):
+    return obtener_review(db, paciente_id, request_id, _prof(usuario, db))
+@router.post("/{paciente_id}/study-requests/{request_id}/review", response_model=StudyReviewResponse, status_code=201)
+def post_review(paciente_id: int, request_id: int, datos: StudyReviewCreate, db: Session = Depends(obtener_db), usuario: Usuario = Depends(obtener_usuario_actual)):
+    return crear_review(db, paciente_id, request_id, _prof(usuario, db), datos)
 
 @router.post("/{paciente_id}/study-requests/{request_id}/access-link", response_model=StudyAccessLinkResponse)
 def create_access_link(paciente_id: int, request_id: int, db: Session = Depends(obtener_db), usuario: Usuario = Depends(obtener_usuario_actual)):

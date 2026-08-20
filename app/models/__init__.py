@@ -19,3 +19,4 @@ from app.models.cuenta_usuario import CuentaUsuario
 from app.models.suscripcion import Suscripcion
 from app.models.evento_suscripcion import EventoSuscripcion
 from app.models.appointment_reminder import AppointmentReminder
+from app.models.study_review import StudyReview

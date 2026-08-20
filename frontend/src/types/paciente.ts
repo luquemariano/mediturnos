@@ -39,6 +39,8 @@ export interface EvolucionClinica {
   profesional_nombre: string;
   contenido: string;
   created_at: string;
+  tipo?: "manual" | "study_review";
+  study_review_id?: number | null;
 }
 export interface ClinicalProfile { id: number | null; paciente_id: number; antecedentes: string | null; alergias: string | null; medicacion_habitual: string | null; condiciones_relevantes: string | null; observaciones: string | null; updated_at: string | null; updated_by_profesional_id: number | null; }
 export type ClinicalProfileUpdate = Omit<ClinicalProfile, "id" | "paciente_id" | "updated_at" | "updated_by_profesional_id">;
@@ -46,6 +48,8 @@ export type PatientDocumentCategory = "laboratory" | "imaging" | "order" | "repo
 export interface PatientDocument { id: number; paciente_id: number; study_request_id: number | null; origin: "professional" | "patient"; original_filename: string; mime_type: string; size_bytes: number | null; category: PatientDocumentCategory; status: "available"; created_at: string; available_at: string | null; uploaded_by_profesional_id: number | null; }
 export type StudyRequestStatus = "pending" | "submitted" | "reviewed" | "closed" | "cancelled";
 export interface StudyRequest { id: number; paciente_id: number; profesional_id: number; turno_id: number | null; title: string; instructions: string | null; status: StudyRequestStatus; requested_at: string; expires_at: string | null; submitted_at: string | null; reviewed_at: string | null; closed_at: string | null; cancelled_at: string | null; created_at: string; updated_at: string; }
+export type StudyReviewDisposition = "online_response" | "requires_in_person" | "requires_teleconsultation";
+export interface StudyReview { id: number; study_request_id: number; review_text: string; disposition: StudyReviewDisposition; reviewed_at: string; professional_name: string; }
 export interface PendingReviewItem { id: number; paciente_id: number; patient_name: string; title: string; requested_at: string; submitted_at: string | null; documents_count: number; }
 export interface PendingReviewResponse { count: number; items: PendingReviewItem[]; }
 export interface PublicStudyRequest { study_request_id: number; professional_name: string; title: string; instructions: string | null; requested_at: string; expires_at: string | null; status: string; }

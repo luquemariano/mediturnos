@@ -6,7 +6,7 @@ from app.integrations.storage import factory
 from app.integrations.storage.base import ObjectNotFoundError, ObjectStorageError
 from app.integrations.storage.validation import ALLOWED_DOCUMENT_MIME_TYPES, MAX_DOCUMENT_SIZE_BYTES, generate_document_storage_key
 from app.models.patient_document import PatientDocument
-from app.repositories.patient_document_repository import buscar_por_id, crear_pending, listar_disponibles
+from app.repositories.patient_document_repository import buscar_por_id, crear_pending, listar_disponibles, listar_disponibles_por_solicitud
 from app.repositories.paciente_repository import buscar_por_id as buscar_paciente, buscar_propio
 from app.schemas.patient_document import PatientDocumentUploadIntentRequest
 from app.core.config import settings
@@ -56,6 +56,10 @@ def confirmar(db: Session, paciente_id: int, profesional_id: int, document_id: i
 
 def listar(db: Session, paciente_id: int, profesional_id: int | None):
     _acceso(db, paciente_id, profesional_id); return listar_disponibles(db, paciente_id)
+
+def listar_por_solicitud(db: Session, paciente_id: int, study_request_id: int, profesional_id: int | None):
+    _acceso(db, paciente_id, profesional_id)
+    return listar_disponibles_por_solicitud(db, paciente_id, study_request_id)
 
 def download_url(db: Session, paciente_id: int, document_id: int, profesional_id: int | None):
     _acceso(db, paciente_id, profesional_id); documento = _documento_propio(db, paciente_id, document_id)
