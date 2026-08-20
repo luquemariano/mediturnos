@@ -59,6 +59,14 @@ export function obtenerMetadatosRuta(pathname: string): RouteMetadata {
     };
   }
 
+  if (pathname === "/suscripcion/retorno") {
+    return {
+      title: "Retorno de suscripción | Turnelia",
+      description: "Verificá el estado de tu suscripción de Turnelia.",
+      robots: "noindex, nofollow",
+    };
+  }
+
   if (pathname === "/estudios/enviar") return { title: "Solicitud de estudio | Turnelia", description: "Consulta segura de una solicitud de estudio.", robots: "noindex, nofollow", referrer: "no-referrer" };
 
   if (

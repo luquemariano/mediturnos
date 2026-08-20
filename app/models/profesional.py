@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from app.models.evolucion_clinica import EvolucionClinica
     from app.models.clinical_profile import ClinicalProfile
     from app.models.study_request import StudyRequest
+    from app.models.study_review import StudyReview
     from app.models.profesional_paciente import ProfesionalPaciente
     from app.models.profesional_especialidad import ProfesionalEspecialidad
     from app.models.usuario import Usuario
@@ -93,6 +94,5 @@ class Profesional(Base):
     pacientes_vinculados: Mapped[list["ProfesionalPaciente"]] = relationship(back_populates="profesional", cascade="all, delete-orphan")
     evoluciones: Mapped[list["EvolucionClinica"]] = relationship(back_populates="profesional")
     clinical_profiles_updated: Mapped[list["ClinicalProfile"]] = relationship(back_populates="updated_by_profesional")
-    from app.models.study_review import StudyReview
     study_requests: Mapped[list["StudyRequest"]] = relationship(back_populates="profesional")
     study_reviews: Mapped[list["StudyReview"]] = relationship(back_populates="profesional")

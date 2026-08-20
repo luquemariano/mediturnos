@@ -89,6 +89,7 @@ class Turno(Base):
     prestacion: Mapped["Prestacion"] = relationship()
 
     profesional: Mapped["Profesional"] = relationship()
+    study_requests: Mapped[list["StudyRequest"]] = relationship(back_populates="turno")
 
     @property
     def paciente_nombre(self) -> str:

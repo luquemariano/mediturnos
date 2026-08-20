@@ -18,5 +18,8 @@ from app.models.cuenta import Cuenta
 from app.models.cuenta_usuario import CuentaUsuario
 from app.models.suscripcion import Suscripcion
 from app.models.evento_suscripcion import EventoSuscripcion
+from app.models.mercadopago_plan_suscripcion import MercadoPagoPlanSuscripcion
+from app.models.cobro_suscripcion import CobroSuscripcion
+from app.models.notificacion_mercadopago_suscripcion import NotificacionMercadoPagoSuscripcion
 from app.models.appointment_reminder import AppointmentReminder
 from app.models.study_review import StudyReview

@@ -40,6 +40,7 @@ type DashboardProfesionalProps = {
   onAbrirDisponibilidad: () => void;
   onAbrirPrestaciones: () => void;
   onAbrirPerfil: () => void;
+  onAbrirSuscripcion?: () => void;
   onCerrarSesion: () => void;
 };
 
@@ -143,6 +144,7 @@ export default function DashboardProfesional({
   onAbrirDisponibilidad,
   onAbrirPrestaciones,
   onAbrirPerfil,
+  onAbrirSuscripcion,
   onCerrarSesion,
 }: DashboardProfesionalProps) {
   const [ahora] = useState(() => new Date());
@@ -341,7 +343,7 @@ export default function DashboardProfesional({
       <div className="prof-contenido">
         <section className="prof-saludo">
           <div><h1>{saludo(ahora)}, {perfil?.nombre ?? nombre}</h1><p>{fechaLarga(ahora)}</p>
-            {cuenta && <p className="prof-suscripcion" aria-label="Estado de suscripción">{etiquetaSuscripcion(cuenta.subscription_status)}{cuenta.subscription_status === "trial" && ` · ${cuenta.trial_days_remaining} días restantes`}</p>}
+            {cuenta && <p className="prof-suscripcion" aria-label="Estado de suscripción">{etiquetaSuscripcion(cuenta.subscription_status)}{cuenta.subscription_status === "trial" && ` · ${cuenta.trial_days_remaining} días restantes`} {onAbrirSuscripcion && <button type="button" onClick={onAbrirSuscripcion}>Configurar plan</button>}</p>}
           </div>
           {!cargandoAgenda && !errorAgenda && <p className="prof-resumen-textual" aria-label="Resumen de la jornada">
             <strong>{turnosHoy.length}</strong> turnos <i /> <strong>{resumen.confirmados}</strong> confirmados <i /> <strong>{resumen.pendientes}</strong> pendiente{resumen.pendientes === 1 ? "" : "s"} <i /> <strong>{resumen.resueltos}</strong> resueltos

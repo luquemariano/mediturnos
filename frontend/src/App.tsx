@@ -21,8 +21,10 @@ import LandingPage from "./landing/LandingPage";
 import RegistroProfesional from "./components/RegistroProfesional";
 import OnboardingProfesional from "./components/OnboardingProfesional";
 import CuentasAdmin from "./components/CuentasAdmin";
-import { rutaOnboarding } from "./utils/onboarding";
+import ActivarSuscripcion from "./components/ActivarSuscripcion";
+import RetornoSuscripcion from "./components/RetornoSuscripcion";
 import StudyUploadAccess from "./pages/StudyUploadAccess";
+import { rutaOnboarding } from "./utils/onboarding";
 import {
   iniciarSesion,
   obtenerUsuarioActual,
@@ -81,6 +83,7 @@ function App() {
 
   const [vista, setVista] =
     useState<Vista>("dashboard");
+  const [pacienteIdInicial, setPacienteIdInicial] = useState<number | undefined>();
 
   useEffect(() => {
     aplicarMetadatosSeo(window.location.pathname);
@@ -299,15 +302,19 @@ function App() {
 
 
   if (usuario) {
+    if (ruta === "/app/suscripcion") {
+      return <ActivarSuscripcion onVolver={abrirDashboard} />;
+    }
     if (vista === "dashboard" && usuario.rol === "profesional") {
       return (
         <DashboardProfesional
           nombre={usuario.nombre}
           onAbrirAgenda={() => setVista("turnos")}
-          onAbrirPacientes={() => setVista("pacientes")}
+          onAbrirPacientes={(patientId) => { setPacienteIdInicial(patientId); setVista("pacientes"); }}
           onAbrirDisponibilidad={() => setVista("disponibilidades")}
           onAbrirPrestaciones={() => setVista("prestaciones")}
           onAbrirPerfil={() => setVista("perfil")}
+          onAbrirSuscripcion={() => navegar("/app/suscripcion")}
           onCerrarSesion={cerrarSesion}
         />
       );
@@ -320,6 +327,7 @@ function App() {
           onVolver={() =>
             setVista("dashboard")
           }
+          pacienteIdInicial={pacienteIdInicial}
           onAbrirAgenda={() => setVista("turnos")}
           onAbrirDisponibilidad={() => setVista("disponibilidades")}
           onAbrirPrestaciones={() => setVista("prestaciones")}

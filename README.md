@@ -277,8 +277,13 @@ Configurá en el backend:
 | `EMAIL_PROVIDER` | Sí | Definida como `resend`. |
 | `RESEND_API_KEY` | Sí | Secreto cargado desde el Dashboard de Render. |
 | `EMAIL_FROM` | Sí | Remitente autorizado por Resend. |
-| `MERCADO_PAGO_ACCESS_TOKEN` | No | Sólo cuando se habiliten pagos reales. |
-| `MERCADO_PAGO_WEBHOOK_SECRET` | No | Sólo cuando se habiliten webhooks reales. |
+| `MERCADO_PAGO_ACCESS_TOKEN` | No | Sólo cuando se habiliten pagos clínicos reales. |
+| `MERCADO_PAGO_WEBHOOK_SECRET` | No | Sólo cuando se habiliten webhooks clínicos reales. |
+| `MERCADOPAGO_ACCESS_TOKEN` | No | Access Token del backend para Suscripciones SaaS; separado por ambiente. |
+| `MERCADOPAGO_PUBLIC_KEY` | No | Public Key de la misma aplicación usada por Suscripciones SaaS. |
+| `MERCADOPAGO_ENV` | No | `production` en Render; `sandbox` localmente. |
+| `MERCADOPAGO_TEST_PAYER_EMAIL` | No | Solo sandbox: email del Buyer Test User argentino. |
+| `MERCADOPAGO_WEBHOOK_SECRET` | No | Secreto del webhook de Suscripciones SaaS. |
 
 En el frontend, `VITE_API_URL` es obligatoria durante el build y está definida
 como `https://api.turnelia.com.ar`. Vite incorpora este valor al bundle: si
@@ -287,6 +292,10 @@ cambia la URL de la API, hay que reconstruir el Static Site.
 Las variables `DEMO_SEED_ENABLED`, `DEMO_ADMIN_*` y
 `DEMO_PROFESSIONAL_*` no se configuran en este despliegue porque el seed está
 bloqueado en `production`. Tampoco se deben cargar `.env` ni secretos en Git.
+
+La aplicación frontend requiere además `VITE_MERCADOPAGO_PUBLIC_KEY` durante
+el build. En sandbox debe ser la Public Key de la aplicación del Seller Test
+User; nunca se debe exponer el Access Token en variables `VITE_*`.
 
 El Web Service usa el `Dockerfile` de la raíz. Su comando de inicio es
 `python -m app.scripts.start`: primero ejecuta `alembic upgrade head` y sólo si

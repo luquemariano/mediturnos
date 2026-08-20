@@ -65,6 +65,11 @@ class Settings(BaseSettings):
     ]
     mercado_pago_access_token: str = ""
     mercado_pago_webhook_secret: str = ""
+    mercadopago_access_token: SecretStr | None = None
+    mercadopago_public_key: str | None = None
+    mercadopago_env: Literal["sandbox", "production"] = "sandbox"
+    mercadopago_test_payer_email: str | None = None
+    mercadopago_webhook_secret: SecretStr | None = None
     jwt_secret_key: str
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 60
@@ -190,6 +195,27 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def validar_configuracion_produccion(self) -> "Settings":
+        access_token = (
+            self.mercadopago_access_token.get_secret_value().strip()
+            if self.mercadopago_access_token is not None
+            else ""
+        )
+        public_key = (self.mercadopago_public_key or "").strip()
+        if access_token or public_key:
+            if not access_token:
+                raise ValueError("MERCADOPAGO_ACCESS_TOKEN es obligatorio cuando Mercado Pago está configurado.")
+            if not public_key:
+                raise ValueError("MERCADOPAGO_PUBLIC_KEY es obligatoria cuando Mercado Pago está configurado.")
+            if not access_token.startswith("APP_USR-"):
+                raise ValueError("MERCADOPAGO_ACCESS_TOKEN debe ser una credencial APP_USR del entorno configurado.")
+        if self.app_env == "production" and self.object_storage_provider == "r2":
+            faltantes = [n for n, v in (("R2_ACCESS_KEY_ID", self.r2_access_key_id), ("R2_SECRET_ACCESS_KEY", self.r2_secret_access_key), ("R2_BUCKET_NAME", self.r2_bucket_name), ("R2_ENDPOINT", self.r2_endpoint)) if v is None or not str(v).strip()]
+            if faltantes:
+                raise ValueError("En production, faltan configuración R2: " + ", ".join(faltantes) + ".")
+            try:
+                adaptador_origen_http.validate_python(self.r2_endpoint)
+            except ValueError as error:
+                raise ValueError("R2_ENDPOINT debe ser una URL HTTP o HTTPS válida.") from error
         if self.app_env != "production":
             return self
 
