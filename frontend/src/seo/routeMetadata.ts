@@ -59,6 +59,8 @@ export function obtenerMetadatosRuta(pathname: string): RouteMetadata {
     };
   }
 
+  if (pathname === "/estudios/enviar") return { title: "Solicitud de estudio | Turnelia", description: "Consulta segura de una solicitud de estudio.", robots: "noindex, nofollow", referrer: "no-referrer" };
+
   if (
     esRutaODescendiente(pathname, "/app")
     || esRutaODescendiente(pathname, "/admin")
