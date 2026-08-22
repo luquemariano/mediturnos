@@ -31,6 +31,8 @@ IDEA / NECESIDAD
 
 Las decisiones relevantes deben reflejarse, según corresponda, en código, tests, [`docs/DECISIONS.md`](DECISIONS.md), [`docs/CURRENT_STATE.md`](CURRENT_STATE.md) y documentación especializada como [`docs/ARCHITECTURE.md`](ARCHITECTURE.md) o [`docs/PRODUCT.md`](PRODUCT.md).
 
+Los trabajos complejos pueden documentarse en [`docs/exec-plans/active/`](exec-plans/active/) mientras están activos y moverse a [`docs/exec-plans/completed/`](exec-plans/completed/) al finalizar.
+
 ## Conceptos y prácticas del proceso
 
 - **Exec Plans:** organización de tareas complejas, sin sustituir inspección ni autorización.

@@ -20,6 +20,10 @@
 - [`docs/CURRENT_STATE.md`](docs/CURRENT_STATE.md): estado comprobable, límites y deuda conocida.
 - [`docs/DECISIONS.md`](docs/DECISIONS.md): decisiones técnicas demostrables y revisables.
 - [`docs/WORKFLOW.md`](docs/WORKFLOW.md): forma de trabajo con agentes.
+- [`docs/SECURITY.md`](docs/SECURITY.md): autenticación, autorización y datos sensibles.
+- [`docs/TESTING.md`](docs/TESTING.md): comandos, cobertura y limitaciones de validación.
+- [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md): Render, Aiven, variables e integraciones declaradas.
+- [`docs/ROADMAP.md`](docs/ROADMAP.md): trabajo pendiente y estado del Harness.
 
 Consultar primero este archivo; luego el documento específico de la tarea.
 
