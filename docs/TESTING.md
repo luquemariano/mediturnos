@@ -30,10 +30,12 @@ Ubicación: `frontend/tests/`. Usa Vitest, Testing Library, jsdom, TypeScript y 
 
 ```powershell
 Set-Location frontend
-npm test
+npx vitest run tests
 npm run lint
 npm run build
 ```
+
+`npx vitest run tests` es la suite frontend unitaria/de integración canónica para CI. No se usa `npm test` como comando canónico porque su descubrimiento amplio puede incluir `frontend/e2e/` y mezclar Playwright; los E2E se ejecutan únicamente de forma explícita con `verify.ps1 -E2E`.
 
 Hay cobertura de sesión, recuperación, dashboards, agenda, pacientes, profesionales, disponibilidad, prestaciones, suscripciones, estudios, documentos, notificaciones y SEO.
 

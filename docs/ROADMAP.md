@@ -29,3 +29,4 @@ Estados: **PENDIENTE**, **EN CURSO**, **COMPLETADO** y **NO DETERMINADO**. No se
 - **NO INCORPORADO:** MCP.
 - **NO INCORPORADOS:** multiagentes automatizados.
 - **PENDIENTE:** template SaaS.
+- **EN CURSO:** Fase 4 GitHub Actions CI; `.github/workflows/ci.yml` fue implementado con backend/frontend separados. La validación real en GitHub está pendiente del push posterior; el diseño y contrato permanecen documentados en [`github-actions-ci.md`](exec-plans/active/github-actions-ci.md).
