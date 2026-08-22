@@ -25,7 +25,7 @@ Fecha de referencia: **2026-08-22**. Es una fotografía del repositorio, no una 
 | E2E / Playwright | IMPLEMENTADO EN CÓDIGO | Suite local validada en Fase 3; no hay Playwright CI en GitHub Actions |
 | Documentación Harness | IMPLEMENTADO EN CÓDIGO | AGENTS y documentos de esta fase |
 | Protección de `main` | DECLARADO EN CONFIGURACIÓN | Ruleset `Turnelia main protection` activo y verificado; PR, `Backend CI` y `Frontend CI` requeridos, approvals 0, `up-to-date` OFF, force-push y eliminación bloqueados, bypass sólo vía Pull Request |
-| PostgreSQL CI | DECLARADO EN CONFIGURACIÓN | Job separado con PostgreSQL `17-alpine`, Alembic y suites selectivas; validación remota pendiente y no required |
+| PostgreSQL CI | DECLARADO EN CONFIGURACIÓN | Job separado con PostgreSQL `17-alpine`, Alembic y suites selectivas; run `32597419679` verde, no required |
 
 ## Snapshot Git de la inspección
 

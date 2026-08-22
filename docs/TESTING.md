@@ -63,7 +63,11 @@ El primer run remoto de Fase 6 (`32597104272`) confirmó Alembic correcto, pero
 detectó schema drift causado por el fixture global aplicado sobre PostgreSQL y
 un falso negativo del parser JUnit. La corrección condiciona ese fixture para
 preservar el esquema migrado y verifica el constraint PostgreSQL antes de
-pytest; la nueva validación remota está pendiente.
+pytest; la fase queda pendiente de revisión final.
+La corrección fue validada remotamente en el run `32597419679`: PostgreSQL CI
+ejecutó `23 passed, 0 failed, 0 skipped`, verificó el constraint migrado y
+confirmó los tres módulos obligatorios mediante JUnit. El job sigue siendo
+informativo y no required.
 
 ## Verificación del Harness
 

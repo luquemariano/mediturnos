@@ -74,7 +74,7 @@ revisión aprobatoria se evaluará convertir `PostgreSQL CI` en required.
   `classname` y `name`) sin depender sólo de `file`.
 - [ ] Validación local de sintaxis.
 - [ ] Commit y push.
-- [ ] Validación remota.
+- [x] Validación remota verde en run `32597419679` sobre commit `c9746cb`.
 
 ## Primer run remoto
 
@@ -89,5 +89,12 @@ tres módulos como no ejecutados al depender exclusivamente del atributo
 
 La corrección conserva el esquema migrado cuando `TEST_DATABASE_URL` usa
 PostgreSQL, mantiene intacto el ciclo SQLite y verifica el constraint antes de
-pytest. La nueva ejecución remota queda pendiente; la fase no está
-completada.
+pytest. La fase no está completada documentalmente porque requiere revisión
+final.
+
+La segunda ejecución remota (`32597419679`) confirmó PostgreSQL `17-alpine`,
+Alembic correcto, el constraint `ex_turnos_profesional_intervalo_activo`
+presente, `23 passed, 0 failed, 0 skipped` y el verificador JUnit satisfecho
+para los tres módulos obligatorios. `Backend CI` terminó con `538 passed, 26
+skipped, 2 warnings` y `Frontend CI` terminó correctamente. PostgreSQL CI
+continúa informativo y no required.
