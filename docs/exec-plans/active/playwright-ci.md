@@ -1,6 +1,6 @@
 # Exec Plan: Playwright E2E CI
 
-Estado: EN CURSO
+Estado: IMPLEMENTADA / PENDIENTE DE REVIEWER
 
 ## Objetivo y alcance
 
@@ -52,11 +52,11 @@ se utilizan. El Ruleset no se modifica.
 
 ## Criterios de aceptación
 
-- [ ] Job `Playwright E2E CI` ejecutable por `workflow_dispatch`.
-- [ ] PostgreSQL, Alembic, seed, API y frontend listos.
-- [ ] Chromium instalado y las tres specs verdes.
-- [ ] Cleanup seguro y artifacts sólo ante fallo.
-- [ ] Sin secretos ni providers externos.
+- [x] Job `Playwright E2E CI` ejecutable por `workflow_dispatch`.
+- [x] PostgreSQL, Alembic, seed, API y frontend listos.
+- [x] Chromium instalado y las tres specs verdes.
+- [x] Cleanup seguro y artifacts sólo ante fallo.
+- [x] Sin secretos productivos ni providers externos.
 - [ ] Reviewer aprueba la implementación y validación.
 
 ## Progreso
@@ -64,5 +64,20 @@ se utilizan. El Ruleset no se modifica.
 - [x] Contratos locales inspeccionados.
 - [x] Job y variables sintéticas implementados.
 - [x] Readiness, sanitización, cleanup y artifacts definidos.
-- [ ] Validación local y remota.
+- [x] Validación remota: run `32598856151`, commit `a2124ff895797708097abee5cdf7514b82932990`, resultado `success`.
+- [x] Backend CI, PostgreSQL CI, Frontend CI y Playwright E2E CI verdes.
+- [x] Playwright: `3 passed (4.2s)` en `smoke.spec.ts`, `auth.spec.ts` y `admin.spec.ts`.
+- [x] Cleanup E2E completado; upload de logs omitido por ejecución exitosa.
 - [ ] Revisión del Reviewer.
+
+## Evidencia remota Fase 7A
+
+La ejecución manual mediante `workflow_dispatch` sobre `feature/mvp` fue
+exitosa. El job instaló Chromium, inició PostgreSQL E2E, aplicó Alembic,
+cargó el seed sintético, verificó API y frontend, y ejecutó las tres specs
+con `3 passed (4.2s)`. El cleanup eliminó exclusivamente los recursos
+Compose `turnelia-e2e` y no publicó artifacts porque no hubo fallo.
+
+El mismo run dejó verdes `Backend CI`, `PostgreSQL CI` y `Frontend CI`. El
+Ruleset no fue modificado y `Playwright E2E CI` continúa siendo informativo,
+no required. Las fases 7B y 7C permanecen fuera de alcance.

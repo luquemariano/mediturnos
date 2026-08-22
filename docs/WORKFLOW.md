@@ -48,7 +48,9 @@ permitido sin utilizar bypass.
 
 Playwright E2E CI se incorpora en Fase 7A como job informativo ejecutable sólo
 por `workflow_dispatch`; no se habilita todavía el trigger de PR ni se modifica
-Branch Protection.
+Branch Protection. La primera validación remota verde quedó registrada en el
+run `32598856151` sobre el commit `a2124ff`; el job continúa siendo
+informativo.
 
 ## Conceptos y prácticas del proceso
 

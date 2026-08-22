@@ -68,7 +68,12 @@ ejecutable únicamente con `workflow_dispatch`. Usa PostgreSQL E2E local,
 Alembic, seed sintético, Chromium headless y las specs `smoke`, `auth` y
 `admin`. En 7A sólo se publican, ante fallo, logs sanitizados de API,
 frontend y PostgreSQL; no se publican traces, screenshots ni HTML reports.
-El job todavía no es required y el Ruleset no fue modificado.
+El job todavía no es required y el Ruleset no fue modificado. La primera
+validación remota manual sobre `feature/mvp` fue exitosa en el run
+`32598856151` (commit `a2124ff`): Chromium instalado, PostgreSQL E2E,
+Alembic, seed sintético, API y frontend listos, y `3 passed (4.2s)` en las
+tres specs. El cleanup fue exitoso y no se publicaron artifacts al no haber
+fallo.
 
 El primer run remoto de Fase 6 (`32597104272`) confirmó Alembic correcto, pero
 detectó schema drift causado por el fixture global aplicado sobre PostgreSQL y

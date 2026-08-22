@@ -90,10 +90,17 @@ checks verdes y merge permitido sin bypass; el PR fue cerrado sin merge.
 
 ## DEC-013 — Playwright E2E CI informativo
 
-Tipo: decisión de Harness implementada, pendiente de validación remota.
+Tipo: decisión de Harness implementada y validada remotamente; pendiente de
+revisión del Reviewer.
 
 Fase 7A usa un job separado `Playwright E2E CI`, ejecutable sólo mediante
 `workflow_dispatch`, con PostgreSQL E2E local, Chromium headless y datos
 sintéticos. No se habilita trigger de PR, no se modifica el Ruleset y no se
 publican traces, screenshots ni HTML reports; ante fallo sólo se permiten logs
 sanitizados de API, frontend y PostgreSQL. Las fases 7B y 7C son posteriores.
+
+La validación manual sobre `feature/mvp` quedó registrada en el run
+`32598856151`, commit `a2124ff`: Chromium, PostgreSQL E2E, Alembic, seed,
+API y frontend completaron correctamente; las tres specs produjeron
+`3 passed (4.2s)`. El cleanup fue correcto y no se subieron logs al no haber
+fallo. Playwright CI sigue siendo informativo y no required.
