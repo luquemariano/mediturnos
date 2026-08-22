@@ -1,6 +1,6 @@
 # Exec Plan: Playwright E2E CI
 
-Estado: IMPLEMENTADA / PENDIENTE DE REVIEWER
+Estado: COMPLETADO
 
 ## Objetivo y alcance
 
@@ -57,7 +57,7 @@ se utilizan. El Ruleset no se modifica.
 - [x] Chromium instalado y las tres specs verdes.
 - [x] Cleanup seguro y artifacts sólo ante fallo.
 - [x] Sin secretos productivos ni providers externos.
-- [ ] Reviewer aprueba la implementación y validación.
+- [x] Reviewer aprueba la implementación y validación.
 
 ## Progreso
 
@@ -68,7 +68,7 @@ se utilizan. El Ruleset no se modifica.
 - [x] Backend CI, PostgreSQL CI, Frontend CI y Playwright E2E CI verdes.
 - [x] Playwright: `3 passed (4.2s)` en `smoke.spec.ts`, `auth.spec.ts` y `admin.spec.ts`.
 - [x] Cleanup E2E completado; upload de logs omitido por ejecución exitosa.
-- [ ] Revisión del Reviewer.
+- [x] Revisión del Reviewer: Fase 7A aprobada para cierre.
 
 ## Evidencia remota Fase 7A
 

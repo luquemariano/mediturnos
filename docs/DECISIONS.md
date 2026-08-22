@@ -90,8 +90,8 @@ checks verdes y merge permitido sin bypass; el PR fue cerrado sin merge.
 
 ## DEC-013 — Playwright E2E CI informativo
 
-Tipo: decisión de Harness implementada y validada remotamente; pendiente de
-revisión del Reviewer.
+Tipo: decisión de Harness implementada, validada remotamente y aprobada para
+cierre por el Reviewer.
 
 Fase 7A usa un job separado `Playwright E2E CI`, ejecutable sólo mediante
 `workflow_dispatch`, con PostgreSQL E2E local, Chromium headless y datos
