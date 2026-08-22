@@ -22,9 +22,10 @@ Fecha de referencia: **2026-08-22**. Es una fotografía del repositorio, no una 
 | R2 | DECLARADO EN CONFIGURACIÓN | Adaptador R2 y fake; uso real NO DETERMINADO |
 | Deployment Render | DECLARADO EN CONFIGURACIÓN | Blueprint declarado; ejecución real NO DETERMINADA |
 | PostgreSQL de producción | DECLARADO EN CONFIGURACIÓN | Proveedor/ubicación documentados: Aiven; conexión y salud actuales NO DETERMINADAS |
-| E2E / Playwright | NO INCORPORADO | No hay suite, dependencia ni configuración; queda como capacidad futura |
+| E2E / Playwright | IMPLEMENTADO EN CÓDIGO | Suite local validada en Fase 3; no hay Playwright CI en GitHub Actions |
 | Documentación Harness | IMPLEMENTADO EN CÓDIGO | AGENTS y documentos de esta fase |
 | Protección de `main` | DECLARADO EN CONFIGURACIÓN | Ruleset `Turnelia main protection` activo y verificado; PR, `Backend CI` y `Frontend CI` requeridos, approvals 0, `up-to-date` OFF, force-push y eliminación bloqueados, bypass sólo vía Pull Request |
+| PostgreSQL CI | DECLARADO EN CONFIGURACIÓN | Job separado con PostgreSQL `17-alpine`, Alembic y suites selectivas; validación remota pendiente y no required |
 
 ## Snapshot Git de la inspección
 
@@ -51,4 +52,4 @@ no se presenta como sincronizada en este documento.
 
 ## Deuda y riesgos
 
-Conviven MediTurnos/Turnelia en branding, nombres técnicos, emails de prueba y servicios Render. También existen dos familias de variables Mercado Pago. SQLite no sustituye una validación PostgreSQL completa y no hay Playwright.
+Conviven MediTurnos/Turnelia en branding, nombres técnicos, emails de prueba y servicios Render. También existen dos familias de variables Mercado Pago. SQLite no sustituye una validación PostgreSQL completa y Playwright CI aún no está incorporado en GitHub Actions.

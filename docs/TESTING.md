@@ -49,6 +49,16 @@ La cobertura no es uniforme entre módulos. Consultar `frontend/tests/` para el 
 - Tests locales no validan la operación productiva de Render, Aiven, Resend, R2 o Mercado Pago.
 - La cobertura PostgreSQL es selectiva.
 
+### PostgreSQL CI
+
+GitHub Actions incluye un job informativo separado llamado `PostgreSQL CI`.
+Usa `postgres:17-alpine` como service container efímero, ejecuta Alembic sobre
+una base PostgreSQL vacía y después valida secuencialmente los módulos de
+concurrencia de turnos, recordatorios y acciones de turnos. El job genera
+`postgresql-test-results.xml` y falla si alguno de esos módulos queda
+completamente skipped. `tests/test_pagos_postgresql.py` no se incluye en este
+job por requerir una variable adicional fuera del contrato actual.
+
 ## Verificación del Harness
 
 Desde la raíz del repositorio:

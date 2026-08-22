@@ -40,7 +40,10 @@ La protección de `main` está documentada en el plan completado [`branch-protec
 feature/* → push → Pull Request hacia main → Backend CI + Frontend CI → checks verdes → merge permitido
 ```
 
-Los checks fallidos bloquean el merge; el push directo normal a `main` no está permitido. Las aprobaciones obligatorias son 0 y `up-to-date` no es obligatorio actualmente. Existe bypass administrativo sólo para recuperación dentro de Pull Requests; no forma parte del flujo normal. PostgreSQL CI y Playwright CI no están implementados en GitHub Actions.
+Los checks fallidos bloquean el merge; el push directo normal a `main` no está permitido. Las aprobaciones obligatorias son 0 y `up-to-date` no es obligatorio actualmente. Existe bypass administrativo sólo para recuperación dentro de Pull Requests; no forma parte del flujo normal. Playwright CI no está implementado en GitHub Actions.
+
+PostgreSQL CI está implementado como job informativo separado y todavía no es
+required en Branch Protection. La protección no se modifica en esta fase.
 
 ## Conceptos y prácticas del proceso
 

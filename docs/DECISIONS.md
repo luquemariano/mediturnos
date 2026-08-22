@@ -76,3 +76,13 @@ en el Exec Plan. La validación roja del PR #2 confirmó el bloqueo y la
 validación verde del PR #3, run
 `32595185386`, terminó `CLEAN`/`MERGEABLE` sin bypass; el PR fue cerrado sin
 merge. Estado final: Fase 5 cerrada.
+
+## DEC-012 — PostgreSQL CI informativo
+
+Tipo: decisión de Harness implementada, pendiente de validación remota.
+
+PostgreSQL CI se ejecuta como job separado con `postgres:17-alpine`, variables
+sintéticas, Alembic y tres módulos PostgreSQL seleccionados. Se ejecuta
+secuencialmente y verifica mediante JUnit que ningún módulo obligatorio quede
+completamente skipped. No es required en Branch Protection hasta contar con
+una ejecución remota verde y revisión aprobatoria.
