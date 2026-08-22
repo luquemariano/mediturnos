@@ -46,6 +46,10 @@ PostgreSQL CI está implementado como job separado y required en Branch
 Protection. La validación del PR #4 confirmó los tres checks verdes y el merge
 permitido sin utilizar bypass.
 
+Playwright E2E CI se incorpora en Fase 7A como job informativo ejecutable sólo
+por `workflow_dispatch`; no se habilita todavía el trigger de PR ni se modifica
+Branch Protection.
+
 ## Conceptos y prácticas del proceso
 
 - **Exec Plans:** organización de tareas complejas, sin sustituir inspección ni autorización.

@@ -61,6 +61,15 @@ job por requerir una variable adicional fuera del contrato actual.
 
 El job es required en Branch Protection tras la validación verde del PR #4.
 
+### Playwright E2E CI — Fase 7A
+
+El workflow incluye `Playwright E2E CI` como job separado e informativo,
+ejecutable únicamente con `workflow_dispatch`. Usa PostgreSQL E2E local,
+Alembic, seed sintético, Chromium headless y las specs `smoke`, `auth` y
+`admin`. En 7A sólo se publican, ante fallo, logs sanitizados de API,
+frontend y PostgreSQL; no se publican traces, screenshots ni HTML reports.
+El job todavía no es required y el Ruleset no fue modificado.
+
 El primer run remoto de Fase 6 (`32597104272`) confirmó Alembic correcto, pero
 detectó schema drift causado por el fixture global aplicado sobre PostgreSQL y
 un falso negativo del parser JUnit. La corrección condiciona ese fixture para

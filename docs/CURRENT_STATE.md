@@ -26,6 +26,7 @@ Fecha de referencia: **2026-08-22**. Es una fotografía del repositorio, no una 
 | Documentación Harness | IMPLEMENTADO EN CÓDIGO | AGENTS y documentos de esta fase |
 | Protección de `main` | DECLARADO EN CONFIGURACIÓN | Ruleset `Turnelia main protection` activo y verificado; PR, `Backend CI` y `Frontend CI` requeridos, approvals 0, `up-to-date` OFF, force-push y eliminación bloqueados, bypass sólo vía Pull Request |
 | PostgreSQL CI | DECLARADO EN CONFIGURACIÓN | Job separado required con PostgreSQL `17-alpine`, Alembic y suites selectivas; run `32597419679` verde y PR #4 validado |
+| Playwright E2E CI | DECLARADO EN CONFIGURACIÓN | Job separado informativo de Fase 7A, sólo `workflow_dispatch`; validación remota pendiente y no required |
 
 ## Snapshot Git de la inspección
 

@@ -87,3 +87,13 @@ secuencialmente y verifica mediante JUnit que ningún módulo obligatorio quede
 completamente skipped. El Ruleset `Turnelia main protection` lo exige junto a
 `Backend CI` y `Frontend CI`. El PR #4, run `32597812092`, confirmó los tres
 checks verdes y merge permitido sin bypass; el PR fue cerrado sin merge.
+
+## DEC-013 — Playwright E2E CI informativo
+
+Tipo: decisión de Harness implementada, pendiente de validación remota.
+
+Fase 7A usa un job separado `Playwright E2E CI`, ejecutable sólo mediante
+`workflow_dispatch`, con PostgreSQL E2E local, Chromium headless y datos
+sintéticos. No se habilita trigger de PR, no se modifica el Ruleset y no se
+publican traces, screenshots ni HTML reports; ante fallo sólo se permiten logs
+sanitizados de API, frontend y PostgreSQL. Las fases 7B y 7C son posteriores.
