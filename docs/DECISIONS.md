@@ -104,3 +104,9 @@ La validación manual sobre `feature/mvp` quedó registrada en el run
 API y frontend completaron correctamente; las tres specs produjeron
 `3 passed (4.2s)`. El cleanup fue correcto y no se subieron logs al no haber
 fallo. Playwright CI sigue siendo informativo y no required.
+
+Para Fase 7B se habilita el job también en `pull_request` hacia `main`, sin
+`pull_request_target`, sin filtros de paths y conservando `workflow_dispatch`.
+La concurrencia se limita al job Playwright y cancela sólo ejecuciones
+obsoletas del mismo PR. El Ruleset permanece sin cambios; la evaluación de
+required queda reservada para Fase 7C.

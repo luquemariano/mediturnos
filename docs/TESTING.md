@@ -61,14 +61,16 @@ job por requerir una variable adicional fuera del contrato actual.
 
 El job es required en Branch Protection tras la validación verde del PR #4.
 
-### Playwright E2E CI — Fase 7A
+### Playwright E2E CI — Fases 7A y 7B
 
 El workflow incluye `Playwright E2E CI` como job separado e informativo,
-ejecutable únicamente con `workflow_dispatch`. Usa PostgreSQL E2E local,
+ejecutable con `workflow_dispatch` y, desde Fase 7B, automáticamente en Pull
+Requests hacia `main`. Usa PostgreSQL E2E local,
 Alembic, seed sintético, Chromium headless y las specs `smoke`, `auth` y
 `admin`. En 7A sólo se publican, ante fallo, logs sanitizados de API,
 frontend y PostgreSQL; no se publican traces, screenshots ni HTML reports.
-La Fase 7A quedó completada. El job todavía no es required y el Ruleset no fue modificado. La primera
+La Fase 7A quedó completada y la Fase 7B está en curso. El job todavía no es
+required y el Ruleset no fue modificado. La primera
 validación remota manual sobre `feature/mvp` fue exitosa en el run
 `32598856151` (commit `a2124ff`): Chromium instalado, PostgreSQL E2E,
 Alembic, seed sintético, API y frontend listos, y `3 passed (4.2s)` en las

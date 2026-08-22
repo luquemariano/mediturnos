@@ -183,7 +183,10 @@ jobs:
 
   playwright-e2e-ci:
     name: Playwright E2E CI
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.base_ref == 'main')
+    concurrency:
+      group: playwright-e2e-ci-${{ github.event.pull_request.number || github.ref }}
+      cancel-in-progress: true
     runs-on: ubuntu-latest
     timeout-minutes: 25
     env:
