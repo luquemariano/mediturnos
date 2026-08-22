@@ -1,113 +1,53 @@
-# MediTurnos contributor guide
+# Turnelia — guía operativa para contribuidores y agentes
 
-## Project overview
+## Identidad
 
-MediTurnos is a full-stack medical appointment management application.
+**Turnelia** es el nombre comercial actual. El repositorio conserva `mediturnos` y `MediTurnos` como nombres técnicos o históricos. No renombrar identificadores internos sólo por branding; cualquier limpieza de naming requiere una tarea específica y controlada.
 
-- Backend: FastAPI, SQLAlchemy, Pydantic, Alembic, JWT, and Mercado Pago.
-- Frontend: React, TypeScript, Vite, Axios, and plain CSS.
-- Production database: PostgreSQL.
-- Local/test fallback: SQLite.
+## Mapa rápido
 
-## Repository layout
+- Backend: FastAPI, SQLAlchemy, Pydantic, Alembic, JWT y PostgreSQL.
+- Frontend: React, TypeScript, Vite, Axios y CSS propio.
+- Capas backend: `router → service → repository` cuando corresponde.
+- Infraestructura declarada: Docker, Render, PostgreSQL y Render Cron; operación real NO DETERMINADA desde el repositorio.
+- Integraciones implementadas/configurables: Mercado Pago, Resend y Cloudflare R2; operación productiva NO DETERMINADA.
+- Tests backend: pytest, habitualmente sobre SQLite; esto no demuestra por sí solo compatibilidad PostgreSQL.
 
-- `app/main.py`: FastAPI application and router registration.
-- `app/routers/`: HTTP endpoints and authorization dependencies.
-- `app/services/`: business rules and transaction boundaries.
-- `app/repositories/`: SQLAlchemy queries and persistence helpers.
-- `app/models/`: ORM models.
-- `app/schemas/`: Pydantic request and response contracts.
-- `app/core/`: settings, authentication, JWT, and authorization.
-- `app/database/`: engine and session configuration.
-- `app/scripts/seed.py`: idempotent demo data loader.
-- `alembic/`: database migrations.
-- `frontend/src/`: React application.
-- `tests/`: backend tests using an in-memory SQLite database.
+## Documentación canónica
 
-## Development commands
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md): estructura y flujos técnicos actuales.
+- [`docs/PRODUCT.md`](docs/PRODUCT.md): módulos, actores y reglas de producto deducibles del sistema.
+- [`docs/CURRENT_STATE.md`](docs/CURRENT_STATE.md): estado comprobable, límites y deuda conocida.
+- [`docs/DECISIONS.md`](docs/DECISIONS.md): decisiones técnicas demostrables y revisables.
+- [`docs/WORKFLOW.md`](docs/WORKFLOW.md): forma de trabajo con agentes.
 
-Run backend tests:
+Consultar primero este archivo; luego el documento específico de la tarea.
 
-```powershell
-.\.venv\Scripts\python.exe -m pytest
-```
+## Reglas de trabajo
 
-Run the API locally:
+- Preservar cambios ajenos y archivos no relacionados.
+- No exponer ni registrar contraseñas, JWT, tokens, secretos de webhooks ni datos sensibles de pacientes.
+- No hacer checkout, merge, commit, push ni Git destructivo salvo autorización explícita.
+- Usar Alembic para cambios persistentes; no confiar en `create_all()` para producción.
+- Mantener compatibilidad PostgreSQL aunque los tests usen SQLite.
+- Mantener permisos en el router y ownership en la lógica de negocio.
+- Mantener el texto visible al usuario en español, salvo contexto existente.
+- Respetar la separación router/service/repository cuando corresponda al flujo existente.
+- No ejecutar migraciones ni seed salvo que la tarea lo pida.
 
-```powershell
-.\.venv\Scripts\python.exe -m uvicorn app.main:app --reload
-```
+## Integraciones y dominios
 
-Run the frontend:
+Los pagos clínicos de turnos y las suscripciones SaaS son flujos distintos y no deben asumirse equivalentes. Resend gestiona emails transaccionales; Cloudflare R2 es almacenamiento opcional; Render Cron procesa recordatorios de turnos.
 
-```powershell
-Set-Location frontend
-npm run dev
-```
+## Antes de implementar una feature
 
-Validate the frontend:
+1. Leer `AGENTS.md` y la documentación relacionada.
+2. Inspeccionar código, configuración y tests existentes.
+3. Identificar compatibilidad, permisos y ownership afectados.
+4. Planificar e implementar el cambio mínimo.
+5. Validar con tests/lint/build proporcionales al riesgo.
+6. Actualizar documentación y comunicar cambios, riesgos y límites.
 
-```powershell
-Set-Location frontend
-npm run lint
-npm run build
-```
+## Fuente de verdad
 
-Start the containerized API and PostgreSQL:
-
-```powershell
-docker compose --env-file .env up -d --build
-```
-
-Do not run migrations or the demo seed unless the task explicitly requires a database change or data setup.
-
-## Implementation conventions
-
-- Keep the existing router-service-repository separation.
-- Put HTTP parsing, response models, and permission dependencies in routers.
-- Put business validation and transaction handling in services.
-- Keep database query details in repositories.
-- Represent API inputs and outputs with Pydantic schemas.
-- Add an Alembic migration for every persistent schema change; do not rely on `Base.metadata.create_all()` in production.
-- Preserve PostgreSQL compatibility even when tests use SQLite.
-- Keep user-facing text in Spanish unless the surrounding interface establishes another language.
-- Configure deployment-specific URLs, origins, credentials, and secrets through environment variables.
-- Never log passwords, JWTs, access tokens, webhook secrets, or patient-sensitive data.
-
-## Authentication and authorization
-
-Supported roles are `administrador`, `recepcionista`, `profesional`, and `paciente`.
-
-- Require authentication by default for application endpoints.
-- Apply least-privilege authorization at the router boundary and enforce ownership in the service layer.
-- Patients may access only their own profile, appointments, and payments.
-- Professionals may access only their own agenda unless an administrative permission explicitly applies.
-- Mercado Pago webhooks are public callbacks and must continue validating their signature.
-
-## Scheduling rules
-
-Changes involving appointments must account for:
-
-- active patients, professionals, and services;
-- future dates and explicit timezone handling;
-- declared professional availability;
-- service duration and overlapping appointments;
-- valid appointment-state transitions;
-- concurrent booking attempts and database-level integrity.
-
-Creation and rescheduling should enforce the same availability rules.
-
-## Testing expectations
-
-- Add or update tests for changed behavior.
-- Cover both successful and forbidden role/ownership cases.
-- For scheduling changes, test exact collisions, partial overlaps, unavailable hours, cancelled appointments, and concurrent booking behavior where practical.
-- For payments, test ownership, duplicate preference handling, and valid/invalid webhook signatures.
-- Do not treat SQLite-only tests as proof that Alembic migrations work on PostgreSQL.
-
-## Repository hygiene
-
-- Do not commit `.env`, secrets, local dumps, generated frontend output, caches, or virtual environments.
-- Avoid modifying the tracked `mediturnos.db` unless a task explicitly calls for updating that artifact.
-- Preserve unrelated user changes in a dirty worktree.
-- Do not commit, push, pull, change branches, or run destructive Git commands unless explicitly requested.
+El orden de confianza es: código/configuración real, tests, migraciones, documentación verificada e inferencias explícitamente marcadas como `NO DETERMINADO`.

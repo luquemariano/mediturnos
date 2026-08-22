@@ -16,24 +16,25 @@
 
 ## Descripción
 
-**Turnelia** es una demostración técnica de una plataforma moderna para consultorios, clínicas y centros de salud. El repositorio conserva internamente el nombre `mediturnos`. El proyecto integra una API REST con FastAPI, autenticación mediante JWT, persistencia en PostgreSQL, contenedores Docker y una interfaz desarrollada con React y TypeScript.
+**Turnelia** es una plataforma web para la gestión de turnos y procesos clínicos, administrativos y de pagos para consultorios, clínicas y centros de salud. El repositorio conserva internamente el nombre `mediturnos`. Contiene una implementación funcional y amplia de los módulos documentados en [`docs/PRODUCT.md`](docs/PRODUCT.md), respaldada por una API REST con FastAPI, autenticación mediante JWT, persistencia configurada para PostgreSQL, migraciones Alembic, pruebas automatizadas, contenedores Docker y una interfaz React con TypeScript.
 
-El alcance fue pensado para portfolio: presenta un recorrido funcional, visualmente atractivo y técnicamente escalable, sin pretender reemplazar un producto médico listo para producción.
+La configuración de deployment e integraciones externas está documentada en el repositorio, pero la operación productiva verificada se mantiene diferenciada y puede ser **NO DETERMINADA** cuando no existe evidencia operativa.
 
-## Estado productivo actual
+## Configuración y estado declarado
 
-- **Frontend productivo:** [https://turnelia.com.ar](https://turnelia.com.ar)
-- **Backend productivo:** [https://api.turnelia.com.ar](https://api.turnelia.com.ar)
-- **Hosting:** Render.
-- **DNS:** Cloudflare.
-- **Base de datos:** Render PostgreSQL.
-- **Email transaccional:** Resend.
-- **Dominio de envío verificado:** `mail.turnelia.com.ar`.
-- **Remitente productivo:** `Turnelia <no-reply@mail.turnelia.com.ar>`.
-- **Recuperación de contraseña:** implementada y validada de punta a punta.
-- **Administrador global:** existe un administrador global real configurado en producción.
-- **Seed demo:** no se ejecuta en producción.
-- **Catálogo:** 36 especialidades activas, sin la opción "Otro".
+El repositorio contiene configuración y documentación para un deployment productivo, pero esta lectura no verificó servicios externos ni producción. Por tanto, los puntos siguientes describen valores declarados o información documentada en el repositorio, no una operación productiva verificada.
+
+- **Frontend declarado:** [https://turnelia.com.ar](https://turnelia.com.ar).
+- **Backend declarado:** [https://api.turnelia.com.ar](https://api.turnelia.com.ar).
+- **Hosting declarado:** Render.
+- **DNS documentado:** Cloudflare.
+- **Base de producción:** PostgreSQL alojado en Aiven según la configuración/historia operativa documentada del proyecto; no está aprovisionado por `render.yaml`. La API utiliza `DATABASE_URL`; el estado actual de esa conexión NO DETERMINADO.
+- **Email configurado para producción:** Resend.
+- **Dominio/remitente documentados:** `mail.turnelia.com.ar` y `Turnelia <no-reply@mail.turnelia.com.ar>`; verificación y entrega actuales NO DETERMINADAS.
+- **Recuperación de contraseña:** IMPLEMENTADA EN REPOSITORIO; operación productiva NO DETERMINADA.
+- **Administrador global:** declarado por documentación previa; existencia actual NO DETERMINADA.
+- **Seed demo:** configuración diseñada para bloquearlo en producción.
+- **Catálogo:** migración de 36 especialidades en el repositorio; estado productivo actual NO DETERMINADO.
 
 ### Nota operativa
 
@@ -245,9 +246,14 @@ siendo genérica para no revelar si el email pertenece a una cuenta.
 
 ### Deploy en Render
 
-El repositorio incluye `render.yaml` para crear mediante un Blueprint tres
-recursos conectados: PostgreSQL administrado, la API FastAPI como Web Service
-Docker y el frontend React como Static Site. El Blueprint no contiene secretos.
+El repositorio incluye `render.yaml` para declarar mediante un Blueprint tres
+recursos: la API FastAPI como Web Service Docker, el frontend React como Static
+Site y un Cron Job. PostgreSQL no está declarado como recurso dentro de
+`render.yaml`; es el motor configurado/declarado para producción mediante
+variables y configuración externa. Según la configuración/historia operativa
+documentada del proyecto, la base PostgreSQL de producción fue migrada/alojada
+en Aiven. La existencia, aprovisionamiento y estado operativo actual de esa
+instancia no se demuestran con `render.yaml`. El Blueprint no contiene secretos.
 Al importar el Blueprint, seleccioná la rama que quieras desplegar; para esta
 primera prueba corresponde `feature/mvp`. Como no se declara `repo` ni `branch`
 en el archivo, Render utiliza el repositorio y la rama vinculados al Blueprint.
@@ -266,7 +272,7 @@ Configurá en el backend:
 | Variable | Requerida | Configuración |
 | --- | --- | --- |
 | `APP_ENV` | Sí | Definida como `production` por el Blueprint. |
-| `DATABASE_URL` | Sí | Inyectada desde el PostgreSQL administrado; no cargarla manualmente. |
+| `DATABASE_URL` | Sí | URL usada por la API para conectarse a PostgreSQL; el proveedor Aiven y su aprovisionamiento quedan fuera de `render.yaml`. |
 | `APP_TIMEZONE` | Sí | Definida como `America/Argentina/Buenos_Aires`. |
 | `JWT_SECRET_KEY` | Sí | Generada de forma segura por Render. |
 | `JWT_ALGORITHM` | Sí | Definida como `HS256`. |
@@ -332,8 +338,10 @@ remitente: para enviar emails a usuarios externos, Resend requiere un dominio
 verificado. Su remitente de prueba sólo sirve bajo las limitaciones documentadas
 en la sección anterior.
 
-Los Custom Domains activos son `turnelia.com.ar` para el Static Site y
-`api.turnelia.com.ar` para el Web Service. La configuración productiva es:
+Los Custom Domains documentados/configurados son `turnelia.com.ar` para el
+Static Site y `api.turnelia.com.ar` para el Web Service. Su estado operativo
+actual es **NO DETERMINADO**; la configuración siguiente es una referencia
+documental, no una verificación realizada en esta fase:
 
 ```text
 FRONTEND_URL=https://turnelia.com.ar
@@ -356,13 +364,10 @@ manualmente los tres valores anteriores en **Environment** y desplegá de nuevo
 el backend y el frontend. Si se usa el dominio para enviar emails, también debe
 verificarse en Resend y actualizarse `EMAIL_FROM` desde el entorno.
 
-El plan gratuito es sólo para esta prueba: el Web Service puede suspenderse por
-inactividad y tener un arranque lento. PostgreSQL gratuito está limitado a 1 GB,
-no ofrece backups y expira 30 días después de su creación; tras el período de
-gracia, Render elimina la base. No debe utilizarse para clientes pagos ni para
-información real que necesite persistencia, recuperación o garantías operativas.
-Antes de una prueba prolongada o comercial, migrá a una base paga con backups y
-revisá los planes vigentes de Render.
+El Web Service de Render puede suspenderse por inactividad y tener un arranque
+lento según el plan utilizado. La disponibilidad, capacidad, backups y
+retención de la instancia PostgreSQL de Aiven no fueron verificadas en esta
+fase y permanecen NO DETERMINADAS.
 
 ### 4. Cargar datos demo
 
@@ -481,15 +486,14 @@ Turnelia es una demo técnica escalable. Algunas extensiones posibles:
 - Calendario semanal y mensual.
 - CRUD completo de profesionales y especialidades.
 - Recordatorios por correo o WhatsApp.
-- Recuperación de contraseña.
 - Auditoría de cambios.
 - Pruebas automatizadas adicionales.
 - Despliegue en la nube.
-- Integración productiva de pagos y notificaciones.
+- Verificación operativa de pagos y notificaciones en producción.
 
 ## Estado del proyecto
 
-**Versión de portfolio funcional.**
+**Versión de portfolio funcional.** El repositorio contiene implementaciones de pagos clínicos, suscripciones SaaS, notificaciones y recordatorios; su operación productiva actual NO DETERMINADA.
 
 El proyecto demuestra el ciclo completo de una aplicación Full Stack: autenticación, API REST, reglas de negocio, persistencia, frontend, contenedores, datos demo y documentación.
 
