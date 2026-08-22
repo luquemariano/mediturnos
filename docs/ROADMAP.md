@@ -22,7 +22,7 @@ Estados: **PENDIENTE**, **EN CURSO**, **COMPLETADO** y **NO DETERMINADO**. No se
 
 - **COMPLETADO:** Fase 1A, memoria canónica inicial.
 - **COMPLETADO:** Fase 1B, incluyendo `SECURITY.md`, `TESTING.md`, `DEPLOYMENT.md`, `ROADMAP.md` y la estructura de Exec Plans.
-- **PENDIENTE / PRÓXIMA FASE:** `setup.ps1` y `verify.ps1` todavía no están implementados; antes de crearlos debe definirse su alcance mediante un Exec Plan.
+- **COMPLETADA:** Fase 2 setup/verify; `setup.ps1` y `verify.ps1` están implementados y el Exec Plan fue completado. Full detecta actualmente tres fallos Vitest preexistentes en `frontend/tests/excepcionesDisponibilidad.test.tsx`; no bloquean el Harness.
 - **NO INCORPORADO:** Playwright/E2E.
 - **COMPLETADO:** flujo Builder → Reviewer documentado manualmente.
 - **NO INCORPORADAS:** Skills específicas.

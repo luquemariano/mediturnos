@@ -47,6 +47,17 @@ La cobertura no es uniforme entre módulos. Consultar `frontend/tests/` para el 
 - Tests locales no validan la operación productiva de Render, Aiven, Resend, R2 o Mercado Pago.
 - La cobertura PostgreSQL es selectiva.
 
+## Verificación del Harness
+
+Desde la raíz del repositorio:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\verify.ps1 -Quick
+powershell -ExecutionPolicy Bypass -File .\verify.ps1 -Full
+```
+
+Quick no ejecuta las suites completas. Full ejecuta pytest backend, Vitest frontend, lint y build; los servicios locales sólo se comprueban con `-LocalServices`. `-LocalServices` es read-only: comprueba Docker, el servicio Compose `db`, `127.0.0.1:5432` y `http://127.0.0.1:8000/health/ready`, sin iniciar servicios ni contactar producción. En la validación de Fase 2, Quick pasó; pytest, lint y build pasaron; Vitest presentó tres fallos en `frontend/tests/excepcionesDisponibilidad.test.tsx`.
+
 ## Regla para nuevas features
 
 Toda modificación relevante debe incluir tests proporcionales al riesgo. Cambios de permisos deben cubrir casos permitidos y prohibidos; cambios de turnos, disponibilidad, estados, solapamientos y concurrencia cuando corresponda; cambios de pagos, ownership, idempotencia y webhooks.
