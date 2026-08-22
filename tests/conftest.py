@@ -68,6 +68,12 @@ app.dependency_overrides[obtener_db] = obtener_db_test
 @pytest.fixture(autouse=True)
 def preparar_base():
     rate_limiter.reiniciar()
+
+    if TEST_DATABASE_URL.startswith("postgresql"):
+        yield
+        rate_limiter.reiniciar()
+        return
+
     Base.metadata.create_all(bind=engine_test)
 
     yield

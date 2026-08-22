@@ -59,6 +59,12 @@ concurrencia de turnos, recordatorios y acciones de turnos. El job genera
 completamente skipped. `tests/test_pagos_postgresql.py` no se incluye en este
 job por requerir una variable adicional fuera del contrato actual.
 
+El primer run remoto de Fase 6 (`32597104272`) confirmó Alembic correcto, pero
+detectó schema drift causado por el fixture global aplicado sobre PostgreSQL y
+un falso negativo del parser JUnit. La corrección condiciona ese fixture para
+preservar el esquema migrado y verifica el constraint PostgreSQL antes de
+pytest; la nueva validación remota está pendiente.
+
 ## Verificación del Harness
 
 Desde la raíz del repositorio:

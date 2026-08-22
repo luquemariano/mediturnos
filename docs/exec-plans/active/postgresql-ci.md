@@ -68,6 +68,26 @@ revisión aprobatoria se evaluará convertir `PostgreSQL CI` en required.
 - [x] Pre-check y selección de módulos.
 - [x] Job y service container implementados.
 - [x] Verificación JUnit contra skips silenciosos implementada.
+- [x] Corrección preparada para conservar el esquema PostgreSQL migrado y
+  verificar el exclusion constraint antes de pytest.
+- [x] Parser JUnit corregido para usar atributos disponibles (`file`,
+  `classname` y `name`) sin depender sólo de `file`.
 - [ ] Validación local de sintaxis.
 - [ ] Commit y push.
 - [ ] Validación remota.
+
+## Primer run remoto
+
+El run `32597104272` confirmó que el service container y Alembic funcionaban:
+`alembic heads`, `upgrade head` y `current` fueron correctos. Pytest recopiló
+23 tests y produjo `21 passed, 2 failed, 1 warning`. Los dos fallos de
+concurrencia dependían del constraint PostgreSQL creado por Alembic, que el
+fixture global de `tests/conftest.py` podía eliminar mediante
+`create_all/drop_all`. Además, el primer parser JUnit reportó falsamente los
+tres módulos como no ejecutados al depender exclusivamente del atributo
+`file`.
+
+La corrección conserva el esquema migrado cuando `TEST_DATABASE_URL` usa
+PostgreSQL, mantiene intacto el ciclo SQLite y verifica el constraint antes de
+pytest. La nueva ejecución remota queda pendiente; la fase no está
+completada.

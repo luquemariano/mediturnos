@@ -88,6 +88,26 @@ jobs:
       - name: Confirm Alembic revision
         run: alembic current
 
+      - name: Verify PostgreSQL exclusion constraint
+        run: |
+          python - <<'PY'
+          from sqlalchemy import create_engine, text
+          from app.core.config import settings
+
+          engine = create_engine(settings.database_url)
+          query = text("""
+              SELECT 1
+              FROM pg_constraint
+              WHERE conname = 'ex_turnos_profesional_intervalo_activo'
+          """)
+          with engine.connect() as connection:
+              if connection.execute(query).scalar_one_or_none() != 1:
+                  raise SystemExit(
+                      "PostgreSQL exclusion constraint is missing"
+                  )
+          print("[OK] PostgreSQL exclusion constraint verified.")
+          PY
+
       - name: Run PostgreSQL tests
         run: |
           set +e
@@ -110,9 +130,14 @@ jobs:
           root = ET.parse("postgresql-test-results.xml").getroot()
           observed = set()
           for testcase in root.iter("testcase"):
-              filename = testcase.attrib.get("file", "")
-              if filename in required and not testcase.find("skipped"):
-                  observed.add(filename)
+              identity = " ".join(
+                  testcase.attrib.get(attribute, "")
+                  for attribute in ("file", "classname", "name")
+              )
+              for module in required:
+                  module_stem = module.removesuffix(".py").replace("/", ".")
+                  if module_stem in identity and not testcase.find("skipped"):
+                      observed.add(module)
           missing = sorted(required - observed)
           if missing:
               print("[FAIL] PostgreSQL modules without executed tests:")
