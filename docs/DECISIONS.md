@@ -77,12 +77,13 @@ validación verde del PR #3, run
 `32595185386`, terminó `CLEAN`/`MERGEABLE` sin bypass; el PR fue cerrado sin
 merge. Estado final: Fase 5 cerrada.
 
-## DEC-012 — PostgreSQL CI informativo
+## DEC-012 — PostgreSQL CI requerido
 
-Tipo: decisión de Harness implementada, pendiente de validación remota.
+Tipo: decisión de Harness implementada y validada remotamente.
 
 PostgreSQL CI se ejecuta como job separado con `postgres:17-alpine`, variables
 sintéticas, Alembic y tres módulos PostgreSQL seleccionados. Se ejecuta
 secuencialmente y verifica mediante JUnit que ningún módulo obligatorio quede
-completamente skipped. No es required en Branch Protection hasta contar con
-una ejecución remota verde y revisión aprobatoria.
+completamente skipped. El Ruleset `Turnelia main protection` lo exige junto a
+`Backend CI` y `Frontend CI`. El PR #4, run `32597812092`, confirmó los tres
+checks verdes y merge permitido sin bypass; el PR fue cerrado sin merge.

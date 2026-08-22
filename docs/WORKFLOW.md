@@ -42,8 +42,9 @@ feature/* → push → Pull Request hacia main → Backend CI + Frontend CI → 
 
 Los checks fallidos bloquean el merge; el push directo normal a `main` no está permitido. Las aprobaciones obligatorias son 0 y `up-to-date` no es obligatorio actualmente. Existe bypass administrativo sólo para recuperación dentro de Pull Requests; no forma parte del flujo normal. Playwright CI no está implementado en GitHub Actions.
 
-PostgreSQL CI está implementado como job informativo separado y todavía no es
-required en Branch Protection. La protección no se modifica en esta fase.
+PostgreSQL CI está implementado como job separado y required en Branch
+Protection. La validación del PR #4 confirmó los tres checks verdes y el merge
+permitido sin utilizar bypass.
 
 ## Conceptos y prácticas del proceso
 

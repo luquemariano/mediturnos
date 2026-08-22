@@ -1,12 +1,12 @@
 # Exec Plan: PostgreSQL CI
 
-Estado: EN CURSO
+Estado: COMPLETADO
 
 ## Objetivo
 
-Agregar un job informativo separado de GitHub Actions que valide migraciones y
-flujos PostgreSQL seleccionados sobre una base efímera de CI. PostgreSQL CI no
-será required en Branch Protection en esta fase.
+Agregar un job separado de GitHub Actions que valide migraciones y flujos
+PostgreSQL seleccionados sobre una base efímera de CI. PostgreSQL CI pasó a ser
+required en Branch Protection después de la validación verde y la revisión.
 
 ## Arquitectura
 
@@ -44,24 +44,26 @@ obligatorios y `JWT_SECRET_KEY`. No se imprimen URLs completas ni contraseñas.
 ## Riesgos y rollback
 
 La cobertura es selectiva y comparte una base efímera en ejecución secuencial;
-no sustituye una validación productiva ni PostgreSQL CI requerido. Para
+no sustituye una validación productiva ni la versión productiva de PostgreSQL.
+Para
 rollback se elimina únicamente el job PostgreSQL CI y su documentación, sin
 alterar `Backend CI`, `Frontend CI`, Ruleset, producción o E2E.
 
-## Branch Protection futura
+## Branch Protection
 
-No se modifica el Ruleset. Sólo después de una ejecución remota verde y una
-revisión aprobatoria se evaluará convertir `PostgreSQL CI` en required.
+El Ruleset `Turnelia main protection` exige `Backend CI`, `Frontend CI` y
+`PostgreSQL CI`. No se modificaron approvals, `up-to-date`, bypass,
+force-push, deletion ni el target `main`.
 
 ## Criterios de aceptación
 
 - [ ] YAML válido y diff limpio.
-- [ ] Job `PostgreSQL CI` separado y no required.
+- [x] Job `PostgreSQL CI` separado y required.
 - [ ] PostgreSQL 17-alpine saludable.
 - [ ] Alembic heads, upgrade y current correctos.
 - [ ] Tres módulos obligatorios ejecutados sin skips silenciosos.
-- [ ] Ejecución remota verde y evidencia registrada.
-- [ ] Documentación actualizada sin marcar la fase como completada.
+- [x] Ejecución remota verde y evidencia registrada.
+- [x] Documentación actualizada y fase completada.
 
 ## Progreso
 
@@ -72,8 +74,8 @@ revisión aprobatoria se evaluará convertir `PostgreSQL CI` en required.
   verificar el exclusion constraint antes de pytest.
 - [x] Parser JUnit corregido para usar atributos disponibles (`file`,
   `classname` y `name`) sin depender sólo de `file`.
-- [ ] Validación local de sintaxis.
-- [ ] Commit y push.
+- [x] Validación local de sintaxis y diff limpio.
+- [x] Commit y push.
 - [x] Validación remota verde en run `32597419679` sobre commit `c9746cb`.
 
 ## Primer run remoto
@@ -89,12 +91,31 @@ tres módulos como no ejecutados al depender exclusivamente del atributo
 
 La corrección conserva el esquema migrado cuando `TEST_DATABASE_URL` usa
 PostgreSQL, mantiene intacto el ciclo SQLite y verifica el constraint antes de
-pytest. La fase no está completada documentalmente porque requiere revisión
-final.
+pytest. La fase quedó completada tras integrar PostgreSQL CI en Branch
+Protection.
 
 La segunda ejecución remota (`32597419679`) confirmó PostgreSQL `17-alpine`,
 Alembic correcto, el constraint `ex_turnos_profesional_intervalo_activo`
 presente, `23 passed, 0 failed, 0 skipped` y el verificador JUnit satisfecho
 para los tres módulos obligatorios. `Backend CI` terminó con `538 passed, 26
 skipped, 2 warnings` y `Frontend CI` terminó correctamente. PostgreSQL CI
-continúa informativo y no required.
+quedó required en Branch Protection.
+
+## Validación de Branch Protection
+
+El Ruleset ID `21208601` quedó con los tres required checks: `Backend CI`,
+`Frontend CI` y `PostgreSQL CI`. El PR descartable #4, desde
+`test/postgresql-ci-required` hacia `main`, usó base `8f10b983` y head temporal
+`b97b9ed`. El run `32597812092` terminó con los tres jobs en `success`; el PR
+terminó `CLEAN`/`MERGEABLE`, demostrando que los checks verdes permiten el
+merge. No se utilizó bypass, no se hizo merge y la rama temporal fue
+eliminada.
+
+## Criterios finales
+
+- [x] PostgreSQL CI requerido junto a Backend CI y Frontend CI.
+- [x] Alembic, constraint, 23 tests y verificador JUnit validados.
+- [x] PR required-checks verde y mergeable sin bypass.
+- [x] PR cerrado sin merge; `main` sin cambios de prueba.
+- [x] PostgreSQL productivo continúa NO DETERMINADO.
+- [x] `tests/test_pagos_postgresql.py` permanece fuera de alcance.

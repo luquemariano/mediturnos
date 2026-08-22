@@ -59,6 +59,8 @@ concurrencia de turnos, recordatorios y acciones de turnos. El job genera
 completamente skipped. `tests/test_pagos_postgresql.py` no se incluye en este
 job por requerir una variable adicional fuera del contrato actual.
 
+El job es required en Branch Protection tras la validación verde del PR #4.
+
 El primer run remoto de Fase 6 (`32597104272`) confirmó Alembic correcto, pero
 detectó schema drift causado por el fixture global aplicado sobre PostgreSQL y
 un falso negativo del parser JUnit. La corrección condiciona ese fixture para
@@ -66,8 +68,8 @@ preservar el esquema migrado y verifica el constraint PostgreSQL antes de
 pytest; la fase queda pendiente de revisión final.
 La corrección fue validada remotamente en el run `32597419679`: PostgreSQL CI
 ejecutó `23 passed, 0 failed, 0 skipped`, verificó el constraint migrado y
-confirmó los tres módulos obligatorios mediante JUnit. El job sigue siendo
-informativo y no required.
+confirmó los tres módulos obligatorios mediante JUnit. El PR #4 confirmó los
+tres checks required verdes y el merge permitido; el PR fue cerrado sin merge.
 
 ## Verificación del Harness
 
