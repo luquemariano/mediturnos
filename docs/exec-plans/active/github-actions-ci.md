@@ -1,6 +1,6 @@
 # Exec Plan: GitHub Actions CI — Fase 4
 
-Estado: IMPLEMENTACIÓN REALIZADA / VALIDACIÓN GITHUB PENDIENTE
+Estado: IMPLEMENTACIÓN PUBLICADA / VALIDACIÓN GITHUB PENDIENTE
 
 ## Objetivo
 
@@ -14,7 +14,11 @@ Implementar la primera capa de integración continua de Turnelia para que una m�
 - Frontend: npm con `frontend/package-lock.json` lockfile v3; scripts `test`, `lint` y `build`.
 - Python local observado: 3.14.7. Node local observado: 24.19.0.
 - `Dockerfile` usa Python 3.14-slim; el frontend usa Vite 8.
-- Se creó `.github/workflows/ci.yml` con la primera implementación del CI básico; la ejecución real en GitHub queda pendiente del push posterior.
+- Se creó y publicó `.github/workflows/ci.yml` en `feature/mvp` con la primera implementación del CI básico.
+- Se intentó descubrir y ejecutar el workflow mediante `workflow_dispatch` sobre `feature/mvp`. GitHub respondió HTTP 404 porque el workflow todavía no está disponible en la rama por defecto `main`; no existe Run ID ni validación real de jobs.
+- El bootstrap fue mergeado exclusivamente en `main` mediante el PR #1 (`8f10b983af884beb751911e96309f078f31bbf96`). GitHub reconoció el workflow y el run manual `32591912967` validó específicamente `feature/mvp`.
+- Resultado real en `feature/mvp`: backend `536 passed, 26 skipped, 2 failed, 2 warnings`; frontend `168 passed, 3 failed` en `frontend/tests/excepcionesDisponibilidad.test.tsx`. El backend falló en dos pruebas del worker por configuración obligatoria ausente (`database_url`) y por una importación en subprocess sin `JWT_SECRET_KEY`; no se agregaron más variables ni se modificaron tests. Lint y build frontend no se ejecutaron después del fallo de Vitest.
+- Corrección local posterior: `Base` fue separado de la conexión web para que la importación del worker no cargue `Settings()` ni requiera JWT; el test de `main()` aísla una configuración worker mínima; la suite de excepciones fija el reloj a `2026-08-22` y restaura timers. Validación dirigida: backend `14 passed`, frontend `11 passed`. Validación completa: backend `541 passed, 26 skipped, 2 warnings`; frontend `171 passed`; lint y build correctos. Aún no se ha ejecutado un nuevo run remoto de esta corrección.
 - No existe evidencia local de branch protection ni de un pipeline CI ya operativo.
 
 ## Alcance
@@ -142,7 +146,7 @@ La disponibilidad de Python 3.14 y Node 24 en las actions oficiales es una preco
 
 ## Validación del plan
 
-En esta fase se realizaron diagnósticos locales: pytest completo y Vitest con alcance `tests`, además de lint y build frontend. El workflow fue revisado localmente por estructura, triggers, permisos, caches, working directories y ausencia de servicios/secretos fuera de alcance. No se ejecutó GitHub Actions: la validación del runner queda pendiente del push posterior.
+En esta fase se realizaron diagnósticos locales: pytest completo y Vitest con alcance `tests`, además de lint y build frontend. El workflow fue revisado localmente por estructura, triggers, permisos, caches, working directories y ausencia de servicios/secretos fuera de alcance. Tras el merge exclusivo del bootstrap en `main`, el run `32591912967` ejecutó GitHub Actions sobre `feature/mvp`. Python `3.14.7`, Node `24.19.0` y `npm ci` fueron correctos; los fallos reales descritos arriba mantienen la Fase 4 en curso.
 
 ## Rollback
 

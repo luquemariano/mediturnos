@@ -5,7 +5,7 @@ from sqlalchemy import Boolean, CheckConstraint, DateTime, Numeric, String, Uniq
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.datetime_utils import ahora_utc
-from app.database.connection import Base
+from app.database.base import Base
 
 
 class MercadoPagoPlanSuscripcion(Base):

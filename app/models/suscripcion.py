@@ -6,7 +6,7 @@ from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Integer, Numeric, 
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.datetime_utils import ahora_utc
-from app.database.connection import Base
+from app.database.base import Base
 
 if TYPE_CHECKING:
     from app.models.cuenta import Cuenta

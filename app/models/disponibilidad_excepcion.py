@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 from sqlalchemy import Boolean, CheckConstraint, Date, ForeignKey, Index, String, Time, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.database.connection import Base
+from app.database.base import Base
 
 if TYPE_CHECKING:
     from app.models.profesional import Profesional

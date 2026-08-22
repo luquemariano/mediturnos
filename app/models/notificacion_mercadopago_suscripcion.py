@@ -4,7 +4,7 @@ from sqlalchemy import DateTime, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.datetime_utils import ahora_utc
-from app.database.connection import Base
+from app.database.base import Base
 
 
 class NotificacionMercadoPagoSuscripcion(Base):

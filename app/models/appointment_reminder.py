@@ -5,7 +5,7 @@ from sqlalchemy import DateTime, ForeignKey, Index, Integer, String, Text, Uniqu
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.datetime_utils import ahora_utc
-from app.database.connection import Base
+from app.database.base import Base
 
 if TYPE_CHECKING:
     from app.models.turno import Turno

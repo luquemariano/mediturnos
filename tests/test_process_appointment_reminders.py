@@ -1,4 +1,5 @@
 from datetime import UTC, datetime
+from types import SimpleNamespace
 
 from app.scripts import process_appointment_reminders as script
 
@@ -57,6 +58,15 @@ def test_process_once_continua_si_un_reminder_falla(monkeypatch):
 def test_main_devuelve_codigo_no_cero_y_cierra_sesion(monkeypatch):
     db = DbFalsa()
     monkeypatch.setattr(script, "SessionLocal", lambda: db)
+    monkeypatch.setattr(
+        script,
+        "load_worker_settings",
+        lambda: SimpleNamespace(
+            database_url="sqlite:///./worker-test.db",
+            email_provider="in_memory",
+            app_timezone="America/Argentina/Buenos_Aires",
+        ),
+    )
     monkeypatch.setattr(script, "process_once", lambda db: (_ for _ in ()).throw(RuntimeError("db")))
     assert script.main() == 1
     assert db.closed is True

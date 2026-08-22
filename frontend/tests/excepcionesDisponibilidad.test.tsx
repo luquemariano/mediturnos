@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import axios from "axios";
 
 import ExcepcionesDisponibilidad from "../src/components/ExcepcionesDisponibilidad";
@@ -12,7 +12,13 @@ function item(datos: Partial<DisponibilidadExcepcion> = {}): DisponibilidadExcep
   return { id: 1, profesional_id: 7, fecha: "2026-08-20", tipo: "cierre_dia", origen: "manual", nombre: null, hora_inicio: null, hora_fin: null, activa: true, ...datos };
 }
 
-beforeEach(() => { vi.clearAllMocks(); vi.mocked(servicio.obtenerMisExcepciones).mockResolvedValue([]); });
+beforeEach(() => {
+  vi.clearAllMocks();
+  vi.setSystemTime(new Date("2026-08-22T12:00:00-03:00"));
+  vi.mocked(servicio.obtenerMisExcepciones).mockResolvedValue([]);
+});
+
+afterEach(() => { vi.useRealTimers(); });
 
 describe("excepciones de disponibilidad", () => {
   it("renderiza la sección integrada y su estado vacío", async () => {
@@ -28,9 +34,9 @@ describe("excepciones de disponibilidad", () => {
     fireEvent.click(screen.getByRole("button", { name: "Cerrar un día" }));
     const dialogo = screen.getByRole("dialog", { name: "Cerrar un día" });
     expect(dialogo).toHaveTextContent("Los turnos ya creados no serán cancelados");
-    fireEvent.change(within(dialogo).getByLabelText("Fecha"), { target: { value: "2026-08-20" } });
+    fireEvent.change(within(dialogo).getByLabelText("Fecha"), { target: { value: "2026-08-25" } });
     fireEvent.click(within(dialogo).getByRole("button", { name: "Confirmar" }));
-    expect(within(dialogo).getByRole("button", { name: "Guardando…" })).toBeDisabled();
+    expect(await within(dialogo).findByRole("button", { name: "Guardando…" })).toBeDisabled();
     resolver(item());
     expect(await screen.findByRole("status")).toHaveTextContent("Día cerrado correctamente");
   });
@@ -73,7 +79,7 @@ describe("excepciones de disponibilidad", () => {
     vi.mocked(servicio.crearMiExcepcion).mockRejectedValue(new axios.AxiosError("Conflict", "ERR_BAD_RESPONSE", undefined, undefined, { status: 409, statusText: "Conflict", headers: {}, config: { headers: {} }, data: { detail: "Ya existe un cierre activo para esta fecha." } }));
     render(<ExcepcionesDisponibilidad />); await screen.findByText("Sin cambios próximos");
     fireEvent.click(screen.getByRole("button", { name: "Cerrar un día" }));
-    fireEvent.change(screen.getByLabelText("Fecha"), { target: { value: "2026-08-20" } });
+    fireEvent.change(screen.getByLabelText("Fecha"), { target: { value: "2026-08-25" } });
     fireEvent.click(screen.getByRole("button", { name: "Confirmar" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("Ya existe un cierre");
     expect(screen.getByRole("dialog")).toBeInTheDocument();
@@ -129,7 +135,7 @@ describe("excepciones de disponibilidad", () => {
     expect(dialogo).toHaveTextContent("Los turnos ya creados para esta fecha no serán cancelados");
     fireEvent.click(within(dialogo).getByRole("button", { name: "Confirmar" }));
     expect(screen.getByRole("alert")).toHaveTextContent("Seleccioná una fecha");
-    fireEvent.change(within(dialogo).getByLabelText("Fecha del feriado"), { target: { value: "2026-08-20" } });
+    fireEvent.change(within(dialogo).getByLabelText("Fecha del feriado"), { target: { value: "2026-08-25" } });
     fireEvent.change(within(dialogo).getByLabelText("Nombre o motivo"), { target: { value: "San Martín" } });
     fireEvent.click(within(dialogo).getByRole("button", { name: "Confirmar" }));
     expect(await screen.findByText("San Martín")).toBeInTheDocument();
