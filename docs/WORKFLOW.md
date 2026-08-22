@@ -34,6 +34,14 @@ Las decisiones relevantes deben reflejarse, según corresponda, en código, test
 Los trabajos complejos pueden documentarse en [`docs/exec-plans/active/`](exec-plans/active/) mientras están activos y moverse a [`docs/exec-plans/completed/`](exec-plans/completed/) al finalizar. Los planes completados de setup/verificación y Playwright/E2E sirven como ejemplos históricos: [`harness-setup-verification.md`](exec-plans/completed/harness-setup-verification.md) y [`playwright-e2e.md`](exec-plans/completed/playwright-e2e.md).
 El plan completado de GitHub Actions CI es [`github-actions-ci.md`](exec-plans/completed/github-actions-ci.md).
 
+La protección de `main` está documentada en el plan completado [`branch-protection.md`](exec-plans/completed/branch-protection.md). El flujo normal es:
+
+```text
+feature/* → push → Pull Request hacia main → Backend CI + Frontend CI → checks verdes → merge permitido
+```
+
+Los checks fallidos bloquean el merge; el push directo normal a `main` no está permitido. Las aprobaciones obligatorias son 0 y `up-to-date` no es obligatorio actualmente. Existe bypass administrativo sólo para recuperación dentro de Pull Requests; no forma parte del flujo normal. PostgreSQL CI y Playwright CI no están implementados en GitHub Actions.
+
 ## Conceptos y prácticas del proceso
 
 - **Exec Plans:** organización de tareas complejas, sin sustituir inspección ni autorización.

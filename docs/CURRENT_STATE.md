@@ -24,6 +24,7 @@ Fecha de referencia: **2026-08-22**. Es una fotografía del repositorio, no una 
 | PostgreSQL de producción | DECLARADO EN CONFIGURACIÓN | Proveedor/ubicación documentados: Aiven; conexión y salud actuales NO DETERMINADAS |
 | E2E / Playwright | NO INCORPORADO | No hay suite, dependencia ni configuración; queda como capacidad futura |
 | Documentación Harness | IMPLEMENTADO EN CÓDIGO | AGENTS y documentos de esta fase |
+| Protección de `main` | DECLARADO EN CONFIGURACIÓN | Ruleset `Turnelia main protection` activo y verificado; PR, `Backend CI` y `Frontend CI` requeridos, approvals 0, `up-to-date` OFF, force-push y eliminación bloqueados, bypass sólo vía Pull Request |
 
 ## Snapshot Git de la inspección
 
@@ -36,6 +37,17 @@ Fecha de referencia: **2026-08-22**. Es una fotografía del repositorio, no una 
 ## Interpretación
 
 La presencia de código/configuración/tests demuestra **IMPLEMENTADO EN CÓDIGO**. La configuración de Render/R2/cron demuestra **DECLARADO EN CONFIGURACIÓN**. La ubicación/proveedor productivo documentado para PostgreSQL es Aiven, según la historia operativa del proyecto y no como inferencia de `render.yaml`. No hay evidencia suficiente para marcar componentes como **VERIFICADO EN PRODUCCIÓN**; estado actual de Render, conexión/salud de PostgreSQL, cron, email, R2 y Mercado Pago: **NO DETERMINADO**.
+
+La protección de `main` se encuentra activa en GitHub mediante el Ruleset
+`Turnelia main protection`, dirigido a `main`. Su configuración efectiva es:
+PR obligatorio, `Backend CI` requerido, `Frontend CI` requerido, approvals = 0,
+`up-to-date` = OFF, force-push y delete bloqueados, y bypass sólo vía Pull
+Request. La verificación roja del PR #2 confirmó el bloqueo por checks
+fallidos. La verificación verde del PR #3 confirmó el camino permitido con
+run `32595185386`; ambos PR fueron cerrados sin merge y sin bypass. Los SHA
+remotos finales fueron `main = 8f10b983af884beb751911e96309f078f31bbf96` y
+`feature/mvp = ec6522f01b5d208ad8b77065fa13bf9249a3fb1f`. La rama local `main`
+no se presenta como sincronizada en este documento.
 
 ## Deuda y riesgos
 
