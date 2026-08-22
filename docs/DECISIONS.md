@@ -110,3 +110,11 @@ Para Fase 7B se habilita el job también en `pull_request` hacia `main`, sin
 La concurrencia se limita al job Playwright y cancela sólo ejecuciones
 obsoletas del mismo PR. El Ruleset permanece sin cambios; la evaluación de
 required queda reservada para Fase 7C.
+
+La validación controlada de 7B quedó registrada en el PR #6, reconciliado con
+`main`, mediante el run `32600285274` con evento `pull_request`. El PR fue
+`MERGEABLE/CLEAN`; Backend CI, PostgreSQL CI, Frontend CI y Playwright E2E CI
+terminaron correctamente, y Playwright produjo `3 passed (4.7s)`. El PR se
+cerró sin merge. El PR #5 se conserva como antecedente: no ejecutó checks por
+conflicto de merge. La concurrencia queda configurada, pero no fue validada
+empíricamente mediante cancelación.

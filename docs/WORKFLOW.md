@@ -50,7 +50,10 @@ Playwright E2E CI se incorpora en Fase 7B como job informativo ejecutable en
 Pull Requests hacia `main` y mediante `workflow_dispatch`; no es required ni
 modifica Branch Protection. La validación inicial de 7A quedó registrada en el
 run `32598856151` sobre el commit `a2124ff`. La concurrencia sólo cancela
-ejecuciones Playwright obsoletas del mismo PR.
+ejecuciones Playwright obsoletas del mismo PR. El PR #5 no generó ejecución por
+conflicto de merge; el PR reconciliado #6 validó el evento `pull_request` en el
+run `32600285274`, con los cuatro jobs verdes. La concurrencia quedó
+configurada, sin validación empírica de cancelación.
 
 ## Conceptos y prácticas del proceso
 

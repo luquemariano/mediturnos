@@ -69,8 +69,11 @@ Requests hacia `main`. Usa PostgreSQL E2E local,
 Alembic, seed sintético, Chromium headless y las specs `smoke`, `auth` y
 `admin`. En 7A sólo se publican, ante fallo, logs sanitizados de API,
 frontend y PostgreSQL; no se publican traces, screenshots ni HTML reports.
-La Fase 7A quedó completada y la Fase 7B está en curso. El job todavía no es
-required y el Ruleset no fue modificado. La primera
+La Fase 7A quedó completada y la Fase 7B está validada, pendiente de revisión
+del Reviewer. El PR #5 quedó bloqueado por conflicto de merge y no generó
+checks; el PR reconciliado #6 sí generó el run `32600285274` por
+`pull_request`, con cuatro jobs verdes y `3 passed (4.7s)` en Playwright. El
+job todavía no es required y el Ruleset no fue modificado. La primera
 validación remota manual sobre `feature/mvp` fue exitosa en el run
 `32598856151` (commit `a2124ff`): Chromium instalado, PostgreSQL E2E,
 Alembic, seed sintético, API y frontend listos, y `3 passed (4.2s)` en las
