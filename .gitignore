@@ -168,6 +168,11 @@ cython_debug/
 #.idea/
 .vscode/
 
+# Playwright E2E local artifacts
+frontend/test-results/
+frontend/playwright-report/
+frontend/.auth/
+
 # Ruff stuff:
 .ruff_cache/
 

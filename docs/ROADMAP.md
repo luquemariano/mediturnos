@@ -11,7 +11,7 @@ Estados: **PENDIENTE**, **EN CURSO**, **COMPLETADO** y **NO DETERMINADO**. No se
 
 ## Ingeniería
 
-- **PENDIENTE:** Playwright y flujos E2E.
+- **COMPLETADO:** Playwright y flujos E2E; smoke, login/logout administrativo y navegación a `CuentasAdmin` validados con PostgreSQL E2E aislado en Docker. El modo headed es opcional y la validación real fue aprobada.
 - **PENDIENTE:** ampliar validación PostgreSQL más allá de suites selectivas.
 - **PENDIENTE:** observabilidad operativa verificable.
 - **PENDIENTE:** normalización controlada MediTurnos → Turnelia.
@@ -23,7 +23,7 @@ Estados: **PENDIENTE**, **EN CURSO**, **COMPLETADO** y **NO DETERMINADO**. No se
 - **COMPLETADO:** Fase 1A, memoria canónica inicial.
 - **COMPLETADO:** Fase 1B, incluyendo `SECURITY.md`, `TESTING.md`, `DEPLOYMENT.md`, `ROADMAP.md` y la estructura de Exec Plans.
 - **COMPLETADA:** Fase 2 setup/verify; `setup.ps1` y `verify.ps1` están implementados y el Exec Plan fue completado. Full detecta actualmente tres fallos Vitest preexistentes en `frontend/tests/excepcionesDisponibilidad.test.tsx`; no bloquean el Harness.
-- **NO INCORPORADO:** Playwright/E2E.
+- **COMPLETADA:** Fase 3 Playwright/E2E; entorno aislado, fixture sintético, `e2e.ps1`, `setup.ps1 -E2E`, `verify.ps1 -E2E` y 3 tests validados.
 - **COMPLETADO:** flujo Builder → Reviewer documentado manualmente.
 - **NO INCORPORADAS:** Skills específicas.
 - **NO INCORPORADO:** MCP.

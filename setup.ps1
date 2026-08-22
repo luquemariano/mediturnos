@@ -1,5 +1,5 @@
 [CmdletBinding()]
-param()
+param([switch]$E2E)
 
 $ErrorActionPreference = 'Stop'
 $repoRoot = (Get-Location).Path
@@ -57,4 +57,12 @@ elseif (Test-Path (Join-Path $repoRoot '.env.example')) { Write-Status 'WARN' '.
 else { Write-Status 'WARN' '.env y .env.example no existen; revisar configuracion manualmente.' }
 
 Write-Status 'OK' 'Setup finalizado. No se ejecutaron Docker Compose, migraciones ni seed.'
+if ($E2E) {
+    Push-Location $frontend
+    try {
+        Write-Status 'OK' 'Instalando Chromium de Playwright...'
+        & npx playwright install chromium
+        if ($LASTEXITCODE -ne 0) { Fail 'No se pudo instalar Chromium de Playwright.' }
+    } finally { Pop-Location }
+}
 exit 0

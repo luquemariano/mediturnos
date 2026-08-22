@@ -31,7 +31,7 @@ IDEA / NECESIDAD
 
 Las decisiones relevantes deben reflejarse, según corresponda, en código, tests, [`docs/DECISIONS.md`](DECISIONS.md), [`docs/CURRENT_STATE.md`](CURRENT_STATE.md) y documentación especializada como [`docs/ARCHITECTURE.md`](ARCHITECTURE.md) o [`docs/PRODUCT.md`](PRODUCT.md).
 
-Los trabajos complejos pueden documentarse en [`docs/exec-plans/active/`](exec-plans/active/) mientras están activos y moverse a [`docs/exec-plans/completed/`](exec-plans/completed/) al finalizar. El plan completado de setup/verificación sirve como ejemplo histórico: [`harness-setup-verification.md`](exec-plans/completed/harness-setup-verification.md).
+Los trabajos complejos pueden documentarse en [`docs/exec-plans/active/`](exec-plans/active/) mientras están activos y moverse a [`docs/exec-plans/completed/`](exec-plans/completed/) al finalizar. Los planes completados de setup/verificación y Playwright/E2E sirven como ejemplos históricos: [`harness-setup-verification.md`](exec-plans/completed/harness-setup-verification.md) y [`playwright-e2e.md`](exec-plans/completed/playwright-e2e.md).
 
 ## Conceptos y prácticas del proceso
 
@@ -39,7 +39,7 @@ Los trabajos complejos pueden documentarse en [`docs/exec-plans/active/`](exec-p
 - **Builder:** práctica de implementación y validación con alcance explícito.
 - **Reviewer:** revisión sistemática de cambios, permisos, tests y riesgos.
 - Actualmente el flujo **Builder → Reviewer** se ejecuta manualmente; no se documenta como infraestructura automatizada.
-- **Playwright/E2E:** futura cobertura de flujos completos; no está instalado ni configurado actualmente.
+- **Playwright/E2E:** cobertura local de flujos completos mediante `verify.ps1 -E2E`; Fase 3 completada.
 - **Skills:** todavía no incorporadas como mecanismo específico del repositorio.
 - **Multiagentes automatizados:** todavía no incorporados.
 - **MCP:** todavía no incorporado.

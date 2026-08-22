@@ -1,0 +1,19 @@
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: turnelia_e2e
+      POSTGRES_PASSWORD: ${E2E_DB_PASSWORD:?E2E_DB_PASSWORD is required}
+      POSTGRES_DB: turnelia_e2e
+    ports:
+      - "127.0.0.1:55432:5432"
+    volumes:
+      - turnelia_e2e_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U turnelia_e2e -d turnelia_e2e"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+volumes:
+  turnelia_e2e_postgres_data:

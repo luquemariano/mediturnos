@@ -2,6 +2,8 @@
 param(
     [switch]$Quick,
     [switch]$Full,
+    [switch]$E2E,
+    [switch]$Headed,
     [switch]$LocalServices
 )
 
@@ -46,8 +48,9 @@ if (-not (Test-Path (Join-Path $repoRoot 'requirements.txt')) -or
     Write-Status 'FAIL' 'El directorio actual no parece ser la raiz valida de Turnelia.'; exit 2
 }
 
-if ($Quick -and $Full) { Write-Status 'FAIL' '-Quick y -Full son mutuamente excluyentes.'; exit 2 }
-$mode = if ($Full) { 'Full' } else { 'Quick' }
+if (@($Quick, $Full, $E2E | Where-Object { $_ }).Count -gt 1) { Write-Status 'FAIL' '-Quick, -Full y -E2E son mutuamente excluyentes.'; exit 2 }
+if ($Headed -and -not $E2E) { Write-Status 'FAIL' '-Headed sólo es válido junto con -E2E.'; exit 2 }
+$mode = if ($Full) { 'Full' } elseif ($E2E) { 'E2E' } else { 'Quick' }
 Write-Status 'OK' "Raiz valida; modo $mode."
 
 if (-not (Test-Command 'git' $true)) { exit 1 }
@@ -120,6 +123,16 @@ if ($Full) {
     } finally { Pop-Location }
     Write-Status 'SKIP' 'Playwright/E2E no incorporado.'
 } else { Write-Status 'SKIP' 'Full no solicitado; no se ejecutaron pytest, Vitest, lint ni build.' }
+
+if ($E2E) {
+    if (-not (Test-Command 'docker' $true)) { Required-Fail 'Docker es obligatorio con -E2E.' }
+    Push-Location $repoRoot
+    try {
+        if ($Headed) { & (Join-Path $repoRoot 'e2e.ps1') -Headed }
+        else { & (Join-Path $repoRoot 'e2e.ps1') }
+        if ($LASTEXITCODE -ne 0) { Required-Fail "E2E falló (exit $LASTEXITCODE)." }
+    } finally { Pop-Location }
+}
 
 if ($failures -gt 0) { Write-Status 'FAIL' "$failures verificacion(es) obligatoria(s) fallaron."; exit 1 }
 Write-Status 'OK' "Verificacion $mode finalizada con warnings permitidos."; exit 0

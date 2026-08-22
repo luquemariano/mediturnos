@@ -41,8 +41,8 @@ La cobertura no es uniforme entre módulos. Consultar `frontend/tests/` para el 
 
 ## Limitaciones actuales
 
-- Playwright no está instalado ni configurado.
-- No existe testing E2E real.
+- Playwright está configurado para Chromium y la suite MVP vive en `frontend/e2e/`.
+- La ejecución E2E requiere Docker, Chromium instalado y el entorno aislado que prepara `e2e.ps1`.
 - SQLite no demuestra compatibilidad PostgreSQL total.
 - Tests locales no validan la operación productiva de Render, Aiven, Resend, R2 o Mercado Pago.
 - La cobertura PostgreSQL es selectiva.
@@ -57,6 +57,31 @@ powershell -ExecutionPolicy Bypass -File .\verify.ps1 -Full
 ```
 
 Quick no ejecuta las suites completas. Full ejecuta pytest backend, Vitest frontend, lint y build; los servicios locales sólo se comprueban con `-LocalServices`. `-LocalServices` es read-only: comprueba Docker, el servicio Compose `db`, `127.0.0.1:5432` y `http://127.0.0.1:8000/health/ready`, sin iniciar servicios ni contactar producción. En la validación de Fase 2, Quick pasó; pytest, lint y build pasaron; Vitest presentó tres fallos en `frontend/tests/excepcionesDisponibilidad.test.tsx`.
+Quick no ejecuta las suites completas. Full ejecuta pytest backend, Vitest frontend, lint y build; los servicios locales sólo se comprueban con `-LocalServices`. `-LocalServices` es read-only: comprueba Docker, el servicio Compose `db`, `127.0.0.1:5432` y `http://127.0.0.1:8000/health/ready`, sin iniciar servicios ni contactar producción. E2E se ejecuta únicamente de forma explícita con `-E2E`, que invoca `e2e.ps1` y prepara PostgreSQL en `127.0.0.1:55432`, API en `127.0.0.1:8001` y frontend en `127.0.0.1:5174`. No se combina con `-LocalServices` y Full no ejecuta E2E.
+
+Para instalar el único navegador autorizado:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\setup.ps1 -E2E
+```
+
+Para ejecutar la suite E2E:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\verify.ps1 -E2E
+```
+
+La ejecución anterior es headless por defecto. Para ver físicamente Chromium ejecutando exactamente la misma suite:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\verify.ps1 -E2E -Headed
+```
+
+`-Headed` sólo es válido junto con `-E2E`; no cambia permanentemente la configuración de Playwright.
+
+La ejecución E2E elimina y recrea únicamente el proyecto/volumen Docker `turnelia-e2e`, aplica migraciones sólo sobre esa base y carga un fixture sintético. Si Docker no está disponible, la validación falla; no se simula éxito.
+
+E2E requiere las variables locales `E2E_ADMIN_PASSWORD`, `E2E_JWT_SECRET` y `E2E_DB_PASSWORD`. No se documentan valores, no se crean `.env` automáticamente y las variables no se imprimen.
 
 ## Regla para nuevas features
 
