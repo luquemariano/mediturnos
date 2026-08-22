@@ -29,4 +29,4 @@ Estados: **PENDIENTE**, **EN CURSO**, **COMPLETADO** y **NO DETERMINADO**. No se
 - **NO INCORPORADO:** MCP.
 - **NO INCORPORADOS:** multiagentes automatizados.
 - **PENDIENTE:** template SaaS.
-- **EN CURSO:** Fase 4 GitHub Actions CI; el bootstrap mínimo fue mergeado en `main` y `workflow_dispatch` validó `feature/mvp` en el run `32591912967`. La corrección local del aislamiento worker y de las fechas frontend dejó backend en `541 passed, 26 skipped` y frontend en `171 passed`; lint y build también pasan. La validación remota posterior y el tratamiento de los warnings/fallos históricos de CI quedan pendientes; el diseño y resultados quedan documentados en [`github-actions-ci.md`](exec-plans/active/github-actions-ci.md).
+- **COMPLETADA:** Fase 4 GitHub Actions CI; el bootstrap fue mergeado en `main` y la validación remota final de `feature/mvp` (`32592968005`, commit `1985d22`) pasó en backend y frontend. Backend: `538 passed, 26 skipped, 2 warnings`; frontend: `171 passed`; lint y build correctos. El plan completado queda en [`github-actions-ci.md`](exec-plans/completed/github-actions-ci.md).
