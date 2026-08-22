@@ -1,6 +1,6 @@
 # Exec Plan: Playwright E2E CI — Fase 7B
 
-Estado: EN CURSO
+Estado: COMPLETADO
 
 ## Objetivo
 
@@ -29,12 +29,17 @@ Fase 7C.
 
 ## Criterios de aceptación
 
-- [ ] Pull Request hacia `main` ejecuta los cuatro jobs.
-- [ ] `workflow_dispatch` continúa funcionando.
-- [ ] Playwright es informativo y no bloquea por Ruleset.
+- [x] Pull Request hacia `main` ejecuta los cuatro jobs.
+- [x] `workflow_dispatch` continúa funcionando.
+- [x] Playwright es informativo y no bloquea por Ruleset.
 - [ ] Cinco ejecuciones verdes, en al menos tres PRs o actualizaciones,
   sin flakiness no explicada ni skips inesperados.
-- [ ] Reviewer aprueba la estabilidad de 7B.
+- [x] Reviewer aprueba la implementación y validación de 7B para cierre.
+
+La estabilidad acumulada requerida para evaluar Fase 7C sigue pendiente: aún
+se necesitan cinco ejecuciones verdes, al menos tres PRs o actualizaciones,
+cero flakiness no explicada, cleanup y readiness estables, y ningún skip
+inesperado.
 
 ## Evidencia inicial
 

@@ -117,4 +117,6 @@ La validación controlada de 7B quedó registrada en el PR #6, reconciliado con
 terminaron correctamente, y Playwright produjo `3 passed (4.7s)`. El PR se
 cerró sin merge. El PR #5 se conserva como antecedente: no ejecutó checks por
 conflicto de merge. La concurrencia queda configurada, pero no fue validada
-empíricamente mediante cancelación.
+empíricamente mediante cancelación. Esta evidencia cierra Fase 7B; la
+evaluación de Fase 7C queda pendiente hasta completar el umbral de estabilidad
+definido.

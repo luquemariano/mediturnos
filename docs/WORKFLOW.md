@@ -53,7 +53,9 @@ run `32598856151` sobre el commit `a2124ff`. La concurrencia sólo cancela
 ejecuciones Playwright obsoletas del mismo PR. El PR #5 no generó ejecución por
 conflicto de merge; el PR reconciliado #6 validó el evento `pull_request` en el
 run `32600285274`, con los cuatro jobs verdes. La concurrencia quedó
-configurada, sin validación empírica de cancelación.
+configurada, sin validación empírica de cancelación. Fase 7B está cerrada;
+Fase 7C permanece pendiente de evidencia de estabilidad antes de evaluar
+required.
 
 ## Conceptos y prácticas del proceso
 
