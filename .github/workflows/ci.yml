@@ -17,6 +17,8 @@ jobs:
     name: Backend CI
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      JWT_SECRET_KEY: turnelia-ci-only-synthetic-jwt-key-2026
     steps:
       - name: Checkout
         uses: actions/checkout@v4
