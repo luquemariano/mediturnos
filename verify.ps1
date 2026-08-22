@@ -4,6 +4,7 @@ param(
     [switch]$Full,
     [switch]$E2E,
     [switch]$Headed,
+    [int]$SlowMo = 0,
     [switch]$LocalServices
 )
 
@@ -50,6 +51,8 @@ if (-not (Test-Path (Join-Path $repoRoot 'requirements.txt')) -or
 
 if (@($Quick, $Full, $E2E | Where-Object { $_ }).Count -gt 1) { Write-Status 'FAIL' '-Quick, -Full y -E2E son mutuamente excluyentes.'; exit 2 }
 if ($Headed -and -not $E2E) { Write-Status 'FAIL' '-Headed sólo es válido junto con -E2E.'; exit 2 }
+if ($PSBoundParameters.ContainsKey('SlowMo') -and -not $E2E) { Write-Status 'FAIL' '-SlowMo sólo es válido junto con -E2E.'; exit 2 }
+if ($SlowMo -lt 0 -or $SlowMo -gt 5000) { Write-Status 'FAIL' '-SlowMo debe estar entre 0 y 5000 ms.'; exit 2 }
 $mode = if ($Full) { 'Full' } elseif ($E2E) { 'E2E' } else { 'Quick' }
 Write-Status 'OK' "Raiz valida; modo $mode."
 
@@ -128,9 +131,10 @@ if ($E2E) {
     if (-not (Test-Command 'docker' $true)) { Required-Fail 'Docker es obligatorio con -E2E.' }
     Push-Location $repoRoot
     try {
-        if ($Headed) { & (Join-Path $repoRoot 'e2e.ps1') -Headed }
-        else { & (Join-Path $repoRoot 'e2e.ps1') }
-        if ($LASTEXITCODE -ne 0) { Required-Fail "E2E falló (exit $LASTEXITCODE)." }
+        if ($Headed) { & (Join-Path $repoRoot 'e2e.ps1') -Headed -SlowMo $SlowMo }
+        else { & (Join-Path $repoRoot 'e2e.ps1') -SlowMo $SlowMo }
+        $e2eExit = $LASTEXITCODE
+        if ($e2eExit -ne 0) { Required-Fail "E2E falló (exit $e2eExit)." }
     } finally { Pop-Location }
 }
 

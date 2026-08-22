@@ -161,3 +161,5 @@ La password PostgreSQL E2E ya no está versionada: `docker-compose.e2e.yml` usa 
 ## Criterio de finalización del plan
 
 La Fase 3 fue aprobada para cierre. El plan conserva el objetivo, alcance, arquitectura, fixture sintético, contratos de `e2e.ps1`, `setup.ps1 -E2E`, `verify.ps1 -E2E`, modo `-Headed`, suite de 3 tests, secrets por variables locales, cleanup seguro, ejecución real con exit `0` y `3 passed`, y riesgos residuales no bloqueantes.
+
+La mejora posterior de observación local admite `verify.ps1 -E2E -Headed -SlowMo 700`. SlowMo se pasa sólo durante la ejecución mediante `PLAYWRIGHT_SLOW_MO`, con default `0` y sin modificar permanentemente la configuración.

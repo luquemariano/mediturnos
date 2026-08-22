@@ -79,6 +79,14 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\verify.ps1 -E2E -Headed
 
 `-Headed` sólo es válido junto con `-E2E`; no cambia permanentemente la configuración de Playwright.
 
+Para observar las acciones ralentizadas localmente:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\verify.ps1 -E2E -Headed -SlowMo 700
+```
+
+`-SlowMo` acepta valores de `0` a `5000` milisegundos, sólo es válido con `-E2E` y se recomienda para observación/debug local. La validación automática normal debe usar `verify.ps1 -E2E` sin demora.
+
 La ejecución E2E elimina y recrea únicamente el proyecto/volumen Docker `turnelia-e2e`, aplica migraciones sólo sobre esa base y carga un fixture sintético. Si Docker no está disponible, la validación falla; no se simula éxito.
 
 E2E requiere las variables locales `E2E_ADMIN_PASSWORD`, `E2E_JWT_SECRET` y `E2E_DB_PASSWORD`. No se documentan valores, no se crean `.env` automáticamente y las variables no se imprimen.

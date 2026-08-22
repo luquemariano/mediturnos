@@ -1,5 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
+const slowMo = Math.max(0, Number.parseInt(process.env.PLAYWRIGHT_SLOW_MO ?? "0", 10) || 0);
+
 export default defineConfig({
   testDir: "./e2e",
   baseURL: "http://127.0.0.1:5174",
@@ -16,6 +18,7 @@ export default defineConfig({
     screenshot: "only-on-failure",
     trace: "retain-on-failure",
     video: "off",
+    launchOptions: slowMo > 0 ? { slowMo } : undefined,
   },
   reporter: [["line"], ["html", { open: "never" }]],
 });

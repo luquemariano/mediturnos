@@ -1,5 +1,8 @@
 [CmdletBinding()]
-param([switch]$Headed)
+param(
+    [switch]$Headed,
+    [int]$SlowMo = 0
+)
 
 $ErrorActionPreference = 'Stop'
 $repoRoot = (Get-Location).Path
@@ -99,6 +102,7 @@ try {
     Assert-Root
     if (-not (Get-Command docker -ErrorAction SilentlyContinue)) { Fail 'Precondiciones' 'Docker no está disponible.' }
     if (-not (Get-Command npm -ErrorAction SilentlyContinue)) { Fail 'Precondiciones' 'npm no está disponible.' }
+    if ($SlowMo -lt 0 -or $SlowMo -gt 5000) { Fail 'Precondiciones E2E' '-SlowMo debe estar entre 0 y 5000 ms.' }
     Assert-E2eSecrets
     New-Item -ItemType Directory -Path $logDirectory -Force | Out-Null
     Push-Location $frontend
@@ -149,6 +153,8 @@ try {
 
     Push-Location $frontend
     try {
+        $env:PLAYWRIGHT_SLOW_MO = [string]$SlowMo
+        if ($SlowMo -gt 0) { Write-Host "[INFO] Playwright SlowMo: $SlowMo ms" }
         $playwrightArgs = @('run', 'test:e2e')
         if ($Headed) { $playwrightArgs += '--', '--headed' }
         & npm @playwrightArgs
