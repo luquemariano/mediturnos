@@ -26,6 +26,19 @@ export function fechaActualNegocio(
   return `${partes.year}-${partes.month}-${partes.day}`;
 }
 
+export function horarioNoSeleccionable(
+  fechaSeleccionada: string,
+  fechaHora: string,
+  ahora: Date = new Date(),
+): boolean {
+  const hoy = fechaActualNegocio(ahora);
+
+  if (fechaSeleccionada < hoy) return true;
+  if (fechaSeleccionada > hoy) return false;
+
+  return new Date(fechaHora).getTime() <= ahora.getTime();
+}
+
 export function formatearFechaTurno(fechaHora: string): string {
   return new Intl.DateTimeFormat("es-AR", {
     timeZone: ZONA_HORARIA_NEGOCIO,

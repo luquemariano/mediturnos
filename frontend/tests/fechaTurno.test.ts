@@ -6,6 +6,7 @@ import {
   etiquetaFechaProximoTurno,
   fechaActualNegocio,
   formatearHoraTurno,
+  horarioNoSeleccionable,
 } from "../src/utils/fechaTurno.ts";
 
 test("agrupa en el día de Buenos Aires cerca de medianoche UTC", () => {
@@ -38,4 +39,14 @@ test("calcula hoy según Buenos Aires y no según UTC", () => {
     fechaActualNegocio(new Date("2026-08-16T01:00:00Z")),
     "2026-08-15",
   );
+});
+
+test("determina horarios seleccionables con la fecha de Buenos Aires", () => {
+  const ahora = new Date("2026-08-24T20:30:00Z");
+
+  assert.equal(horarioNoSeleccionable("2026-08-25", "2026-08-25T12:00:00Z", ahora), false);
+  assert.equal(horarioNoSeleccionable("2026-08-24", "2026-08-24T20:29:00Z", ahora), true);
+  assert.equal(horarioNoSeleccionable("2026-08-24", "2026-08-24T20:30:00Z", ahora), true);
+  assert.equal(horarioNoSeleccionable("2026-08-24", "2026-08-24T20:31:00Z", ahora), false);
+  assert.equal(horarioNoSeleccionable("2026-08-23", "2026-08-23T12:00:00Z", ahora), true);
 });

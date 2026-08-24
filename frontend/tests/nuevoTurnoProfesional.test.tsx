@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import axios from "axios";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import NuevoTurnoProfesional from "../src/components/NuevoTurnoProfesional";
 import * as pacienteService from "../src/services/pacienteService";
@@ -28,7 +28,14 @@ async function completarHastaFecha() {
   fireEvent.change(screen.getByLabelText("Fecha"), { target: { value: "2030-01-07" } });
 }
 
-beforeEach(() => { vi.clearAllMocks(); preparar(); });
+beforeEach(() => {
+  vi.useFakeTimers({ shouldAdvanceTime: true });
+  vi.setSystemTime(new Date("2026-08-24T20:30:00Z"));
+  vi.clearAllMocks();
+  preparar();
+});
+
+afterEach(() => vi.useRealTimers());
 
 describe("nuevo turno profesional", () => {
   it("carga pacientes mínimos y muestra sólo prestaciones propias activas", async () => {
@@ -51,6 +58,72 @@ describe("nuevo turno profesional", () => {
     vi.mocked(turnoService.obtenerHorariosLibres).mockResolvedValue([]);
     await completarHastaFecha();
     expect(await screen.findByText("No hay horarios disponibles para esta fecha.")).toBeInTheDocument();
+  });
+
+  it("mantiene habilitados todos los horarios de una fecha futura", async () => {
+    vi.mocked(turnoService.obtenerHorariosLibres).mockResolvedValue([
+      { fecha_hora: "2030-01-07T12:00:00Z" },
+      { fecha_hora: "2030-01-07T12:30:00Z" },
+    ]);
+
+    await completarHastaFecha();
+
+    expect(await screen.findByRole("radio", { name: "09:00" })).toBeEnabled();
+    expect(screen.getByRole("radio", { name: "09:30" })).toBeEnabled();
+  });
+
+  it("deshabilita horarios anteriores o iguales a ahora y conserva los futuros", async () => {
+    vi.mocked(turnoService.obtenerHorariosLibres).mockResolvedValue([
+      { fecha_hora: "2026-08-24T19:30:00Z" },
+      { fecha_hora: "2026-08-24T20:30:00Z" },
+      { fecha_hora: "2026-08-24T21:00:00Z" },
+    ]);
+    render(<NuevoTurnoProfesional onCerrar={vi.fn()} onCreado={vi.fn()} />);
+    await screen.findByRole("option", { name: "López, Ana" });
+    fireEvent.change(screen.getByLabelText("Prestación"), { target: { value: "3" } });
+    fireEvent.change(screen.getByLabelText("Fecha"), { target: { value: "2026-08-24" } });
+
+    const anterior = await screen.findByRole("radio", { name: "16:30" });
+    const igual = screen.getByRole("radio", { name: "17:30" });
+    const futuro = screen.getByRole("radio", { name: "18:00" });
+    expect(anterior).toBeDisabled();
+    expect(igual).toBeDisabled();
+    expect(anterior.closest("label")).toHaveClass("horario-pasado");
+    expect(igual.closest("label")).toHaveClass("horario-pasado");
+    expect(futuro).toBeEnabled();
+    fireEvent.click(igual);
+    expect(igual).not.toBeChecked();
+  });
+
+  it("impide fechas anteriores con min y bloquea un estado pasado forzado", async () => {
+    vi.mocked(turnoService.obtenerHorariosLibres).mockResolvedValue([
+      { fecha_hora: "2026-08-23T15:00:00Z" },
+    ]);
+    render(<NuevoTurnoProfesional onCerrar={vi.fn()} onCreado={vi.fn()} />);
+    await screen.findByRole("option", { name: "López, Ana" });
+    fireEvent.change(screen.getByLabelText("Paciente"), { target: { value: "2" } });
+    fireEvent.change(screen.getByLabelText("Prestación"), { target: { value: "3" } });
+    const selectorFecha = screen.getByLabelText("Fecha");
+    expect(selectorFecha).toHaveAttribute("min", "2026-08-24");
+    fireEvent.change(selectorFecha, { target: { value: "2026-08-23" } });
+
+    expect(await screen.findByRole("radio", { name: "12:00" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Confirmar turno" })).toBeDisabled();
+    expect(turnoService.crearMiTurnoProfesional).not.toHaveBeenCalled();
+  });
+
+  it("limpia la selección cuando una recarga deja el horario inválido", async () => {
+    vi.mocked(turnoService.obtenerHorariosLibres)
+      .mockResolvedValueOnce([{ fecha_hora: "2030-01-07T12:00:00Z" }])
+      .mockResolvedValueOnce([{ fecha_hora: "2026-08-24T20:30:00Z" }]);
+    await completarHastaFecha();
+    fireEvent.click(await screen.findByRole("radio", { name: "09:00" }));
+    expect(screen.getByRole("button", { name: "Confirmar turno" })).toBeEnabled();
+
+    fireEvent.change(screen.getByLabelText("Fecha"), { target: { value: "2026-08-24" } });
+
+    expect(await screen.findByRole("radio", { name: "17:30" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Confirmar turno" })).toBeDisabled();
   });
 
   it("crea sin profesional_id, bloquea doble submit y conserva observaciones", async () => {

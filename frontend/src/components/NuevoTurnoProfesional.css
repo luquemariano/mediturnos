@@ -16,6 +16,7 @@
 .nuevo-turno-prof-horarios { display: flex; flex-wrap: wrap; gap: 7px; }
 .nuevo-turno-prof-horarios label { min-width: 70px; min-height: 40px; display: grid; place-items: center; padding: 0 12px; border: 1px solid var(--prof-border); border-radius: 7px; color: var(--prof-primary-dark); font-variant-numeric: tabular-nums; cursor: pointer; }
 .nuevo-turno-prof-horarios label.seleccionado { border-color: var(--prof-primary); background: var(--prof-primary-soft); color: var(--prof-primary-dark); }
+.nuevo-turno-prof-horarios label.horario-pasado { background: rgba(101,113,109,.06); color: var(--prof-text-secondary); cursor: not-allowed; opacity: .58; text-decoration: line-through; text-decoration-color: rgba(101,113,109,.52); text-decoration-thickness: 1px; }
 .nuevo-turno-prof-horarios input { position: absolute; opacity: 0; }
 .nuevo-turno-prof textarea { resize: vertical; }
 .nuevo-turno-prof-resumen { color: var(--prof-text-secondary); font-size: 13px; }
