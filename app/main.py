@@ -50,6 +50,7 @@ def crear_app(configuracion: Settings = settings) -> FastAPI:
         allow_methods=[
             "GET",
             "POST",
+            "PUT",
             "PATCH",
             "DELETE",
             "OPTIONS",

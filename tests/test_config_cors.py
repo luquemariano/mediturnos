@@ -1,5 +1,6 @@
 import pytest
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.testclient import TestClient
 from pydantic import ValidationError
 from pydantic_settings import SettingsError
 
@@ -99,6 +100,7 @@ def test_cors_configura_metodos_y_headers_explicitos():
     assert middleware.kwargs["allow_methods"] == [
         "GET",
         "POST",
+        "PUT",
         "PATCH",
         "DELETE",
         "OPTIONS",
@@ -107,3 +109,25 @@ def test_cors_configura_metodos_y_headers_explicitos():
         "Authorization",
         "Content-Type",
     ]
+
+
+def test_cors_acepta_preflight_put_para_clinical_profile():
+    middleware = next(
+        middleware
+        for middleware in app.user_middleware
+        if middleware.cls is CORSMiddleware
+    )
+    origen_permitido = middleware.kwargs["allow_origins"][0]
+
+    with TestClient(app) as client:
+        respuesta = client.options(
+            "/pacientes/1/clinical-profile",
+            headers={
+                "Origin": origen_permitido,
+                "Access-Control-Request-Method": "PUT",
+                "Access-Control-Request-Headers": "authorization,content-type",
+            },
+        )
+
+    assert respuesta.status_code == 200
+    assert "PUT" in respuesta.headers["access-control-allow-methods"]
