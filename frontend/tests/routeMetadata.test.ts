@@ -13,6 +13,9 @@ afterEach(() => {
 describe("metadatos SEO por ruta", () => {
   it("indexa la portada con canonical propio", () => {
     expect(obtenerMetadatosRuta("/")).toMatchObject({
+      title: "Turnelia | Sistema de turnos y gestión para consultorios",
+      description:
+        "Gestioná turnos, pacientes, historias clínicas, horarios y prestaciones desde una sola plataforma. Software de gestión para profesionales y consultorios.",
       robots: "index, follow",
       canonical: "https://turnelia.com.ar/",
     });

@@ -1,7 +1,7 @@
 const HOME_TITLE =
-  "Software de turnos para profesionales de salud | Turnelia";
+  "Turnelia | Sistema de turnos y gestión para consultorios";
 const HOME_DESCRIPTION =
-  "Gestioná turnos, pacientes, horarios y prestaciones desde una sola plataforma. Turnelia simplifica la organización diaria de profesionales y consultorios.";
+  "Gestioná turnos, pacientes, historias clínicas, horarios y prestaciones desde una sola plataforma. Software de gestión para profesionales y consultorios.";
 const HOME_CANONICAL = "https://turnelia.com.ar/";
 
 export interface RouteMetadata {
