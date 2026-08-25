@@ -59,7 +59,6 @@ def listar_prestaciones(
         requiere_roles(
             "administrador",
             "recepcionista",
-            "profesional",
             "paciente",
         )
     ),
@@ -80,7 +79,6 @@ def ver_prestacion(
         requiere_roles(
             "administrador",
             "recepcionista",
-            "profesional",
             "paciente",
         )
     ),

@@ -1,0 +1,8 @@
+.retorno-suscripcion { min-height: 100vh; display: grid; place-items: center; padding: 24px; background: #f5f7fb; color: #183153; }
+.retorno-panel { width: min(100%, 560px); padding: 36px; border-radius: 20px; background: #fff; box-shadow: 0 12px 40px #17365d16; text-align: center; }
+.retorno-kicker { color: #28766b; font-weight: 700; }
+.retorno-panel h1 { margin: 10px 0 14px; }
+.retorno-acciones { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin-top: 26px; }
+.retorno-acciones button { border: 0; border-radius: 9px; padding: 12px 18px; background: #28766b; color: white; font-weight: 700; cursor: pointer; }
+.retorno-acciones .retorno-secundario { background: #e8eef5; color: #183153; }
+.retorno-error { padding: 12px; border-radius: 8px; background: #fff0f0; color: #a22b2b; }

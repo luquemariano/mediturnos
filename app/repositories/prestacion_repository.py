@@ -84,6 +84,18 @@ def buscar_prestacion_por_id(
         .first()
     )
 
+def listar_prestaciones_de_profesional(db: Session, profesional_id: int) -> list[Prestacion]:
+    return db.query(Prestacion).filter(Prestacion.profesional_id == profesional_id).order_by(Prestacion.activa.desc(), Prestacion.nombre, Prestacion.id).all()
+
+def buscar_prestacion_de_profesional(db: Session, prestacion_id: int, profesional_id: int) -> Prestacion | None:
+    return db.query(Prestacion).filter(Prestacion.id == prestacion_id, Prestacion.profesional_id == profesional_id).first()
+
+def buscar_nombre_de_profesional(db: Session, profesional_id: int, nombre: str, excluir_id: int | None = None) -> Prestacion | None:
+    consulta = db.query(Prestacion).filter(Prestacion.profesional_id == profesional_id, Prestacion.nombre.ilike(nombre.strip()))
+    if excluir_id is not None:
+        consulta = consulta.filter(Prestacion.id != excluir_id)
+    return consulta.first()
+
 
 def actualizar_prestacion(
     prestacion: Prestacion,

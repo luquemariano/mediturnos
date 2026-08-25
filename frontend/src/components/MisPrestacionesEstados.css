@@ -1,0 +1,112 @@
+/* Overrides scoped to the management modal so global form buttons cannot turn blue. */
+.mp-modal .mp-boton {
+  outline: none;
+  box-shadow: none;
+  transform: none;
+  transition: background-color .15s ease, border-color .15s ease, color .15s ease, box-shadow .15s ease;
+}
+
+.mp-modal .mp-boton.primario {
+  border-color: #176f6a;
+  background: #176f6a;
+  color: #fff;
+}
+.mp-modal .mp-boton.primario:hover:not(:disabled),
+.mp-modal .mp-boton.primario:active:not(:disabled) {
+  border-color: #115a56;
+  background: #115a56;
+  color: #fff;
+  transform: none;
+}
+.mp-modal .mp-boton.primario:focus,
+.mp-modal .mp-boton.primario:focus-visible {
+  outline: 0;
+  box-shadow: 0 0 0 3px rgba(23, 111, 106, .24);
+}
+
+.mp-modal .mp-boton.secundario {
+  border-color: #d9e0dc;
+  background: #fff;
+  color: #153e3b;
+}
+.mp-modal .mp-boton.secundario:hover:not(:disabled) {
+  border-color: #c7d0cb;
+  background: #f1ece3;
+  color: #153e3b;
+}
+.mp-modal .mp-boton.secundario:active:not(:disabled) {
+  border-color: #c7d0cb;
+  background: #e8e2d8;
+  color: #153e3b;
+  transform: none;
+}
+.mp-modal .mp-boton.secundario:focus,
+.mp-modal .mp-boton.secundario:focus-visible {
+  outline: 0;
+  box-shadow: 0 0 0 3px rgba(23, 111, 106, .18);
+}
+
+/* The first secondary action in an inactive prestation form is Reactivar. */
+.mp-overlay:not(.confirmar) form.mp-modal > footer .mp-boton.secundario:first-child {
+  border-color: #176f6a;
+  background: #fff;
+  color: #176f6a;
+}
+.mp-overlay:not(.confirmar) form.mp-modal > footer .mp-boton.secundario:first-child:hover:not(:disabled) {
+  border-color: #115a56;
+  background: #e5f0ed;
+  color: #115a56;
+}
+.mp-overlay:not(.confirmar) form.mp-modal > footer .mp-boton.secundario:first-child:active:not(:disabled) {
+  border-color: #115a56;
+  background: #d8e8e4;
+  color: #115a56;
+}
+.mp-overlay:not(.confirmar) form.mp-modal > footer .mp-boton.secundario:first-child:focus,
+.mp-overlay:not(.confirmar) form.mp-modal > footer .mp-boton.secundario:first-child:focus-visible {
+  outline: 0;
+  box-shadow: 0 0 0 3px rgba(23, 111, 106, .2);
+}
+
+.mp-modal .mp-boton.peligro {
+  border-color: #d9e0dc;
+  background: #fff;
+  color: #b24f4a;
+}
+.mp-modal .mp-boton.peligro:hover:not(:disabled) {
+  border-color: #b24f4a;
+  background: #f7e8e6;
+  color: #963f3a;
+}
+.mp-modal .mp-boton.peligro:active:not(:disabled) {
+  border-color: #b24f4a;
+  background: #f0d9d6;
+  color: #963f3a;
+  transform: none;
+}
+.mp-modal .mp-boton.peligro:focus,
+.mp-modal .mp-boton.peligro:focus-visible {
+  outline: 0;
+  box-shadow: 0 0 0 3px rgba(178, 79, 74, .2);
+}
+
+.mp-modal .mp-boton:disabled,
+.mp-modal .mp-boton:disabled:hover,
+.mp-modal .mp-boton:disabled:active {
+  cursor: not-allowed;
+  opacity: .6;
+  transform: none;
+  box-shadow: none;
+}
+
+.mp-modal header button:hover,
+.mp-modal header button:active {
+  border-color: #c7d0cb;
+  background: #f1ece3;
+  color: #153e3b;
+}
+.mp-modal header button:focus,
+.mp-modal header button:focus-visible {
+  outline: 0;
+  box-shadow: 0 0 0 3px rgba(23, 111, 106, .18);
+}

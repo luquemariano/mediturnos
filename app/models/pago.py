@@ -2,10 +2,17 @@ from datetime import datetime
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime, ForeignKey, Numeric, String
+from sqlalchemy import (
+    Boolean,
+    DateTime,
+    ForeignKey,
+    Numeric,
+    String,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.database.connection import Base
+from app.database.base import Base
 
 
 if TYPE_CHECKING:
@@ -14,6 +21,12 @@ if TYPE_CHECKING:
 
 class Pago(Base):
     __tablename__ = "pagos"
+    __table_args__ = (
+        UniqueConstraint(
+            "turno_id",
+            name="uq_pagos_turno_id",
+        ),
+    )
 
     id: Mapped[int] = mapped_column(
         primary_key=True,
@@ -51,6 +64,22 @@ class Pago(Base):
 
     init_point: Mapped[str | None] = mapped_column(
         String(500),
+        nullable=True,
+    )
+
+    requiere_revision: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+    )
+
+    motivo_revision: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True,
+    )
+
+    mp_actualizado_en: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
         nullable=True,
     )
 

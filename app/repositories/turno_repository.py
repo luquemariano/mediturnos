@@ -1,5 +1,6 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session, joinedload
 
 from app.models.paciente import Paciente
@@ -8,7 +9,26 @@ from app.models.turno import Turno
 from app.schemas.turno import TurnoCrear
 
 
+ESPACIO_LOCK_AGENDA = 73421
 
+
+def bloquear_agenda_profesional(
+    db: Session,
+    profesional_id: int,
+) -> None:
+    bind = db.get_bind()
+
+    if bind.dialect.name != "postgresql":
+        return
+
+    db.execute(
+        select(
+            func.pg_advisory_xact_lock(
+                ESPACIO_LOCK_AGENDA,
+                profesional_id,
+            )
+        )
+    )
 def buscar_paciente_por_id(
     db: Session,
     paciente_id: int,
@@ -34,31 +54,41 @@ def buscar_prestacion_por_id(
 def buscar_conflicto_horario(
     db: Session,
     profesional_id: int,
-    fecha_hora: datetime,
+    inicio_nuevo: datetime,
+    duracion_minutos: int,
+    turno_id_excluido: int | None = None,
 ) -> Turno | None:
-    return (
-        db.query(Turno)
-        .join(
-            Prestacion,
-            Turno.prestacion_id == Prestacion.id,
-        )
-        .filter(
-            Prestacion.profesional_id == profesional_id,
-            Turno.fecha_hora == fecha_hora,
-            Turno.estado != "cancelado",
-        )
-        .first()
+    fin_nuevo = inicio_nuevo + timedelta(
+        minutes=duracion_minutos,
     )
+
+    consulta = db.query(Turno).filter(
+        Turno.profesional_id == profesional_id,
+        Turno.fecha_hora < fin_nuevo,
+        Turno.fecha_fin > inicio_nuevo,
+        Turno.estado != "cancelado",
+    )
+
+    if turno_id_excluido is not None:
+        consulta = consulta.filter(
+            Turno.id != turno_id_excluido,
+        )
+
+    return consulta.first()
 
 
 def guardar_turno(
     db: Session,
     datos: TurnoCrear,
+    profesional_id: int,
+    fecha_fin: datetime,
 ) -> Turno:
     turno = Turno(
         paciente_id=datos.paciente_id,
         prestacion_id=datos.prestacion_id,
+        profesional_id=profesional_id,
         fecha_hora=datos.fecha_hora,
+        fecha_fin=fecha_fin,
         observaciones=datos.observaciones,
     )
 
@@ -116,13 +146,7 @@ def buscar_turnos_por_profesional_id(
 ) -> list[Turno]:
     consulta = (
         db.query(Turno)
-        .join(
-            Prestacion,
-            Turno.prestacion_id == Prestacion.id,
-        )
-        .filter(
-            Prestacion.profesional_id == profesional_id,
-        )
+        .filter(Turno.profesional_id == profesional_id)
     )
 
     if estado is not None:
@@ -143,13 +167,9 @@ def buscar_turno_de_profesional(
 ) -> Turno | None:
     return (
         db.query(Turno)
-        .join(
-            Prestacion,
-            Turno.prestacion_id == Prestacion.id,
-        )
         .filter(
             Turno.id == turno_id,
-            Prestacion.profesional_id == profesional_id,
+            Turno.profesional_id == profesional_id,
         )
         .first()
     )

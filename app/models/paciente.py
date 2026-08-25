@@ -4,10 +4,15 @@ from typing import TYPE_CHECKING
 from sqlalchemy import Boolean, Date, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.database.connection import Base
+from app.database.base import Base
 
 
 if TYPE_CHECKING:
+    from app.models.evolucion_clinica import EvolucionClinica
+    from app.models.clinical_profile import ClinicalProfile
+    from app.models.patient_document import PatientDocument
+    from app.models.study_request import StudyRequest
+    from app.models.profesional_paciente import ProfesionalPaciente
     from app.models.usuario import Usuario
 
 
@@ -36,10 +41,10 @@ class Paciente(Base):
         nullable=False,
     )
 
-    dni: Mapped[str] = mapped_column(
+    dni: Mapped[str | None] = mapped_column(
         String(20),
         unique=True,
-        nullable=False,
+        nullable=True,
     )
 
     fecha_nacimiento: Mapped[date | None] = mapped_column(
@@ -47,9 +52,9 @@ class Paciente(Base):
         nullable=True,
     )
 
-    telefono: Mapped[str] = mapped_column(
+    telefono: Mapped[str | None] = mapped_column(
         String(30),
-        nullable=False,
+        nullable=True,
     )
 
     email: Mapped[str | None] = mapped_column(
@@ -76,3 +81,8 @@ class Paciente(Base):
     usuario: Mapped["Usuario | None"] = relationship(
         back_populates="paciente",
     )
+    profesionales_vinculados: Mapped[list["ProfesionalPaciente"]] = relationship(back_populates="paciente", cascade="all, delete-orphan")
+    evoluciones: Mapped[list["EvolucionClinica"]] = relationship(back_populates="paciente", cascade="all, delete-orphan")
+    clinical_profile: Mapped["ClinicalProfile | None"] = relationship(back_populates="paciente", uselist=False, cascade="all, delete-orphan")
+    patient_documents: Mapped[list["PatientDocument"]] = relationship(back_populates="paciente", cascade="all, delete-orphan")
+    study_requests: Mapped[list["StudyRequest"]] = relationship(back_populates="paciente", cascade="all, delete-orphan")

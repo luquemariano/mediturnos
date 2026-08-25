@@ -1,13 +1,15 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, String
+from sqlalchemy import Boolean, DateTime, Index, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.database.connection import Base
+from app.database.base import Base
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from app.models.cuenta_usuario import CuentaUsuario
     from app.models.paciente import Paciente
+    from app.models.password_reset_token import PasswordResetToken
     from app.models.profesional import Profesional
 
 class Usuario(Base):
@@ -62,3 +64,15 @@ class Usuario(Base):
         back_populates="usuario",
         uselist=False,
     )
+
+    password_reset_tokens: Mapped[list["PasswordResetToken"]] = relationship(
+        back_populates="usuario",
+        cascade="all, delete-orphan",
+    )
+
+    membresias_cuenta: Mapped[list["CuentaUsuario"]] = relationship(
+        back_populates="usuario", cascade="all, delete-orphan",
+    )
+
+
+Index("ix_usuarios_email_lower_unique", func.lower(Usuario.email), unique=True)

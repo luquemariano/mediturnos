@@ -8,26 +8,90 @@ from app.core.dependencies import (
 )
 from app.database.connection import obtener_db
 from app.models.usuario import Usuario
+from app.schemas.paciente import (PacienteSeleccionRespuesta, PacienteProfesionalCrear,
+    PacienteProfesionalActualizar)
+from app.schemas.prestacion import (PrestacionRespuesta, PrestacionProfesionalCrear,
+    PrestacionProfesionalActualizar)
 from app.schemas.profesional import (
+    ProfesionalActualizar,
     ProfesionalCrear,
     ProfesionalRespuesta,
 )
-from app.schemas.turno import TurnoRespuesta
+from app.schemas.turno import (
+    TurnoCrearProfesional,
+    TurnoReprogramar,
+    TurnoRespuesta,
+)
+from app.schemas.disponibilidad import (
+    DisponibilidadCrear,
+    DisponibilidadPropiaCrear,
+    DisponibilidadActualizar,
+    DisponibilidadRespuesta,
+)
+from app.schemas.disponibilidad_excepcion import (
+    DisponibilidadExcepcionCrear,
+    DisponibilidadExcepcionRespuesta,
+    DisponibilidadExcepcionRango,
+    DisponibilidadExcepcionRangoCreadoRespuesta,
+    DisponibilidadExcepcionRangoReabiertoRespuesta,
+    FeriadoCrear,
+)
+from app.services.paciente_service import (obtener_pacientes_profesional,
+    crear_paciente_profesional, actualizar_paciente_profesional,
+    desactivar_paciente_profesional, obtener_turnos_paciente_profesional)
+from app.services.prestacion_service import (obtener_prestaciones_profesional,
+    crear_prestacion_profesional, modificar_prestacion_profesional,
+    desactivar_prestacion_profesional)
 from app.services.profesional_service import (
+    EspecialidadesConPrestacionesError,
     EspecialidadesDuplicadasError,
     EspecialidadesInvalidasError,
     crear_profesional,
+    modificar_profesional,
     obtener_mi_profesional,
     obtener_profesional_por_id,
     obtener_profesionales,
 )
-from app.services.turno_service import obtener_agenda_de_profesional
+from app.services.study_request_service import listar_pending_review
+from app.schemas.study_request_pending_review import PendingReviewResponse
+from app.services.turno_service import (
+    cancelar_turno_profesional,
+    crear_turno_profesional,
+    obtener_agenda_de_profesional,
+    reprogramar_turno_profesional,
+)
+from app.services.disponibilidad_service import (
+    actualizar_disponibilidad_profesional,
+    crear_disponibilidad,
+    desactivar_disponibilidad_profesional,
+    obtener_disponibilidades_profesional,
+)
+from app.services.disponibilidad_excepcion_service import (
+    crear_excepcion,
+    eliminar_excepcion,
+    obtener_excepciones,
+    cerrar_rango,
+    reabrir_rango,
+    crear_feriado,
+    eliminar_feriado,
+)
+from datetime import date
 
 
 router = APIRouter(
     prefix="/profesionales",
     tags=["Profesionales"],
 )
+
+@router.get("/me/study-requests/pending-review", response_model=PendingReviewResponse)
+def listar_mis_estudios_pendientes(
+    db: Session = Depends(obtener_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual),
+):
+    if usuario_actual.rol != "profesional":
+        raise HTTPException(status_code=403, detail="El usuario autenticado no es un profesional.")
+    profesional = obtener_mi_profesional(db, usuario_actual.id)
+    return listar_pending_review(db, profesional.id)
 
 
 @router.post(
@@ -93,6 +157,54 @@ def ver_mi_perfil_profesional(
     )
 
 
+@router.patch(
+    "/me",
+    response_model=ProfesionalRespuesta,
+    summary="Actualizar mi perfil profesional",
+)
+def actualizar_mi_perfil_profesional(
+    datos: ProfesionalActualizar,
+    db: Session = Depends(obtener_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual),
+):
+    if usuario_actual.rol != "profesional":
+        raise HTTPException(status_code=403, detail="El usuario autenticado no es un profesional.")
+    profesional = obtener_mi_profesional(db, usuario_actual.id)
+    try:
+        return modificar_profesional(db, profesional, datos)
+    except IntegrityError:
+        raise HTTPException(status_code=409, detail="Ya existe un profesional con esa matrícula.") from None
+    except EspecialidadesDuplicadasError:
+        raise HTTPException(status_code=400, detail="No se puede repetir una especialidad.") from None
+    except EspecialidadesInvalidasError:
+        raise HTTPException(status_code=400, detail="Una o más especialidades no existen.") from None
+    except EspecialidadesConPrestacionesError as error:
+        raise HTTPException(status_code=409, detail="No se puede quitar una especialidad con prestaciones asociadas.") from error
+
+
+@router.get("/me/disponibilidades", response_model=list[DisponibilidadRespuesta])
+def listar_mis_disponibilidades(
+    db: Session = Depends(obtener_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual),
+):
+    if usuario_actual.rol != "profesional":
+        raise HTTPException(status_code=403, detail="El usuario autenticado no es un profesional.")
+    profesional = obtener_mi_profesional(db, usuario_actual.id)
+    return obtener_disponibilidades_profesional(db, profesional.id)
+
+
+@router.post("/me/disponibilidades", response_model=DisponibilidadRespuesta, status_code=201)
+def crear_mi_disponibilidad(
+    datos: DisponibilidadPropiaCrear,
+    db: Session = Depends(obtener_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual),
+):
+    if usuario_actual.rol != "profesional":
+        raise HTTPException(status_code=403, detail="El usuario autenticado no es un profesional.")
+    profesional = obtener_mi_profesional(db, usuario_actual.id)
+    return crear_disponibilidad(db, DisponibilidadCrear(profesional_id=profesional.id, **datos.model_dump()))
+
+
 @router.get(
     "/me/agenda",
     response_model=list[TurnoRespuesta],
@@ -120,6 +232,305 @@ def ver_mi_agenda(
         db,
         profesional.id,
         estado,
+    )
+
+
+@router.get(
+    "/me/pacientes",
+    response_model=list[PacienteSeleccionRespuesta],
+    summary="Listar pacientes activos para mi agenda",
+)
+def listar_pacientes_para_mi_agenda(
+    q: str | None = None,
+    db: Session = Depends(obtener_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual),
+):
+    if usuario_actual.rol != "profesional":
+        raise HTTPException(
+            status_code=403,
+            detail="El usuario autenticado no es un profesional.",
+        )
+
+    profesional = obtener_mi_profesional(db, usuario_actual.id)
+    return obtener_pacientes_profesional(db, profesional.id, q)
+
+@router.get("/me/prestaciones", response_model=list[PrestacionRespuesta])
+def listar_mis_prestaciones(db: Session = Depends(obtener_db), usuario_actual: Usuario = Depends(obtener_usuario_actual)):
+    if usuario_actual.rol != "profesional":
+        raise HTTPException(status_code=403, detail="El usuario autenticado no es un profesional.")
+    profesional = obtener_mi_profesional(db, usuario_actual.id)
+    return obtener_prestaciones_profesional(db, profesional.id)
+
+@router.post("/me/prestaciones", response_model=PrestacionRespuesta, status_code=201)
+def registrar_mi_prestacion(datos: PrestacionProfesionalCrear, db: Session = Depends(obtener_db), usuario_actual: Usuario = Depends(obtener_usuario_actual)):
+    if usuario_actual.rol != "profesional":
+        raise HTTPException(status_code=403, detail="El usuario autenticado no es un profesional.")
+    profesional = obtener_mi_profesional(db, usuario_actual.id)
+    return crear_prestacion_profesional(db, profesional.id, datos)
+
+@router.patch("/me/prestaciones/{prestacion_id}", response_model=PrestacionRespuesta)
+def editar_mi_prestacion(prestacion_id: int, datos: PrestacionProfesionalActualizar, db: Session = Depends(obtener_db), usuario_actual: Usuario = Depends(obtener_usuario_actual)):
+    if usuario_actual.rol != "profesional":
+        raise HTTPException(status_code=403, detail="El usuario autenticado no es un profesional.")
+    profesional = obtener_mi_profesional(db, usuario_actual.id)
+    return modificar_prestacion_profesional(db, profesional.id, prestacion_id, datos)
+
+@router.delete("/me/prestaciones/{prestacion_id}", response_model=PrestacionRespuesta)
+def eliminar_mi_prestacion(prestacion_id: int, db: Session = Depends(obtener_db), usuario_actual: Usuario = Depends(obtener_usuario_actual)):
+    if usuario_actual.rol != "profesional":
+        raise HTTPException(status_code=403, detail="El usuario autenticado no es un profesional.")
+    profesional = obtener_mi_profesional(db, usuario_actual.id)
+    return desactivar_prestacion_profesional(db, profesional.id, prestacion_id)
+
+@router.post("/me/pacientes", response_model=PacienteSeleccionRespuesta, status_code=201)
+def registrar_mi_paciente(datos: PacienteProfesionalCrear, db: Session = Depends(obtener_db), usuario_actual: Usuario = Depends(obtener_usuario_actual)):
+    if usuario_actual.rol != "profesional":
+        raise HTTPException(status_code=403, detail="El usuario autenticado no es un profesional.")
+    profesional = obtener_mi_profesional(db, usuario_actual.id)
+    return crear_paciente_profesional(db, profesional.id, datos)
+
+@router.patch("/me/pacientes/{paciente_id}", response_model=PacienteSeleccionRespuesta)
+def editar_mi_paciente(paciente_id: int, datos: PacienteProfesionalActualizar, db: Session = Depends(obtener_db), usuario_actual: Usuario = Depends(obtener_usuario_actual)):
+    if usuario_actual.rol != "profesional":
+        raise HTTPException(status_code=403, detail="El usuario autenticado no es un profesional.")
+    profesional = obtener_mi_profesional(db, usuario_actual.id)
+    return actualizar_paciente_profesional(db, profesional.id, paciente_id, datos)
+
+@router.delete("/me/pacientes/{paciente_id}", status_code=204)
+def desactivar_mi_paciente(paciente_id: int, db: Session = Depends(obtener_db), usuario_actual: Usuario = Depends(obtener_usuario_actual)):
+    if usuario_actual.rol != "profesional":
+        raise HTTPException(status_code=403, detail="El usuario autenticado no es un profesional.")
+    profesional = obtener_mi_profesional(db, usuario_actual.id)
+    desactivar_paciente_profesional(db, profesional.id, paciente_id)
+
+@router.get("/me/pacientes/{paciente_id}/turnos", response_model=list[TurnoRespuesta])
+def historial_de_mi_paciente(paciente_id: int, db: Session = Depends(obtener_db), usuario_actual: Usuario = Depends(obtener_usuario_actual)):
+    if usuario_actual.rol != "profesional":
+        raise HTTPException(status_code=403, detail="El usuario autenticado no es un profesional.")
+    profesional = obtener_mi_profesional(db, usuario_actual.id)
+    return obtener_turnos_paciente_profesional(db, profesional.id, paciente_id)
+
+
+@router.post(
+    "/me/turnos",
+    response_model=TurnoRespuesta,
+    status_code=201,
+    summary="Crear un turno en mi agenda profesional",
+)
+def crear_turno_en_mi_agenda(
+    datos: TurnoCrearProfesional,
+    db: Session = Depends(obtener_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual),
+):
+    if usuario_actual.rol != "profesional":
+        raise HTTPException(
+            status_code=403,
+            detail="El usuario autenticado no es un profesional.",
+        )
+
+    profesional = obtener_mi_profesional(db, usuario_actual.id)
+    return crear_turno_profesional(db, profesional.id, datos)
+
+
+@router.patch(
+    "/me/disponibilidades/{disponibilidad_id}",
+    response_model=DisponibilidadRespuesta,
+    summary="Actualizar una disponibilidad habitual propia",
+)
+def actualizar_mi_disponibilidad(
+    disponibilidad_id: int,
+    datos: DisponibilidadActualizar,
+    db: Session = Depends(obtener_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual),
+):
+    if usuario_actual.rol != "profesional":
+        raise HTTPException(status_code=403, detail="El usuario autenticado no es un profesional.")
+    profesional = obtener_mi_profesional(db, usuario_actual.id)
+    return actualizar_disponibilidad_profesional(
+        db, disponibilidad_id, profesional.id, datos,
+    )
+
+
+@router.delete(
+    "/me/disponibilidades/{disponibilidad_id}",
+    response_model=DisponibilidadRespuesta,
+    summary="Eliminar una disponibilidad habitual propia",
+)
+def eliminar_mi_disponibilidad(
+    disponibilidad_id: int,
+    db: Session = Depends(obtener_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual),
+):
+    if usuario_actual.rol != "profesional":
+        raise HTTPException(status_code=403, detail="El usuario autenticado no es un profesional.")
+    profesional = obtener_mi_profesional(db, usuario_actual.id)
+    return desactivar_disponibilidad_profesional(
+        db, disponibilidad_id, profesional.id,
+    )
+
+
+@router.get(
+    "/me/excepciones-disponibilidad",
+    response_model=list[DisponibilidadExcepcionRespuesta],
+    summary="Listar mis excepciones de disponibilidad",
+)
+def listar_mis_excepciones_disponibilidad(
+    fecha_desde: date | None = None,
+    fecha_hasta: date | None = None,
+    db: Session = Depends(obtener_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual),
+):
+    if usuario_actual.rol != "profesional":
+        raise HTTPException(status_code=403, detail="El usuario autenticado no es un profesional.")
+    profesional = obtener_mi_profesional(db, usuario_actual.id)
+    return obtener_excepciones(db, profesional.id, fecha_desde, fecha_hasta)
+
+
+@router.post(
+    "/me/excepciones-disponibilidad",
+    response_model=DisponibilidadExcepcionRespuesta,
+    status_code=201,
+    summary="Crear una excepción de disponibilidad propia",
+)
+def crear_mi_excepcion_disponibilidad(
+    datos: DisponibilidadExcepcionCrear,
+    db: Session = Depends(obtener_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual),
+):
+    if usuario_actual.rol != "profesional":
+        raise HTTPException(status_code=403, detail="El usuario autenticado no es un profesional.")
+    profesional = obtener_mi_profesional(db, usuario_actual.id)
+    return crear_excepcion(db, profesional.id, datos)
+
+
+@router.post(
+    "/me/excepciones-disponibilidad/rango",
+    response_model=DisponibilidadExcepcionRangoCreadoRespuesta,
+    summary="Cerrar un rango de fechas propio",
+)
+def cerrar_mi_disponibilidad_por_rango(
+    datos: DisponibilidadExcepcionRango,
+    db: Session = Depends(obtener_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual),
+):
+    if usuario_actual.rol != "profesional":
+        raise HTTPException(status_code=403, detail="El usuario autenticado no es un profesional.")
+    profesional = obtener_mi_profesional(db, usuario_actual.id)
+    return cerrar_rango(db, profesional.id, datos.fecha_desde, datos.fecha_hasta)
+
+
+@router.post(
+    "/me/excepciones-disponibilidad/reabrir-rango",
+    response_model=DisponibilidadExcepcionRangoReabiertoRespuesta,
+    summary="Reabrir un rango de fechas propio",
+)
+def reabrir_mi_disponibilidad_por_rango(
+    datos: DisponibilidadExcepcionRango,
+    db: Session = Depends(obtener_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual),
+):
+    if usuario_actual.rol != "profesional":
+        raise HTTPException(status_code=403, detail="El usuario autenticado no es un profesional.")
+    profesional = obtener_mi_profesional(db, usuario_actual.id)
+    return reabrir_rango(db, profesional.id, datos.fecha_desde, datos.fecha_hasta)
+
+
+@router.delete(
+    "/me/excepciones-disponibilidad/{excepcion_id}",
+    response_model=DisponibilidadExcepcionRespuesta,
+    summary="Eliminar una excepción de disponibilidad propia",
+)
+def eliminar_mi_excepcion_disponibilidad(
+    excepcion_id: int,
+    db: Session = Depends(obtener_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual),
+):
+    if usuario_actual.rol != "profesional":
+        raise HTTPException(status_code=403, detail="El usuario autenticado no es un profesional.")
+    profesional = obtener_mi_profesional(db, usuario_actual.id)
+    return eliminar_excepcion(db, profesional.id, excepcion_id)
+
+
+@router.post(
+    "/me/feriados",
+    response_model=DisponibilidadExcepcionRespuesta,
+    status_code=201,
+    summary="Agregar un feriado o día no laborable propio",
+)
+def crear_mi_feriado(
+    datos: FeriadoCrear,
+    db: Session = Depends(obtener_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual),
+):
+    if usuario_actual.rol != "profesional":
+        raise HTTPException(status_code=403, detail="El usuario autenticado no es un profesional.")
+    profesional = obtener_mi_profesional(db, usuario_actual.id)
+    return crear_feriado(db, profesional.id, datos)
+
+
+@router.delete(
+    "/me/feriados/{excepcion_id}",
+    response_model=DisponibilidadExcepcionRespuesta,
+    summary="Quitar un feriado o día no laborable propio",
+)
+def eliminar_mi_feriado(
+    excepcion_id: int,
+    db: Session = Depends(obtener_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual),
+):
+    if usuario_actual.rol != "profesional":
+        raise HTTPException(status_code=403, detail="El usuario autenticado no es un profesional.")
+    profesional = obtener_mi_profesional(db, usuario_actual.id)
+    return eliminar_feriado(db, profesional.id, excepcion_id)
+
+
+@router.patch(
+    "/me/agenda/{turno_id}/cancelar",
+    response_model=TurnoRespuesta,
+    summary="Cancelar un turno de mi agenda",
+)
+def cancelar_turno_de_mi_agenda(
+    turno_id: int,
+    db: Session = Depends(obtener_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual),
+):
+    if usuario_actual.rol != "profesional":
+        raise HTTPException(
+            status_code=403,
+            detail="El usuario autenticado no es un profesional.",
+        )
+
+    profesional = obtener_mi_profesional(db, usuario_actual.id)
+    return cancelar_turno_profesional(
+        db,
+        turno_id,
+        profesional.id,
+    )
+
+
+@router.patch(
+    "/me/agenda/{turno_id}/reprogramar",
+    response_model=TurnoRespuesta,
+    summary="Reprogramar un turno de mi agenda",
+)
+def reprogramar_turno_de_mi_agenda(
+    turno_id: int,
+    datos: TurnoReprogramar,
+    db: Session = Depends(obtener_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual),
+):
+    if usuario_actual.rol != "profesional":
+        raise HTTPException(
+            status_code=403,
+            detail="El usuario autenticado no es un profesional.",
+        )
+
+    profesional = obtener_mi_profesional(db, usuario_actual.id)
+    return reprogramar_turno_profesional(
+        db,
+        turno_id,
+        profesional.id,
+        datos,
     )
 @router.get(
     "/",
@@ -233,3 +644,67 @@ def ver_profesional(
         )
 
     return profesional
+
+
+@router.patch(
+    "/{profesional_id}",
+    response_model=ProfesionalRespuesta,
+    summary="Actualizar un profesional",
+)
+def actualizar_profesional(
+    profesional_id: int,
+    datos: ProfesionalActualizar,
+    db: Session = Depends(obtener_db),
+    usuario_actual: Usuario = Depends(
+        requiere_roles("administrador")
+    ),
+):
+    profesional = obtener_profesional_por_id(
+        db,
+        profesional_id,
+    )
+
+    if profesional is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Profesional no encontrado.",
+        )
+
+    try:
+        return modificar_profesional(
+            db,
+            profesional,
+            datos,
+        )
+
+    except IntegrityError:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "Ya existe un profesional con esa matrícula."
+            ),
+        )
+
+    except EspecialidadesDuplicadasError:
+        raise HTTPException(
+            status_code=400,
+            detail="No se puede repetir una especialidad.",
+        )
+
+    except EspecialidadesInvalidasError:
+        raise HTTPException(
+            status_code=400,
+            detail="Una o más especialidades no existen.",
+        )
+
+    except EspecialidadesConPrestacionesError as error:
+        nombres = ", ".join(error.nombres)
+
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "No se puede quitar la especialidad "
+                f"'{nombres}' porque tiene prestaciones "
+                "asociadas a este profesional."
+            ),
+        )

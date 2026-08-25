@@ -1,0 +1,22 @@
+.suscripcion-pagina { min-height: 100vh; background: #f5f7fb; padding: 32px 18px; color: #183153; }
+.suscripcion-panel { max-width: 820px; margin: auto; background: white; border-radius: 20px; padding: 28px; box-shadow: 0 12px 40px #17365d16; }
+.suscripcion-volver { background: none; border: 0; color: #2867a8; cursor: pointer; padding: 0 0 18px; }
+.suscripcion-panel header p { color: #28766b; font-weight: 700; margin: 0; }
+.suscripcion-panel h1 { margin: 6px 0 22px; }
+.suscripcion-trial { display: flex; justify-content: space-between; gap: 12px; padding: 14px 16px; background: #eff8f5; border-radius: 12px; }
+.suscripcion-planes { border: 0; padding: 24px 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.suscripcion-planes legend { font-weight: 700; padding-top: 20px; }
+.suscripcion-planes label { border: 1px solid #d8e1eb; border-radius: 12px; padding: 16px; display: grid; gap: 5px; cursor: pointer; }
+.suscripcion-planes label.seleccionado { border-color: #28766b; background: #f1faf7; }
+.suscripcion-aviso { background: #fff8e7; border-radius: 10px; padding: 12px; }
+.suscripcion-tarjeta { display: grid; gap: 14px; margin-top: 22px; }
+.suscripcion-tarjeta label { display: grid; gap: 6px; font-weight: 600; }
+.suscripcion-tarjeta input, .suscripcion-tarjeta select { height: 48px; min-height: 48px; border: 1px solid #cbd6e2; border-radius: 8px; padding: 8px; box-sizing: border-box; }
+.campo-seguro { height: 48px; min-height: 48px; overflow: hidden; border: 1px solid #cbd6e2; border-radius: 8px; padding: 0; box-sizing: border-box; }
+.suscripcion-fila { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.suscripcion-tarjeta button { border: 0; border-radius: 10px; background: #28766b; color: white; padding: 13px; font-weight: 700; cursor: pointer; }
+.suscripcion-tarjeta button:disabled { opacity: .6; cursor: wait; }
+.suscripcion-exito { color: #176b4d; background: #eaf8f1; padding: 12px; border-radius: 8px; }
+.suscripcion-error { color: #a22b2b; background: #fff0f0; padding: 12px; border-radius: 8px; }
+.suscripcion-token-debug { display: block; overflow-wrap: anywhere; color: #6a3b00; background: #fff4d6; border: 1px solid #e0b45a; padding: 12px; border-radius: 8px; font-family: monospace; }
+@media (max-width: 680px) { .suscripcion-planes { grid-template-columns: 1fr; } .suscripcion-trial, .suscripcion-fila { grid-template-columns: 1fr; display: grid; } }

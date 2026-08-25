@@ -1,3 +1,4 @@
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.models.usuario import Usuario
@@ -9,7 +10,7 @@ def buscar_usuario_por_email(
 ) -> Usuario | None:
     return (
         db.query(Usuario)
-        .filter(Usuario.email == email)
+        .filter(func.lower(Usuario.email) == email.strip().lower())
         .first()
     )
 

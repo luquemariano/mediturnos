@@ -4,6 +4,12 @@ import type {
   LoginRequest,
   LoginResponse,
   UsuarioActual,
+  ChangePasswordRequest,
+  ForgotPasswordRequest,
+  MensajeResponse,
+  ResetPasswordRequest,
+  RegistroProfesionalRequest,
+  RegistroProfesionalResponse,
 } from "../types/auth";
 
 
@@ -26,4 +32,26 @@ Promise<UsuarioActual> {
   );
 
   return respuesta.data;
+}
+
+export async function registrarProfesional(datos: RegistroProfesionalRequest): Promise<RegistroProfesionalResponse> {
+  return (await api.post<RegistroProfesionalResponse>("/auth/register/profesional", datos)).data;
+}
+
+export async function solicitarRecuperacion(
+  datos: ForgotPasswordRequest,
+): Promise<MensajeResponse> {
+  return (await api.post<MensajeResponse>("/auth/forgot-password", datos)).data;
+}
+
+export async function restablecerPassword(
+  datos: ResetPasswordRequest,
+): Promise<MensajeResponse> {
+  return (await api.post<MensajeResponse>("/auth/reset-password", datos)).data;
+}
+
+export async function cambiarPassword(
+  datos: ChangePasswordRequest,
+): Promise<MensajeResponse> {
+  return (await api.post<MensajeResponse>("/auth/change-password", datos)).data;
 }

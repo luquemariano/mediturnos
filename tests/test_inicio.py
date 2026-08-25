@@ -3,5 +3,5 @@ def test_inicio(client):
 
     assert respuesta.status_code == 200
     assert respuesta.json() == {
-        "mensaje": "¡Bienvenido a MediTurnos!"
+        "mensaje": "¡Bienvenido a Turnelia!"
     }

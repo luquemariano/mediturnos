@@ -53,6 +53,30 @@
   font-weight: 600;
 }
 
+.turnos-cabecera-acciones { display: flex; align-items: flex-start; gap: 18px; }
+.modal-turno-fondo { position: fixed; z-index: 50; inset: 0; display: grid; place-items: center; padding: 24px; overflow-y: auto; background: rgba(16, 24, 40, .62); }
+.modal-turno { width: min(760px, 100%); max-height: calc(100vh - 48px); overflow-y: auto; border-radius: 20px; background: #fff; box-shadow: 0 28px 80px rgba(16, 24, 40, .28); }
+.modal-turno-encabezado { display: flex; align-items: flex-start; justify-content: space-between; padding: 24px 28px; border-bottom: 1px solid #eaecf0; }
+.modal-turno-encabezado h2 { color: #172033; font-size: 25px; }
+.modal-turno-encabezado > button { border: 0; background: transparent; color: #667085; font-size: 28px; cursor: pointer; }
+.formulario-turno { gap: 0; }
+.formulario-turno-campos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; padding: 24px 28px; }
+.formulario-turno-campos > label { display: grid; gap: 7px; color: #344054; font-size: 14px; font-weight: 700; }
+.formulario-turno select, .formulario-turno input[type="date"], .formulario-turno textarea { width: 100%; padding: 11px 12px; border: 1px solid #d0d5dd; border-radius: 9px; background: #fff; color: #101828; font: inherit; }
+.formulario-turno select:disabled, .formulario-turno input:disabled { background: #f2f4f7; color: #98a2b3; }
+.campo-observaciones, .horarios-turno { grid-column: 1 / -1; }
+.formulario-turno textarea { resize: vertical; }
+.horarios-turno { display: flex; flex-wrap: wrap; gap: 9px; min-height: 82px; padding: 14px; border: 1px solid #d0d5dd; border-radius: 10px; }
+.horarios-turno legend { padding: 0 6px; color: #344054; font-size: 14px; font-weight: 700; }
+.horarios-turno > p { width: 100%; color: #667085; font-size: 13px; }
+.horarios-turno > label { display: inline-flex; align-items: center; gap: 6px; padding: 8px 11px; border: 1px solid #d0d5dd; border-radius: 8px; color: #344054; font-size: 13px; font-weight: 700; cursor: pointer; }
+.horarios-turno > label.seleccionado { border-color: #2563eb; background: #eff6ff; color: #1d4ed8; }
+.horarios-turno input { accent-color: #2563eb; }
+.formulario-turno-estado { padding: 50px 28px; color: #667085; text-align: center; }
+.formulario-turno .mensaje-turnos-error { margin: 0 28px 20px; }
+.formulario-turno-acciones { display: flex; justify-content: flex-end; gap: 12px; padding: 20px 28px; border-top: 1px solid #eaecf0; }
+.formulario-turno-acciones .boton-primario { padding: 11px 18px; }
+
 .turnos-herramientas {
   display: grid;
   gap: 16px;
@@ -373,6 +397,7 @@
 }
 
 .accion-confirmar,
+.accion-reprogramar,
 .accion-cancelar {
   padding: 8px 10px;
   border-radius: 8px;
@@ -388,6 +413,12 @@
   color: #067647;
 }
 
+.accion-reprogramar {
+  border: 1px solid #b2ccff;
+  background: #eff4ff;
+  color: #175cd3;
+}
+
 .accion-cancelar {
   border: 1px solid #fecdca;
   background: #fff;
@@ -395,10 +426,26 @@
 }
 
 .accion-confirmar:disabled,
+.accion-reprogramar:disabled,
 .accion-cancelar:disabled {
   cursor: not-allowed;
   opacity: 0.55;
 }
+
+.reprogramar-turno-resumen {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid #e4e7ec;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.reprogramar-turno-resumen p { display: grid; gap: 4px; }
+.reprogramar-turno-resumen span { color: #98a2b3; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+.reprogramar-turno-resumen strong { color: #344054; font-size: 14px; }
 
 @media (max-width: 800px) {
   .turnos-contenido {
@@ -418,6 +465,12 @@
 }
 
 @media (max-width: 560px) {
+  .turnos-cabecera-acciones { width: 100%; justify-content: space-between; }
+  .formulario-turno-campos { grid-template-columns: 1fr; padding: 20px; }
+  .modal-turno-fondo { align-items: end; padding: 0; }
+  .modal-turno { max-height: 94vh; border-radius: 18px 18px 0 0; }
+  .reprogramar-turno-resumen { grid-template-columns: 1fr; }
+
   .turnos-cabecera {
     flex-direction: column;
   }

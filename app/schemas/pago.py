@@ -12,6 +12,9 @@ class PagoRespuesta(BaseModel):
     estado: str
     monto: Decimal
     init_point: str | None
+    requiere_revision: bool
+    motivo_revision: str | None
+    mp_actualizado_en: datetime | None
     creado_en: datetime
     actualizado_en: datetime
 

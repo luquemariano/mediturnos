@@ -2,17 +2,12 @@ import jwt
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
+from collections.abc import Callable
 
 from app.core.jwt import verificar_access_token
 from app.database.connection import obtener_db
 from app.models.usuario import Usuario
 from app.repositories.usuario_repository import buscar_usuario_por_id
-from collections.abc import Callable
-
-import jwt
-from fastapi import Depends, HTTPException
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from sqlalchemy.orm import Session
 
 
 bearer_scheme = HTTPBearer()
@@ -33,11 +28,9 @@ def obtener_usuario_actual(
     )
 
     token = credenciales.credentials
-    print("TOKEN RECIBIDO:", token)
 
     try:
         payload = verificar_access_token(token)
-        print("PAYLOAD:", payload)
 
         usuario_id = payload.get("sub")
 

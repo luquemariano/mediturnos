@@ -1,0 +1,94 @@
+services:
+  - type: cron
+    name: turnelia-appointment-reminders
+    runtime: docker
+    schedule: "*/15 * * * *"
+    dockerCommand: python -m app.scripts.process_appointment_reminders
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: APP_TIMEZONE
+        value: America/Argentina/Buenos_Aires
+      - key: APPOINTMENT_ACTION_SECRET
+        sync: false
+      - key: PUBLIC_API_URL
+        value: https://api.turnelia.com.ar
+      - key: EMAIL_PROVIDER
+        value: resend
+      - key: RESEND_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+
+  - type: web
+    name: mediturnos-api
+    runtime: docker
+    plan: free
+    healthCheckPath: /health/ready
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: APP_TIMEZONE
+        value: America/Argentina/Buenos_Aires
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: JWT_ALGORITHM
+        value: HS256
+      - key: JWT_EXPIRE_MINUTES
+        value: 60
+      - key: PASSWORD_RESET_EXPIRE_MINUTES
+        value: 60
+      - key: CORS_ALLOWED_ORIGINS
+        value: '["https://turnelia.com.ar","https://www.turnelia.com.ar","https://mediturnos-frontend-711v.onrender.com"]'
+      - key: FRONTEND_URL
+        value: https://turnelia.com.ar
+      - key: PUBLIC_API_URL
+        value: https://api.turnelia.com.ar
+      - key: APPOINTMENT_ACTION_SECRET
+        sync: false
+      - key: EMAIL_PROVIDER
+        value: resend
+      - key: RESEND_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+      - key: MERCADOPAGO_ACCESS_TOKEN
+        sync: false
+      - key: MERCADOPAGO_PUBLIC_KEY
+        sync: false
+      - key: MERCADOPAGO_ENV
+        value: production
+      - key: MERCADOPAGO_TEST_PAYER_EMAIL
+        value: ""
+      - key: MERCADOPAGO_WEBHOOK_SECRET
+        sync: false
+      - key: TRUST_PROXY_HEADERS
+        value: true
+      - key: RATE_LIMIT_WINDOW_SECONDS
+        value: 60
+      - key: RATE_LIMIT_REGISTER_ATTEMPTS
+        value: 5
+      - key: RATE_LIMIT_LOGIN_ATTEMPTS
+        value: 15
+      - key: RATE_LIMIT_PASSWORD_RESET_ATTEMPTS
+        value: 3
+
+  - type: web
+    name: mediturnos-frontend
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm ci && npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://api.turnelia.com.ar
+      - key: VITE_MERCADOPAGO_PUBLIC_KEY
+        sync: false
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

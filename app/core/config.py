@@ -1,19 +1,308 @@
+from ipaddress import ip_address
+from typing import Literal
+
+from pydantic import (
+    AnyHttpUrl,
+    SecretStr,
+    TypeAdapter,
+    field_validator,
+    model_validator,
+)
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from sqlalchemy.engine import make_url
+from sqlalchemy.exc import ArgumentError
+from app.core.public_url import validar_public_api_url
+
+
+adaptador_origen_http = TypeAdapter(AnyHttpUrl)
+JWT_SECRET_ILUSTRATIVO = (
+    "reemplazar_por_una_clave_larga_y_aleatoria"
+)
+LONGITUD_MINIMA_JWT_PRODUCCION = 32
+
+
+def es_host_loopback(host: str) -> bool:
+    host_normalizado = host.lower().rstrip(".")
+
+    if (
+        host_normalizado.startswith("[")
+        and host_normalizado.endswith("]")
+    ):
+        host_normalizado = host_normalizado[1:-1]
+
+    if host_normalizado == "localhost":
+        return True
+
+    try:
+        direccion = ip_address(host_normalizado)
+    except ValueError:
+        return False
+
+    ipv4_mapeada = getattr(
+        direccion,
+        "ipv4_mapped",
+        None,
+    )
+
+    return direccion.is_loopback or (
+        ipv4_mapeada is not None
+        and ipv4_mapeada.is_loopback
+    )
 
 
 class Settings(BaseSettings):
+    app_env: Literal[
+        "development",
+        "demo",
+        "test",
+        "production",
+    ] = "development"
     database_url: str = "sqlite:///./mediturnos.db"
+    app_timezone: str = "America/Argentina/Buenos_Aires"
+    cors_allowed_origins: list[str] = [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ]
     mercado_pago_access_token: str = ""
     mercado_pago_webhook_secret: str = ""
+    mercadopago_access_token: SecretStr | None = None
+    mercadopago_public_key: str | None = None
+    mercadopago_env: Literal["sandbox", "production"] = "sandbox"
+    mercadopago_test_payer_email: str | None = None
+    mercadopago_webhook_secret: SecretStr | None = None
     jwt_secret_key: str
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 60
+    password_reset_expire_minutes: int = 60
+    frontend_url: str = "http://localhost:5173"
+    public_api_url: str = "https://api.mediturnos.example"
+    appointment_action_secret: SecretStr | None = SecretStr("turnelia-local-appointment-action-secret")
+    study_access_secret: SecretStr | None = SecretStr("turnelia-local-study-access-secret")
+    study_access_token_ttl_seconds: int = 2592000
+    email_provider: Literal["in_memory", "resend"] = "in_memory"
+    resend_api_key: SecretStr | None = None
+    email_from: str | None = None
+    demo_seed_enabled: bool = False
+    demo_admin_email: str | None = None
+    demo_admin_password: SecretStr | None = None
+    demo_admin_reset_password: bool = False
+    demo_professional_email: str | None = None
+    demo_professional_password: SecretStr | None = None
+    demo_professional_reset_password: bool = False
+    trust_proxy_headers: bool = False
+    rate_limit_window_seconds: int = 60
+    rate_limit_register_attempts: int = 5
+    rate_limit_login_attempts: int = 15
+    rate_limit_password_reset_attempts: int = 3
+    object_storage_provider: Literal["fake", "r2"] = "fake"
+    r2_account_id: str | None = None
+    r2_access_key_id: str | None = None
+    r2_secret_access_key: SecretStr | None = None
+    r2_bucket_name: str | None = None
+    r2_endpoint: str | None = None
+    r2_presigned_upload_ttl_seconds: int = 600
+    r2_presigned_download_ttl_seconds: int = 300
+
+    @field_validator("r2_presigned_upload_ttl_seconds", "r2_presigned_download_ttl_seconds")
+    @classmethod
+    def validar_ttl_storage(cls, valor: int) -> int:
+        if valor <= 0:
+            raise ValueError("Los TTL de object storage deben ser mayores que cero.")
+        return valor
+
+    @field_validator(
+        "rate_limit_window_seconds",
+        "rate_limit_register_attempts",
+        "rate_limit_login_attempts",
+        "rate_limit_password_reset_attempts",
+    )
+    @classmethod
+    def validar_rate_limit(cls, valor: int) -> int:
+        if valor <= 0:
+            raise ValueError("Los límites de solicitudes deben ser mayores que cero.")
+        return valor
+
+    @field_validator("password_reset_expire_minutes")
+    @classmethod
+    def validar_expiracion_password_reset(cls, minutos: int) -> int:
+        if minutos <= 0:
+            raise ValueError("PASSWORD_RESET_EXPIRE_MINUTES debe ser mayor que cero.")
+        return minutos
+
+    @field_validator("study_access_token_ttl_seconds")
+    @classmethod
+    def validar_ttl_study_access(cls, valor: int) -> int:
+        if valor <= 0:
+            raise ValueError("STUDY_ACCESS_TOKEN_TTL_SECONDS debe ser mayor que cero.")
+        return valor
+
+    @field_validator("frontend_url")
+    @classmethod
+    def validar_frontend_url(cls, valor: str) -> str:
+        try:
+            adaptador_origen_http.validate_python(valor)
+        except ValueError as error:
+            raise ValueError("FRONTEND_URL debe ser una URL HTTP o HTTPS válida.") from error
+        return valor.rstrip("/")
+
+    @field_validator("public_api_url")
+    @classmethod
+    def validar_public_api(cls, valor: str) -> str:
+        return validar_public_api_url(valor, production=False)
+
+    @field_validator("cors_allowed_origins")
+    @classmethod
+    def validar_origenes_cors(
+        cls,
+        origenes: list[str],
+    ) -> list[str]:
+        if not origenes:
+            raise ValueError(
+                "CORS_ALLOWED_ORIGINS no puede ser una lista vacía."
+            )
+
+        for origen in origenes:
+            if origen == "*":
+                raise ValueError(
+                    "CORS_ALLOWED_ORIGINS no puede contener '*'."
+                )
+
+            try:
+                url = adaptador_origen_http.validate_python(origen)
+            except ValueError as error:
+                raise ValueError(
+                    "Cada valor de CORS_ALLOWED_ORIGINS debe ser "
+                    "un origen HTTP o HTTPS válido. "
+                    f"Valor inválido: {origen!r}."
+                ) from error
+
+            if (
+                url.username is not None
+                or url.password is not None
+                or url.path not in (None, "/")
+                or origen.endswith("/")
+                or url.query is not None
+                or url.fragment is not None
+            ):
+                raise ValueError(
+                    "Cada valor de CORS_ALLOWED_ORIGINS debe contener "
+                    "solamente esquema, host y puerto opcional; "
+                    "no se permiten path, query ni fragment. "
+                    f"Valor inválido: {origen!r}."
+                )
+
+        return origenes
+
+    @model_validator(mode="after")
+    def validar_configuracion_produccion(self) -> "Settings":
+        access_token = (
+            self.mercadopago_access_token.get_secret_value().strip()
+            if self.mercadopago_access_token is not None
+            else ""
+        )
+        public_key = (self.mercadopago_public_key or "").strip()
+        if access_token or public_key:
+            if not access_token:
+                raise ValueError("MERCADOPAGO_ACCESS_TOKEN es obligatorio cuando Mercado Pago está configurado.")
+            if not public_key:
+                raise ValueError("MERCADOPAGO_PUBLIC_KEY es obligatoria cuando Mercado Pago está configurado.")
+            if not access_token.startswith("APP_USR-"):
+                raise ValueError("MERCADOPAGO_ACCESS_TOKEN debe ser una credencial APP_USR del entorno configurado.")
+        if self.app_env == "production" and self.object_storage_provider == "r2":
+            faltantes = [n for n, v in (("R2_ACCESS_KEY_ID", self.r2_access_key_id), ("R2_SECRET_ACCESS_KEY", self.r2_secret_access_key), ("R2_BUCKET_NAME", self.r2_bucket_name), ("R2_ENDPOINT", self.r2_endpoint)) if v is None or not str(v).strip()]
+            if faltantes:
+                raise ValueError("En production, faltan configuración R2: " + ", ".join(faltantes) + ".")
+            try:
+                adaptador_origen_http.validate_python(self.r2_endpoint)
+            except ValueError as error:
+                raise ValueError("R2_ENDPOINT debe ser una URL HTTP o HTTPS válida.") from error
+        if self.app_env != "production":
+            return self
+
+        try:
+            url_database = make_url(self.database_url)
+        except ArgumentError as error:
+            raise ValueError(
+                "En production, DATABASE_URL debe ser una URL "
+                "PostgreSQL válida."
+            ) from error
+
+        if (
+            url_database.get_backend_name() != "postgresql"
+            or not url_database.database
+        ):
+            raise ValueError(
+                "En production, DATABASE_URL debe ser una URL "
+                "PostgreSQL válida; SQLite no está permitido."
+            )
+
+        if url_database.drivername == "postgresql":
+            self.database_url = url_database.set(
+                drivername="postgresql+psycopg"
+            ).render_as_string(hide_password=False)
+        elif url_database.drivername != "postgresql+psycopg":
+            raise ValueError(
+                "En production, DATABASE_URL debe usar un driver "
+                "PostgreSQL compatible con psycopg."
+            )
+
+        if (
+            self.jwt_secret_key.strip() == JWT_SECRET_ILUSTRATIVO
+            or len(self.jwt_secret_key.strip())
+            < LONGITUD_MINIMA_JWT_PRODUCCION
+        ):
+            raise ValueError(
+                "En production, JWT_SECRET_KEY debe ser una clave "
+                "propia de al menos 32 caracteres."
+            )
+
+        for origen in self.cors_allowed_origins:
+            host = adaptador_origen_http.validate_python(
+                origen
+            ).host
+
+            if host is not None and es_host_loopback(host):
+                raise ValueError(
+                    "En production, CORS_ALLOWED_ORIGINS no puede "
+                    "contener localhost ni direcciones de loopback."
+                )
+
+        if self.email_provider != "resend":
+            raise ValueError(
+                "En production, EMAIL_PROVIDER debe ser 'resend'."
+            )
+        if (
+            self.resend_api_key is None
+            or not self.resend_api_key.get_secret_value().strip()
+        ):
+            raise ValueError(
+                "En production con Resend, RESEND_API_KEY es obligatorio."
+            )
+        if not self.email_from or not self.email_from.strip():
+            raise ValueError(
+                "En production con Resend, EMAIL_FROM es obligatorio."
+            )
+        if not self.appointment_action_secret or len(self.appointment_action_secret.get_secret_value().strip()) < 32:
+            raise ValueError("En production, APPOINTMENT_ACTION_SECRET debe tener al menos 32 caracteres.")
+        if not self.study_access_secret or len(self.study_access_secret.get_secret_value().strip()) < 32:
+            raise ValueError("En production, STUDY_ACCESS_SECRET debe tener al menos 32 caracteres.")
+        self.public_api_url = validar_public_api_url(self.public_api_url, production=True)
+        frontend_host = adaptador_origen_http.validate_python(
+            self.frontend_url
+        ).host
+        if frontend_host is not None and es_host_loopback(frontend_host):
+            raise ValueError(
+                "En production, FRONTEND_URL no puede usar localhost ni loopback."
+            )
+
+        return self
 
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
         extra="ignore",
         case_sensitive=False,
+        hide_input_in_errors=True,
     )
 
 

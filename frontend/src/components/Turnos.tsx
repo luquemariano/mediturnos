@@ -7,6 +7,8 @@ import {
 import axios from "axios";
 
 import "./Turnos.css";
+import ModalNuevoTurno from "./ModalNuevoTurno";
+import ModalReprogramarTurno from "./ModalReprogramarTurno";
 import {
   cambiarEstadoTurno,
   obtenerTurnos,
@@ -15,10 +17,16 @@ import type {
   EstadoTurno,
   Turno,
 } from "../types/turno";
+import {
+  claveFechaNegocio,
+  formatearFechaAgrupada,
+  formatearHoraTurno,
+} from "../utils/fechaTurno";
 
 
 type TurnosProps = {
   onVolver: () => void;
+  rol: string;
 };
 
 
@@ -69,32 +77,10 @@ function normalizarTexto(
 }
 
 
-function formatearFecha(
-  fechaHora: string,
-): string {
-  return new Intl.DateTimeFormat(
-    "es-AR",
-    {
-      weekday: "long",
-      day: "2-digit",
-      month: "long",
-      year: "numeric",
-    },
-  ).format(new Date(fechaHora));
-}
-
-
 function formatearHora(
   fechaHora: string,
 ): string {
-  return new Intl.DateTimeFormat(
-    "es-AR",
-    {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    },
-  ).format(new Date(fechaHora));
+  return formatearHoraTurno(fechaHora);
 }
 
 
@@ -124,11 +110,9 @@ function agruparTurnosPorFecha(
       grupos: Record<string, Turno[]>,
       turno,
     ) => {
-      const clave = new Date(
+      const clave = claveFechaNegocio(
         turno.fecha_hora,
-      )
-        .toISOString()
-        .slice(0, 10);
+      );
 
       if (!grupos[clave]) {
         grupos[clave] = [];
@@ -145,6 +129,7 @@ function agruparTurnosPorFecha(
 
 function Turnos({
   onVolver,
+  rol,
 }: TurnosProps) {
   const [turnos, setTurnos] =
     useState<Turno[]>([]);
@@ -166,6 +151,12 @@ function Turnos({
 
   const [turnoActualizando, setTurnoActualizando] =
     useState<number | null>(null);
+
+  const [mostrarNuevoTurno, setMostrarNuevoTurno] =
+    useState(false);
+
+  const [turnoAReprogramar, setTurnoAReprogramar] =
+    useState<Turno | null>(null);
 
 
   const cargarTurnos =
@@ -307,12 +298,10 @@ function Turnos({
       <section className="dashboard">
         <header className="dashboard-encabezado">
           <div className="marca dashboard-marca">
-            <span className="marca-icono">
-              +
-            </span>
+            <img className="marca-icono" src="/brand/mediturnos-symbol.svg" alt="" aria-hidden="true" />
 
             <div>
-              <h1>MediTurnos</h1>
+              <h1>Turnelia</h1>
               <p>Agenda médica</p>
             </div>
           </div>
@@ -343,7 +332,22 @@ function Turnos({
               </p>
             </div>
 
-            <div className="turnos-resumen">
+            <div className="turnos-cabecera-acciones">
+              {["administrador", "recepcionista"].includes(rol) && (
+                <button
+                  type="button"
+                  className="boton-primario"
+                  onClick={() => {
+                    setMensajeError("");
+                    setMensajeExito("");
+                    setMostrarNuevoTurno(true);
+                  }}
+                >
+                  Nuevo turno
+                </button>
+              )}
+
+              <div className="turnos-resumen">
               <strong>
                 {turnosFiltrados.length}
               </strong>
@@ -352,7 +356,8 @@ function Turnos({
                 {turnosFiltrados.length === 1
                   ? "turno visible"
                   : "turnos visibles"}
-              </span>
+                </span>
+              </div>
             </div>
           </div>
 
@@ -477,21 +482,15 @@ function Turnos({
                       <header className="agenda-dia-encabezado">
                         <div>
                           <span>
-                            {new Date(
-                              `${fecha}T12:00:00`,
-                            ).toLocaleDateString(
-                              "es-AR",
-                              {
-                                day: "2-digit",
-                                month: "2-digit",
-                              },
-                            )}
+                            {fecha
+                              .split("-")
+                              .reverse()
+                              .slice(0, 2)
+                              .join("/")}
                           </span>
 
                           <h3>
-                            {formatearFecha(
-                              `${fecha}T12:00:00`,
-                            )}
+                            {formatearFechaAgrupada(fecha)}
                           </h3>
                         </div>
 
@@ -615,6 +614,26 @@ function Turnos({
                                     </button>
                                   )}
 
+                                {["administrador", "recepcionista"].includes(rol)
+                                  && turno.estado
+                                  !== "cancelado"
+                                  && turno.estado
+                                  !== "finalizado"
+                                  && (
+                                    <button
+                                      type="button"
+                                      className="accion-reprogramar"
+                                      disabled={turnoActualizando === turno.id}
+                                      onClick={() => {
+                                        setMensajeError("");
+                                        setMensajeExito("");
+                                        setTurnoAReprogramar(turno);
+                                      }}
+                                    >
+                                      Reprogramar
+                                    </button>
+                                  )}
+
                                 {turno.estado
                                   !== "cancelado"
                                   && turno.estado
@@ -649,6 +668,39 @@ function Turnos({
             )}
         </section>
       </section>
+
+      {mostrarNuevoTurno && (
+        <ModalNuevoTurno
+          onCerrar={() => setMostrarNuevoTurno(false)}
+          onTurnoCreado={(turno) => {
+            setTurnos((actuales) => [...actuales, turno]);
+            setMostrarNuevoTurno(false);
+            setMensajeExito(
+              `El turno de ${turno.paciente_nombre} fue creado correctamente.`,
+            );
+          }}
+        />
+      )}
+
+      {turnoAReprogramar
+        && ["administrador", "recepcionista"].includes(rol)
+        && (
+          <ModalReprogramarTurno
+            turno={turnoAReprogramar}
+            onCerrar={() => setTurnoAReprogramar(null)}
+            onTurnoReprogramado={(turnoActualizado) => {
+              setTurnos((actuales) => actuales.map((turno) =>
+                turno.id === turnoActualizado.id
+                  ? turnoActualizado
+                  : turno
+              ));
+              setTurnoAReprogramar(null);
+              setMensajeExito(
+                `El turno de ${turnoActualizado.paciente_nombre} fue reprogramado correctamente.`,
+              );
+            }}
+          />
+        )}
     </main>
   );
 }

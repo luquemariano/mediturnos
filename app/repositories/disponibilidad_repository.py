@@ -3,7 +3,9 @@ from sqlalchemy.orm import Session
 from app.models.disponibilidad import Disponibilidad
 from app.models.profesional import Profesional
 from app.schemas.disponibilidad import DisponibilidadCrear
-from datetime import date, datetime, time
+from datetime import date, timedelta, time
+
+from app.core.datetime_utils import fecha_hora_civil_a_utc
 
 from app.models.prestacion import Prestacion
 from app.models.turno import Turno
@@ -59,6 +61,22 @@ def buscar_por_profesional(
     )
 
 
+def buscar_disponibilidad_de_profesional(
+    db: Session,
+    disponibilidad_id: int,
+    profesional_id: int,
+) -> Disponibilidad | None:
+    return (
+        db.query(Disponibilidad)
+        .filter(
+            Disponibilidad.id == disponibilidad_id,
+            Disponibilidad.profesional_id == profesional_id,
+            Disponibilidad.activa.is_(True),
+        )
+        .first()
+    )
+
+
 def buscar_por_dia(
     db: Session,
     profesional_id: int,
@@ -86,32 +104,46 @@ def buscar_prestacion(
     )
 
 
+def buscar_turno_por_id(
+    db: Session,
+    turno_id: int,
+) -> Turno | None:
+    return (
+        db.query(Turno)
+        .filter(Turno.id == turno_id)
+        .first()
+    )
+
+
 def buscar_turnos_del_dia(
     db: Session,
     profesional_id: int,
     fecha: date,
+    turno_id_excluido: int | None = None,
 ) -> list[Turno]:
-    inicio_dia = datetime.combine(
+    inicio_dia = fecha_hora_civil_a_utc(
         fecha,
         time.min,
     )
 
-    fin_dia = datetime.combine(
-        fecha,
-        time.max,
+    fin_dia = fecha_hora_civil_a_utc(
+        fecha + timedelta(days=1),
+        time.min,
     )
 
-    return (
+    consulta = (
         db.query(Turno)
-        .join(
-            Prestacion,
-            Turno.prestacion_id == Prestacion.id,
-        )
         .filter(
-            Prestacion.profesional_id == profesional_id,
-            Turno.fecha_hora >= inicio_dia,
-            Turno.fecha_hora <= fin_dia,
+            Turno.profesional_id == profesional_id,
+            Turno.fecha_hora < fin_dia,
+            Turno.fecha_fin > inicio_dia,
             Turno.estado != "cancelado",
         )
-        .all()
     )
+
+    if turno_id_excluido is not None:
+        consulta = consulta.filter(
+            Turno.id != turno_id_excluido,
+        )
+
+    return consulta.all()

@@ -18,6 +18,18 @@ export interface Turno {
   especialidad_nombre: string;
 
   fecha_hora: string;
+  fecha_fin?: string;
   estado: EstadoTurno;
   observaciones: string | null;
+}
+
+export interface TurnoCrear {
+  paciente_id: number;
+  prestacion_id: number;
+  fecha_hora: string;
+  observaciones: string | null;
+}
+
+export interface HorarioLibre {
+  fecha_hora: string;
 }

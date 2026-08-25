@@ -186,7 +186,6 @@ def listar_pacientes(
         requiere_roles(
             "administrador",
             "recepcionista",
-            "profesional",
         )
     ),
 ):
@@ -205,7 +204,6 @@ def ver_paciente(
         requiere_roles(
             "administrador",
             "recepcionista",
-            "profesional",
         )
     ),
 ):

@@ -1,24 +1,111 @@
 from datetime import datetime, time, timedelta
+
+from app.core.datetime_utils import (
+    fecha_actual_negocio,
+    fecha_hora_civil_a_utc,
+)
 from decimal import Decimal
 
+from pydantic import EmailStr, TypeAdapter, ValidationError
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.database.connection import SessionLocal
+from app.models.disponibilidad import Disponibilidad
 from app.models.especialidad import Especialidad
+from app.models.evolucion_clinica import EvolucionClinica
 from app.models.paciente import Paciente
+from app.models.pago import Pago
 from app.models.prestacion import Prestacion
 from app.models.profesional import Profesional
 from app.models.profesional_especialidad import (
     ProfesionalEspecialidad,
 )
+from app.models.profesional_paciente import ProfesionalPaciente
 from app.models.turno import Turno
 from app.models.usuario import Usuario
+from app.models.cuenta import Cuenta
+from app.models.cuenta_usuario import CuentaUsuario
+from app.models.suscripcion import Suscripcion
 from app.core.security import generar_hash_password
 
 
 MARCA_TURNO_DEMO = "[DEMO_MEDI_TURNOS]"
-ADMIN_DEMO_EMAIL = "admin@mediturnos.demo"
-ADMIN_DEMO_PASSWORD = "Demo1234!"
+MARCA_EVOLUCION_DEMO = "[DEMO_TURNELIA_EVOLUCION]"
+NOMBRE_ADMIN_DEMO = "Administrador Demo"
+NOMBRE_PROFESIONAL_DEMO = "Profesional Demo"
+MATRICULA_PROFESIONAL_DEMO = "MP-DEMO-PSIQ-001"
+EMAIL_ADMIN_DEMO_LEGACY = "admin.demo@mediturnos.local"
+EMAIL_PROFESIONAL_DEMO_LEGACY = "profesional.demo@mediturnos.local"
+ADAPTADOR_EMAIL = TypeAdapter(EmailStr)
+
+
+class ConfiguracionSeedInvalidaError(RuntimeError):
+    pass
+
+
+class CuentaAdminNoDemoError(RuntimeError):
+    pass
+
+
+class CuentaProfesionalNoDemoError(RuntimeError):
+    pass
+
+
+class TurnosDemoConPagosError(RuntimeError):
+    pass
+
+
+def validar_ejecucion_seed() -> None:
+    if settings.app_env == "production":
+        raise ConfiguracionSeedInvalidaError(
+            "El seed demo no puede ejecutarse en production."
+        )
+
+    if not settings.demo_seed_enabled:
+        raise ConfiguracionSeedInvalidaError(
+            "El seed demo está deshabilitado. Configurá "
+            "DEMO_SEED_ENABLED=true para ejecutarlo."
+        )
+
+    validar_email_demo(settings.demo_admin_email, "DEMO_ADMIN_EMAIL")
+    validar_email_demo(
+        settings.demo_professional_email,
+        "DEMO_PROFESSIONAL_EMAIL",
+    )
+
+
+def validar_email_demo(email: str | None, nombre_variable: str) -> str:
+    email_normalizado = (email or "").strip()
+    if not email_normalizado:
+        raise ConfiguracionSeedInvalidaError(
+            f"{nombre_variable} es obligatorio para ejecutar el seed demo."
+        )
+
+    try:
+        return str(ADAPTADOR_EMAIL.validate_python(email_normalizado))
+    except ValidationError as error:
+        raise ConfiguracionSeedInvalidaError(
+            f"{nombre_variable} debe ser un email válido."
+        ) from error
+
+
+def obtener_password_demo() -> str | None:
+    if settings.demo_admin_password is None:
+        return None
+
+    password = settings.demo_admin_password.get_secret_value()
+
+    return password if password else None
+
+
+def obtener_password_profesional_demo() -> str | None:
+    if settings.demo_professional_password is None:
+        return None
+
+    password = settings.demo_professional_password.get_secret_value()
+
+    return password if password else None
 
 
 
@@ -26,33 +113,161 @@ ADMIN_DEMO_PASSWORD = "Demo1234!"
 def obtener_o_crear_admin_demo(
     db: Session,
 ) -> Usuario:
+    email = validar_email_demo(settings.demo_admin_email, "DEMO_ADMIN_EMAIL")
     usuario = (
         db.query(Usuario)
-        .filter(Usuario.email == ADMIN_DEMO_EMAIL)
+        .filter(Usuario.email == email)
         .first()
     )
 
-    password_hash = generar_hash_password(
-        ADMIN_DEMO_PASSWORD,
-    )
+    if usuario is None and settings.app_env in ("development", "demo"):
+        usuario_legacy = (
+            db.query(Usuario)
+            .filter(Usuario.email == EMAIL_ADMIN_DEMO_LEGACY)
+            .first()
+        )
+        if usuario_legacy is not None:
+            if (
+                usuario_legacy.nombre != NOMBRE_ADMIN_DEMO
+                or usuario_legacy.rol != "administrador"
+            ):
+                raise CuentaAdminNoDemoError(
+                    "La cuenta con el email demo anterior no puede "
+                    "identificarse inequívocamente como el "
+                    "administrador demo."
+                )
+            usuario_legacy.email = email
+            usuario = usuario_legacy
 
     if usuario is not None:
-        usuario.nombre = "Administrador Demo"
-        usuario.password_hash = password_hash
-        usuario.rol = "administrador"
+        if (
+            usuario.nombre != NOMBRE_ADMIN_DEMO
+            or usuario.rol != "administrador"
+        ):
+            raise CuentaAdminNoDemoError(
+                "La cuenta configurada en DEMO_ADMIN_EMAIL ya "
+                "existe, pero no puede identificarse inequívocamente "
+                "como el administrador demo."
+            )
+
+        if settings.demo_admin_reset_password:
+            password = obtener_password_demo()
+
+            if password is None:
+                raise ConfiguracionSeedInvalidaError(
+                    "DEMO_ADMIN_PASSWORD es obligatorio cuando "
+                    "DEMO_ADMIN_RESET_PASSWORD=true."
+                )
+
+            usuario.password_hash = generar_hash_password(password)
+
         usuario.activo = True
 
         return usuario
 
+    password = obtener_password_demo()
+
+    if password is None:
+        raise ConfiguracionSeedInvalidaError(
+            "DEMO_ADMIN_PASSWORD es obligatorio para crear el "
+            "administrador demo."
+        )
+
     usuario = Usuario(
-        nombre="Administrador Demo",
-        email=ADMIN_DEMO_EMAIL,
-        password_hash=password_hash,
+        nombre=NOMBRE_ADMIN_DEMO,
+        email=email,
+        password_hash=generar_hash_password(password),
         rol="administrador",
         activo=True,
     )
 
     db.add(usuario)
+    db.flush()
+
+    return usuario
+
+
+def obtener_o_crear_usuario_profesional_demo(
+    db: Session,
+    profesional: Profesional,
+) -> Usuario:
+    email = validar_email_demo(
+        settings.demo_professional_email,
+        "DEMO_PROFESSIONAL_EMAIL",
+    )
+    usuario = db.query(Usuario).filter(Usuario.email == email).first()
+
+    if usuario is None and settings.app_env in ("development", "demo"):
+        usuario_legacy = (
+            db.query(Usuario)
+            .filter(
+                Usuario.email == EMAIL_PROFESIONAL_DEMO_LEGACY,
+                Usuario.id == profesional.usuario_id,
+            )
+            .first()
+        )
+        if usuario_legacy is not None:
+            if (
+                usuario_legacy.nombre != NOMBRE_PROFESIONAL_DEMO
+                or usuario_legacy.rol != "profesional"
+            ):
+                raise CuentaProfesionalNoDemoError(
+                    "La cuenta con el email demo anterior no puede "
+                    "identificarse inequívocamente como el profesional demo."
+                )
+            usuario_legacy.email = email
+            usuario = usuario_legacy
+
+    if profesional.usuario_id is not None and (
+        usuario is None or profesional.usuario_id != usuario.id
+    ):
+        raise CuentaProfesionalNoDemoError(
+            "El perfil profesional demo ya está vinculado a otra "
+            "cuenta. No se modificó ningún usuario."
+        )
+
+    if usuario is not None:
+        if (
+            usuario.nombre != NOMBRE_PROFESIONAL_DEMO
+            or usuario.rol != "profesional"
+            or usuario.profesional is None
+            or usuario.profesional.id != profesional.id
+        ):
+            raise CuentaProfesionalNoDemoError(
+                "La cuenta configurada en DEMO_PROFESSIONAL_EMAIL "
+                "ya existe, pero no puede identificarse "
+                "inequívocamente como el profesional demo."
+            )
+
+        if settings.demo_professional_reset_password:
+            password = obtener_password_profesional_demo()
+            if password is None:
+                raise ConfiguracionSeedInvalidaError(
+                    "DEMO_PROFESSIONAL_PASSWORD es obligatorio "
+                    "cuando DEMO_PROFESSIONAL_RESET_PASSWORD=true."
+                )
+            usuario.password_hash = generar_hash_password(password)
+
+        usuario.activo = True
+        return usuario
+
+    password = obtener_password_profesional_demo()
+    if password is None:
+        raise ConfiguracionSeedInvalidaError(
+            "DEMO_PROFESSIONAL_PASSWORD es obligatorio para crear "
+            "el profesional demo."
+        )
+
+    usuario = Usuario(
+        nombre=NOMBRE_PROFESIONAL_DEMO,
+        email=email,
+        password_hash=generar_hash_password(password),
+        rol="profesional",
+        activo=True,
+    )
+    db.add(usuario)
+    db.flush()
+    profesional.usuario = usuario
     db.flush()
 
     return usuario
@@ -113,9 +328,13 @@ def obtener_o_crear_profesional(
         profesional.email = email
         profesional.activo = True
 
+        asegurar_cuenta_profesional_demo(db, profesional)
         return profesional
 
+    cuenta = Cuenta(nombre=f"{nombre} {apellido}", tipo="individual")
+    cuenta.suscripcion = Suscripcion(plan_code="profesional", status="active")
     profesional = Profesional(
+        cuenta=cuenta,
         nombre=nombre,
         apellido=apellido,
         matricula=matricula,
@@ -128,6 +347,96 @@ def obtener_o_crear_profesional(
     db.flush()
 
     return profesional
+
+
+def asegurar_cuenta_profesional_demo(db: Session, profesional: Profesional) -> Cuenta:
+    if profesional.cuenta is None:
+        profesional.cuenta = Cuenta(
+            nombre=f"{profesional.nombre} {profesional.apellido}", tipo="individual",
+            suscripcion=Suscripcion(plan_code="profesional", status="active"),
+        )
+        db.flush()
+    elif profesional.cuenta.suscripcion is None:
+        profesional.cuenta.suscripcion = Suscripcion(plan_code="profesional", status="active")
+    else:
+        profesional.cuenta.suscripcion.plan_code = "profesional"
+        profesional.cuenta.suscripcion.status = "active"
+        profesional.cuenta.suscripcion.trial_started_at = None
+        profesional.cuenta.suscripcion.trial_ends_at = None
+    return profesional.cuenta
+
+
+def asegurar_membresia_propietario_demo(db: Session, profesional: Profesional, usuario: Usuario) -> None:
+    cuenta = asegurar_cuenta_profesional_demo(db, profesional)
+    membresia = db.get(CuentaUsuario, (cuenta.id, usuario.id))
+    if membresia is None:
+        db.add(CuentaUsuario(cuenta=cuenta, usuario=usuario, rol_cuenta="propietario"))
+    else:
+        membresia.rol_cuenta = "propietario"
+
+
+def obtener_o_crear_disponibilidad_demo(
+    db: Session,
+    profesional: Profesional,
+    dia_semana: int,
+    hora_inicio: time,
+    hora_fin: time,
+) -> Disponibilidad:
+    disponibilidad = (
+        db.query(Disponibilidad)
+        .filter(
+            Disponibilidad.profesional_id == profesional.id,
+            Disponibilidad.dia_semana == dia_semana,
+            Disponibilidad.hora_inicio == hora_inicio,
+            Disponibilidad.hora_fin == hora_fin,
+        )
+        .first()
+    )
+
+    if disponibilidad is not None:
+        disponibilidad.activa = True
+        return disponibilidad
+
+    disponibilidad = Disponibilidad(
+        profesional_id=profesional.id,
+        dia_semana=dia_semana,
+        hora_inicio=hora_inicio,
+        hora_fin=hora_fin,
+        activa=True,
+    )
+    db.add(disponibilidad)
+    db.flush()
+
+    return disponibilidad
+
+
+def vincular_profesional_paciente_demo(
+    db: Session,
+    profesional: Profesional,
+    paciente: Paciente,
+) -> ProfesionalPaciente:
+    relacion = (
+        db.query(ProfesionalPaciente)
+        .filter(
+            ProfesionalPaciente.profesional_id == profesional.id,
+            ProfesionalPaciente.paciente_id == paciente.id,
+        )
+        .first()
+    )
+
+    if relacion is not None:
+        relacion.activo = True
+        return relacion
+
+    relacion = ProfesionalPaciente(
+        profesional_id=profesional.id,
+        paciente_id=paciente.id,
+        activo=True,
+    )
+    db.add(relacion)
+    db.flush()
+
+    return relacion
 
 
 def vincular_profesional_especialidad(
@@ -264,11 +573,11 @@ def construir_fecha(
     hora: int,
     minuto: int,
 ) -> datetime:
-    fecha = datetime.now().date() + timedelta(
+    fecha = fecha_actual_negocio() + timedelta(
         days=dias_desde_hoy,
     )
 
-    return datetime.combine(
+    return fecha_hora_civil_a_utc(
         fecha,
         time(
             hour=hora,
@@ -314,13 +623,63 @@ def eliminar_turnos_demo(
         .all()
     )
 
+    ids_turnos_demo = [turno.id for turno in turnos_demo]
+
+    if ids_turnos_demo:
+        pago_asociado = (
+            db.query(Pago.id)
+            .filter(Pago.turno_id.in_(ids_turnos_demo))
+            .first()
+        )
+
+        if pago_asociado is not None:
+            raise TurnosDemoConPagosError(
+                "No se pueden recrear los turnos demo porque uno "
+                "o más tienen pagos asociados. No se eliminó ningún "
+                "turno ni pago."
+            )
+
     for turno in turnos_demo:
         db.delete(turno)
 
     db.flush()
 
 
-def cargar_datos_demo(
+def crear_evolucion_demo(
+    db: Session,
+    paciente: Paciente,
+    profesional: Profesional,
+    dias_desde_hoy: int,
+    hora: int,
+    minuto: int,
+    contenido: str,
+) -> EvolucionClinica:
+    evolucion = EvolucionClinica(
+        paciente_id=paciente.id,
+        profesional_id=profesional.id,
+        contenido=f"{MARCA_EVOLUCION_DEMO} {contenido}",
+        created_at=construir_fecha(dias_desde_hoy, hora, minuto),
+    )
+    db.add(evolucion)
+    return evolucion
+
+
+def eliminar_evoluciones_demo(db: Session) -> None:
+    evoluciones_demo = (
+        db.query(EvolucionClinica)
+        .filter(
+            EvolucionClinica.contenido.like(
+                f"{MARCA_EVOLUCION_DEMO}%",
+            )
+        )
+        .all()
+    )
+    for evolucion in evoluciones_demo:
+        db.delete(evolucion)
+    db.flush()
+
+
+def _cargar_datos_demo(
     db: Session,
 ) -> None:
     print("Cargando administrador demo...")
@@ -358,6 +717,35 @@ def cargar_datos_demo(
         ),
         duracion_turno_minutos=30,
     )
+
+    psiquiatria = obtener_o_crear_especialidad(
+        db=db,
+        nombre="Psiquiatría",
+        descripcion=(
+            "Evaluación, diagnóstico y tratamiento "
+            "de la salud mental."
+        ),
+        duracion_turno_minutos=50,
+    )
+
+    catalogo_adicional = [
+        "Medicina General", "Ginecología", "Obstetricia", "Dermatología",
+        "Traumatología", "Neurología", "Oftalmología", "Otorrinolaringología",
+        "Gastroenterología", "Endocrinología", "Urología", "Neumonología",
+        "Reumatología", "Infectología", "Nefrología", "Hematología",
+        "Oncología", "Cirugía General", "Medicina Familiar", "Medicina Laboral",
+        "Medicina del Deporte", "Psicología", "Psicopedagogía",
+        "Terapia Ocupacional", "Kinesiología", "Fisioterapia",
+        "Fonoaudiología", "Nutrición", "Odontología", "Enfermería",
+        "Podología", "Estética",
+    ]
+    for nombre in catalogo_adicional:
+        obtener_o_crear_especialidad(
+            db=db,
+            nombre=nombre,
+            descripcion=f"Atención profesional en {nombre.lower()}.",
+            duracion_turno_minutos=30,
+        )
 
     print("Cargando profesionales...")
 
@@ -397,6 +785,25 @@ def cargar_datos_demo(
         email="lucia.fernandez@mediturnos.demo",
     )
 
+    sofia_ramirez = obtener_o_crear_profesional(
+        db=db,
+        nombre="Sofía",
+        apellido="Ramírez",
+        matricula=MATRICULA_PROFESIONAL_DEMO,
+        telefono="3515551105",
+        email="sofia.ramirez@mediturnos.demo",
+    )
+
+    print("Cargando usuario profesional demo...")
+
+    usuario_profesional_demo = obtener_o_crear_usuario_profesional_demo(
+        db=db,
+        profesional=sofia_ramirez,
+    )
+    asegurar_membresia_propietario_demo(
+        db, sofia_ramirez, usuario_profesional_demo,
+    )
+
     print(
         "Vinculando profesionales "
         "con especialidades..."
@@ -428,6 +835,13 @@ def cargar_datos_demo(
         profesional=lucia_fernandez,
         especialidad=cardiologia,
         duracion_turno_minutos=30,
+    )
+
+    vincular_profesional_especialidad(
+        db=db,
+        profesional=sofia_ramirez,
+        especialidad=psiquiatria,
+        duracion_turno_minutos=50,
     )
 
     print("Cargando prestaciones...")
@@ -514,6 +928,38 @@ def cargar_datos_demo(
         modalidad="presencial",
         profesional=martin_lopez,
         especialidad=pediatria,
+    )
+
+    consulta_psiquiatrica = obtener_o_crear_prestacion(
+        db=db,
+        nombre="Consulta psiquiátrica",
+        descripcion=(
+            "Evaluación clínica y seguimiento "
+            "de la salud mental."
+        ),
+        duracion_minutos=50,
+        precio=Decimal("28000.00"),
+        modalidad="presencial",
+        profesional=sofia_ramirez,
+        especialidad=psiquiatria,
+    )
+
+    print("Cargando disponibilidad del profesional demo...")
+
+    dia_demo_principal = fecha_actual_negocio().weekday()
+    obtener_o_crear_disponibilidad_demo(
+        db,
+        sofia_ramirez,
+        dia_demo_principal,
+        time(8, 0),
+        time(12, 0),
+    )
+    obtener_o_crear_disponibilidad_demo(
+        db,
+        sofia_ramirez,
+        dia_demo_principal,
+        time(14, 0),
+        time(19, 0),
     )
 
     print("Cargando pacientes demo...")
@@ -606,6 +1052,22 @@ def cargar_datos_demo(
         numero_afiliado="APROSS-45111223",
     )
 
+    for paciente_demo in (
+        juan_perez,
+        silvina_perez,
+        ana_lopez,
+        roberto_sanchez,
+        mariana_torres,
+        diego_ferreyra,
+        paula_romero,
+        mateo_castro,
+    ):
+        vincular_profesional_paciente_demo(
+            db,
+            sofia_ramirez,
+            paciente_demo,
+        )
+
     db.flush()
 
     print("Recreando turnos demo...")
@@ -613,6 +1075,48 @@ def cargar_datos_demo(
     eliminar_turnos_demo(db)
 
     turnos_demo = [
+        (
+            juan_perez,
+            consulta_psiquiatrica,
+            construir_fecha(0, 8, 0),
+            "finalizado",
+            "Seguimiento clínico completado.",
+        ),
+        (
+            silvina_perez,
+            consulta_psiquiatrica,
+            construir_fecha(0, 9, 0),
+            "confirmado",
+            "Consulta de seguimiento.",
+        ),
+        (
+            ana_lopez,
+            consulta_psiquiatrica,
+            construir_fecha(0, 10, 0),
+            "ausente",
+            "El paciente no se presentó.",
+        ),
+        (
+            roberto_sanchez,
+            consulta_psiquiatrica,
+            construir_fecha(0, 14, 0),
+            "confirmado",
+            "Control de tratamiento.",
+        ),
+        (
+            mariana_torres,
+            consulta_psiquiatrica,
+            construir_fecha(0, 15, 0),
+            "reservado",
+            "Primera entrevista.",
+        ),
+        (
+            diego_ferreyra,
+            consulta_psiquiatrica,
+            construir_fecha(0, 16, 0),
+            "cancelado",
+            "Cancelación informada por el paciente.",
+        ),
         (
             juan_perez,
             consulta_clinica,
@@ -736,21 +1240,74 @@ def cargar_datos_demo(
             descripcion_demo=descripcion,
         )
 
-    db.commit()
+    print("Recreando evoluciones clínicas demo...")
 
+    eliminar_evoluciones_demo(db)
+
+    evoluciones_demo = [
+        (juan_perez, -3, 10, 15, "Consulta de seguimiento ficticia. Evolución general favorable para demostración."),
+        (juan_perez, -10, 16, 30, "Control programado demo. Sin novedades relevantes desde el registro anterior."),
+        (juan_perez, -22, 9, 45, "Registro ficticio para comprobar la continuidad del historial clínico."),
+        (juan_perez, -39, 11, 0, "Seguimiento de prueba. Se mantiene el esquema periódico de controles demo."),
+        (juan_perez, -61, 15, 20, "Primera anotación simulada del historial. Contenido sin datos clínicos reales."),
+        (silvina_perez, -1, 14, 10, "Evolución demo reciente para validar el orden cronológico descendente."),
+        (silvina_perez, -8, 9, 20, "Consulta ficticia de seguimiento. Sin cambios relevantes para la demostración."),
+        (silvina_perez, -19, 17, 5, "Control de prueba registrado para visualizar varias consultas del paciente."),
+        (silvina_perez, -35, 10, 40, "Seguimiento demo. Se programa una nueva revisión ficticia."),
+        (silvina_perez, -56, 12, 0, "Registro inicial simulado, creado exclusivamente para el entorno demo."),
+        (ana_lopez, -5, 8, 50, "Consulta de demostración. Evolución estable sin información médica real."),
+        (ana_lopez, -17, 13, 35, "Seguimiento ficticio para probar lectura y separación entre registros."),
+        (ana_lopez, -31, 10, 5, "Control programado de prueba. No se registran novedades en este ejemplo."),
+        (ana_lopez, -48, 16, 15, "Anotación demo anterior para completar la secuencia cronológica."),
+        (roberto_sanchez, -6, 11, 25, "Registro ficticio breve utilizado para probar un historial corto."),
+        (roberto_sanchez, -28, 15, 45, "Consulta demo previa. Se conserva seguimiento periódico de ejemplo."),
+        (mateo_castro, -4, 9, 10, "Control ficticio de demostración, sin datos clínicos ni personales reales."),
+        (mateo_castro, -24, 14, 30, "Registro de prueba anterior para visualizar un historial breve."),
+    ]
+
+    for paciente, dias, hora, minuto, contenido in evoluciones_demo:
+        crear_evolucion_demo(
+            db=db,
+            paciente=paciente,
+            profesional=sofia_ramirez,
+            dias_desde_hoy=dias,
+            hora=hora,
+            minuto=minuto,
+            contenido=contenido,
+        )
+
+
+
+def imprimir_resumen_seed() -> None:
     print("")
     print("Datos demo cargados correctamente.")
     print("----------------------------------")
-    print("Especialidades: 3")
-    print("Profesionales: 4")
-    print("Prestaciones: 6")
+    print("Especialidades: 36")
+    print("Profesionales: 5")
+    print("Prestaciones: 7")
     print("Pacientes demo disponibles: 8")
-    print("Turnos demo recreados: 15")
+    print("Turnos demo recreados: 21")
+    print("Evoluciones demo recreadas: 18")
     print("")
     print("Credenciales de acceso demo")
     print("---------------------------")
-    print(f"Email: {ADMIN_DEMO_EMAIL}")
-    print(f"Contraseña: {ADMIN_DEMO_PASSWORD}")
+    print(f"Administrador: {settings.demo_admin_email}")
+    print(f"Profesional: {settings.demo_professional_email}")
+
+
+def cargar_datos_demo(
+    db: Session,
+) -> None:
+    validar_ejecucion_seed()
+
+    try:
+        _cargar_datos_demo(db)
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+
+    imprimir_resumen_seed()
 
 
 def main() -> None:

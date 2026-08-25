@@ -1,0 +1,39 @@
+.nuevo-turno-prof-fondo { position: fixed; z-index: 100; inset: 0; display: grid; place-items: center; padding: 24px; background: rgba(21,62,59,.42); }
+.nuevo-turno-prof { width: min(610px, 100%); max-height: calc(100dvh - 48px); overflow-y: auto; border: 1px solid rgba(101,113,109,.24); border-radius: 10px; background: var(--prof-surface); }
+.nuevo-turno-prof > header { min-height: 78px; display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 17px 22px; border-bottom: 1px solid rgba(101,113,109,.16); background: var(--prof-surface-warm); }
+.nuevo-turno-prof > header span { color: var(--prof-text-secondary); font-size: 11px; font-weight: 700; letter-spacing: .07em; }
+.nuevo-turno-prof > header h2 { font-family: Manrope, sans-serif; font-size: 23px; font-weight: 600; letter-spacing: -.02em; }
+.nuevo-turno-prof > header button { width: 40px; height: 40px; border: 0; border-radius: 7px; background: transparent; color: var(--prof-text-secondary); font-size: 25px; cursor: pointer; }
+.nuevo-turno-prof > header button:hover { background: rgba(255,255,255,.55); color: var(--prof-text); }
+.nuevo-turno-prof form { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 22px; }
+.nuevo-turno-prof form > label, .nuevo-turno-prof fieldset { display: grid; gap: 6px; color: var(--prof-text); font-size: 13px; font-weight: 700; }
+.nuevo-turno-prof label small { color: var(--prof-text-secondary); font-weight: 400; }
+.nuevo-turno-prof select, .nuevo-turno-prof input[type="date"], .nuevo-turno-prof textarea { width: 100%; min-height: 44px; padding: 9px 11px; border: 1px solid var(--prof-border); border-radius: 7px; outline: 0; background: var(--prof-surface); color: var(--prof-text); font: inherit; }
+.nuevo-turno-prof select:focus, .nuevo-turno-prof input:focus, .nuevo-turno-prof textarea:focus { border-color: var(--prof-primary); box-shadow: 0 0 0 3px rgba(23,111,106,.12); }
+.nuevo-turno-prof fieldset, .nuevo-turno-prof form > label:nth-of-type(4), .nuevo-turno-prof-error, .nuevo-turno-prof-resumen, .nuevo-turno-prof footer { grid-column: 1 / -1; }
+.nuevo-turno-prof fieldset { min-width: 0; padding: 0; border: 0; }
+.nuevo-turno-prof fieldset > p { color: var(--prof-text-secondary); font-size: 13px; font-weight: 400; }
+.nuevo-turno-prof-horarios { display: flex; flex-wrap: wrap; gap: 7px; }
+.nuevo-turno-prof-horarios label { min-width: 70px; min-height: 40px; display: grid; place-items: center; padding: 0 12px; border: 1px solid var(--prof-border); border-radius: 7px; color: var(--prof-primary-dark); font-variant-numeric: tabular-nums; cursor: pointer; }
+.nuevo-turno-prof-horarios label.seleccionado { border-color: var(--prof-primary); background: var(--prof-primary-soft); color: var(--prof-primary-dark); }
+.nuevo-turno-prof-horarios label.horario-pasado { background: rgba(101,113,109,.06); color: var(--prof-text-secondary); cursor: not-allowed; opacity: .58; text-decoration: line-through; text-decoration-color: rgba(101,113,109,.52); text-decoration-thickness: 1px; }
+.nuevo-turno-prof-horarios input { position: absolute; opacity: 0; }
+.nuevo-turno-prof textarea { resize: vertical; }
+.nuevo-turno-prof-resumen { color: var(--prof-text-secondary); font-size: 13px; }
+.nuevo-turno-prof-error { padding: 9px 11px; border-left: 3px solid var(--prof-danger); background: rgba(169,78,73,.06); color: var(--prof-danger); font-size: 13px; }
+.nuevo-turno-prof footer { display: flex; justify-content: flex-end; gap: 9px; padding-top: 3px; }
+.nuevo-turno-prof footer button { min-height: 42px; padding: 0 16px; border: 1px solid var(--prof-border); border-radius: 7px; background: transparent; color: var(--prof-primary-dark); font-weight: 700; cursor: pointer; }
+.nuevo-turno-prof footer button:last-child { border-color: var(--prof-primary); background: var(--prof-primary); color: #fff; }
+.nuevo-turno-prof footer button:last-child:hover { background: var(--prof-primary-hover); }
+.nuevo-turno-prof button:disabled, .nuevo-turno-prof select:disabled, .nuevo-turno-prof input:disabled, .nuevo-turno-prof textarea:disabled { cursor: wait; opacity: .58; }
+.nuevo-turno-prof-carga { min-height: 300px; display: grid; place-items: center; color: var(--prof-text-secondary); }
+
+@media (max-width: 620px) {
+  .nuevo-turno-prof-fondo { align-items: end; padding: 0; }
+  .nuevo-turno-prof { max-height: calc(100dvh - 58px); border-inline: 0; border-bottom: 0; border-radius: 12px 12px 0 0; }
+  .nuevo-turno-prof form { grid-template-columns: 1fr; padding: 18px 16px 24px; }
+  .nuevo-turno-prof form > label, .nuevo-turno-prof fieldset, .nuevo-turno-prof footer { grid-column: 1; }
+  .nuevo-turno-prof footer button { flex: 1; min-height: 46px; }
+}
+
+@media (prefers-reduced-motion: reduce) { .nuevo-turno-prof * { transition: none !important; } }
