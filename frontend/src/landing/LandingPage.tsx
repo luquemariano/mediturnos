@@ -13,6 +13,20 @@ const funciones = [
 
 const iconos = ["calendar", "users", "clock", "briefcase", "bell", "devices"];
 
+const preguntasFrecuentes = [
+  ["¿Qué es Turnelia y para qué sirve?", "Turnelia es una plataforma pensada para simplificar la gestión diaria de tu consultorio. Te permite organizar turnos, pacientes, agenda y seguimiento de la atención desde un solo lugar."],
+  ["¿Turnelia está pensado para profesionales independientes?", "Sí. El Plan Profesional está diseñado para profesionales que gestionan su propia atención y necesitan una herramienta simple para organizar pacientes, turnos y tareas del consultorio."],
+  ["¿Necesito instalar algún programa?", "No. Turnelia funciona desde el navegador, por lo que no necesitás instalar programas ni realizar configuraciones complicadas. Solo necesitás conexión a Internet y tus datos de acceso."],
+  ["¿Puedo gestionar mis turnos y pacientes desde el celular?", "Sí. Turnelia puede utilizarse desde el navegador de tu celular, tablet o computadora, permitiéndote consultar y gestionar la información de tu consultorio desde distintos dispositivos."],
+  ["¿Puedo registrar la información y evolución de mis pacientes?", "Sí. Turnelia permite mantener organizada la información de tus pacientes y registrar el seguimiento de cada atención, para que puedas consultar su evolución cuando la necesites."],
+  ["¿Mis pacientes necesitan tener una cuenta en Turnelia?", "No. Como profesional podés administrar tus pacientes y sus turnos directamente desde tu cuenta de Turnelia, sin necesidad de que cada paciente tenga una cuenta propia."],
+  ["¿Turnelia envía recordatorios de los turnos?", "Sí. Turnelia envía recordatorios por correo electrónico a tus pacientes antes de sus turnos. Desde el mismo mensaje, el paciente puede confirmar o cancelar su asistencia, ayudándote a mantener la agenda actualizada y reducir ausencias."],
+  ["¿Qué tan segura y confidencial es la información de mis pacientes?", "La información de tus pacientes es confidencial y está protegida mediante controles de acceso. Los datos clínicos y de atención quedan disponibles únicamente para el profesional correspondiente, evitando accesos no autorizados."],
+  ["¿Qué incluye el Plan Profesional?", "El Plan Profesional incluye las herramientas necesarias para organizar tu actividad diaria: gestión de pacientes, agenda y turnos, prestaciones, disponibilidad y seguimiento de la atención desde una única plataforma."],
+  ["¿Puedo cancelar la suscripción cuando quiera?", "Sí. Podés cancelar tu suscripción cuando lo necesites, sin permanencia mínima. Además, la información que generes en Turnelia sigue siendo tuya: podés descargar los datos de tu actividad y de tus pacientes para conservarlos o utilizarlos fuera de la plataforma."],
+  ["¿Qué pasa si tengo un problema o necesito ayuda?", "Contás con un Centro de Ayuda con tutoriales y guías paso a paso para resolver las dudas más frecuentes. Y si no encontrás allí la respuesta que necesitás, también tenés soporte personalizado para ayudarte ante cualquier duda o inconveniente con Turnelia."],
+] as const;
+
 function LineIcon({ name }: { name: string }) {
   const paths: Record<string, React.ReactNode> = {
     calendar: <><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4m8-4v4M3 10h18"/></>,
@@ -88,6 +102,17 @@ function Showcase({ id, eyebrow, title, text, bullets, asset, reverse = false, i
   </section>;
 }
 
+function FAQ() {
+  const [abierta, setAbierta] = useState<number | null>(null);
+  return <section id="preguntas-frecuentes" className="landing-section faq"><div className="landing-container">
+    <div className="section-heading"><p className="eyebrow">Preguntas frecuentes</p><h2>¿Tenés alguna duda?</h2><p>Encontrá respuestas rápidas sobre Turnelia y el Plan Profesional.</p></div>
+    <div className="faq__list">{preguntasFrecuentes.map(([pregunta, respuesta], index) => { const estaAbierta = abierta === index; const respuestaId = `faq-respuesta-${index}`; return <div className={`faq__item${estaAbierta ? " is-open" : ""}`} key={pregunta}>
+      <h3><button type="button" aria-expanded={estaAbierta} aria-controls={respuestaId} onClick={() => setAbierta(estaAbierta ? null : index)}><span>{pregunta}</span><span className="faq__indicator" aria-hidden="true">{estaAbierta ? "−" : "+"}</span></button></h3>
+      <div id={respuestaId} className="faq__answer" hidden={!estaAbierta}><p>{respuesta}</p></div>
+    </div>; })}</div>
+  </div></section>;
+}
+
 export default function LandingPage() {
   return <div className="landing-page">
     <LandingHeader />
@@ -112,6 +137,7 @@ export default function LandingPage() {
       <section id="precios" className="landing-section pricing"><div className="landing-container"><div className="section-heading"><p className="eyebrow">Precios</p><h2>Planes simples para crecer con Turnelia</h2><p>Elegí la opción que mejor se adapte a tu forma de trabajar.</p></div><div className="pricing__grid">{PLANES.map(plan => <article className={plan.destacado ? "plan plan--featured" : "plan"} key={plan.nombre}><span className="plan__status">{plan.estado}</span><h3>{plan.nombre}</h3><p>{plan.descripcion}</p><p className="plan__price">{plan.precio}</p><ul>{plan.incluye.map(item => <li key={item}>{item}</li>)}</ul><a className="button button--outline" href={plan.href}>{plan.accion}</a></article>)}</div><div className="pricing__payment"><img src="/brand/mercadopago.svg" alt="Mercado Pago" /><span>Pagos seguros con Mercado Pago</span></div><p className="pricing__note">*Sujeto a política de uso razonable.</p></div></section>
       <section id="demo" className="dark-cta"><div className="landing-container dark-cta__inner"><div><p className="eyebrow">Demo</p><h2>Conocé Turnelia funcionando</h2><p>Creá tu cuenta y probá Turnelia con 14 días de acceso gratuito.</p></div><a className="button button--light" href="/registro">Probar Turnelia</a></div></section>
       <section id="profesionales" className="landing-section audience"><div className="landing-container"><div className="section-heading"><p className="eyebrow">Para quién es</p><h2>Pensado para profesionales que gestionan su propia consulta</h2></div><div className="audience__list">{["Médicos", "Psicólogos", "Psiquiatras", "Psicopedagogos", "Nutricionistas", "Kinesiólogos", "Otros profesionales independientes"].map(item => <span key={item}>{item}</span>)}</div></div></section>
+      <FAQ />
       <section id="contacto" className="dark-cta dark-cta--final"><div className="landing-container dark-cta__inner"><div><h2>Menos tiempo organizando. Más tiempo para tus pacientes.</h2><p>Empezá a ordenar tu consulta con Turnelia.</p><div className="landing-contacto"><a href="mailto:marianoluque@live.com">marianoluque@live.com</a><a href={WHATSAPP_URL}>+54 9 351 227 7416</a></div></div><div className="button-row"><a className="button button--light" href="/registro">Probar Turnelia</a>{WHATSAPP_URL ? <a className="button button--dark-outline" href={WHATSAPP_URL} target="_blank" rel="noreferrer">Hablar por WhatsApp</a> : <button className="button button--dark-outline" disabled title="Canal de WhatsApp pendiente de configurar">Hablar por WhatsApp</button>}</div></div></section>
     </main>
     <footer className="landing-footer"><div className="landing-container landing-footer__grid"><div><img src="/brand/mediturnos-logo-horizontal.svg" alt="Turnelia"/><p>Agenda y gestión profesional.</p></div><div><h2>Producto</h2><a href="#funciones">Funciones</a><a href="#precios">Precios</a><a href="#demo">Demo</a></div><div><h2>Turnelia</h2><a href="#contacto">Contacto</a><span>Privacidad</span><span>Términos</span></div><div><h2>Acceso</h2><a href="/login">Ingresar</a></div></div><div className="landing-container landing-footer__bottom">© 2026 Turnelia. Todos los derechos reservados.</div></footer>
