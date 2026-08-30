@@ -84,4 +84,16 @@ describe("integración F10.6 de agenda profesional", () => {
   it("transiciona de detalle a cancelación y conserva la advertencia", async () => {
     vi.mocked(servicio.obtenerMiAgendaProfesional).mockResolvedValue([turno]); renderAgenda(); await waitFor(() => expect(servicio.obtenerMiAgendaProfesional).toHaveBeenCalledOnce()); fireEvent.click(screen.getByRole("button", { name: "Semana" })); const bloque = await screen.findByRole("button", { name: /12:00, Ana López, Consulta clínica, confirmado/i }); fireEvent.click(bloque); const dialogo = await screen.findByRole("dialog", { name: "Detalle del turno" }); fireEvent.click(within(dialogo).getByRole("button", { name: "Cancelar" })); expect(await screen.findByRole("dialog", { name: "Cancelar turno" })).toBe(dialogo); expect(screen.getByText(/El turno quedará cancelado/)).toBeInTheDocument(); expect(screen.queryByLabelText("Nueva fecha")).not.toBeInTheDocument();
   });
+
+  it("prioriza hora y paciente en turnos compactos y conserva el aria-label completo", async () => {
+    vi.mocked(servicio.obtenerMiAgendaProfesional).mockResolvedValue([turno]); renderAgenda(); await waitFor(() => expect(servicio.obtenerMiAgendaProfesional).toHaveBeenCalledOnce()); fireEvent.click(screen.getByRole("button", { name: "Semana" }));
+    const bloque = await screen.findByRole("button", { name: /12:00, Ana López, Consulta clínica, confirmado/i });
+    expect(bloque).toHaveClass("es-compacto"); expect(within(bloque).getByText("12:00")).toBeInTheDocument(); expect(within(bloque).getByText("Ana López")).toBeInTheDocument(); expect(within(bloque).queryByText("Consulta clínica")).not.toBeInTheDocument(); expect(bloque).toHaveAccessibleName("12:00, Ana López, Consulta clínica, confirmado");
+  });
+
+  it("muestra la prestación cuando el bloque tiene espacio suficiente", async () => {
+    vi.mocked(servicio.obtenerMiAgendaProfesional).mockResolvedValue([{ ...turno, fecha_fin: "2026-08-13T16:00:00Z" }]); renderAgenda(); await waitFor(() => expect(servicio.obtenerMiAgendaProfesional).toHaveBeenCalledOnce()); fireEvent.click(screen.getByRole("button", { name: "Semana" }));
+    const bloque = await screen.findByRole("button", { name: /12:00, Ana López, Consulta clínica, confirmado/i });
+    expect(bloque).not.toHaveClass("es-compacto"); expect(within(bloque).getByText("Consulta clínica")).toBeInTheDocument();
+  });
 });
