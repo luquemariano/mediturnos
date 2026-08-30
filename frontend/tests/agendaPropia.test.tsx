@@ -75,6 +75,20 @@ beforeEach(() => {
 afterEach(() => vi.useRealTimers());
 
 describe("agenda propia profesional Signature", () => {
+  it("inicia en hoy, consulta un rango civil y conserva un día vacío al navegar", async () => {
+    vi.setSystemTime(new Date("2026-08-31T12:00:00Z"));
+    vi.mocked(servicio.obtenerMiAgendaProfesional).mockResolvedValue([]);
+    renderProfesional();
+    expect(await screen.findByText(/Lunes, 31 de agosto de 2026/i)).toBeInTheDocument();
+    expect(servicio.obtenerMiAgendaProfesional).toHaveBeenCalledWith({ desde: "2026-08-31", hasta: "2026-08-31" });
+    expect(screen.getByRole("button", { name: "Día" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "Semana" })).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: "Fecha siguiente" }));
+    expect(await screen.findByText(/Martes, 1 de septiembre de 2026/i)).toBeInTheDocument();
+    expect(screen.getByText("No tenés turnos para este día.")).toBeInTheDocument();
+    expect(servicio.obtenerMiAgendaProfesional).toHaveBeenLastCalledWith({ desde: "2026-09-01", hasta: "2026-09-01" });
+  });
+
   it("usa el endpoint propio y el shell profesional compartido", async () => {
     vi.mocked(servicio.obtenerMiAgendaProfesional).mockResolvedValue([]);
     renderProfesional();
@@ -96,9 +110,8 @@ describe("agenda propia profesional Signature", () => {
   it("agrupa por fecha local, marca Hoy y ordena cronológicamente", async () => {
     vi.mocked(servicio.obtenerMiAgendaProfesional).mockResolvedValue(agenda);
     renderProfesional();
-    const hoy = await screen.findByRole("heading", { name: /Hoy · jueves 13 de agosto/i });
+    const hoy = await screen.findByRole("heading", { name: /Jueves, 13 de agosto de 2026/i });
     expect(hoy).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: /viernes 14 de agosto/i })).toBeInTheDocument();
     const filas = screen.getAllByRole("article");
     expect(filas[0]).toHaveAccessibleName(/08:00–08:50, Bruno Paz/);
     expect(filas[1]).toHaveAccessibleName(/09:00–09:50, Ana López/);
@@ -108,11 +121,10 @@ describe("agenda propia profesional Signature", () => {
   it("navega localmente entre fechas sin ocultar los grupos", async () => {
     vi.mocked(servicio.obtenerMiAgendaProfesional).mockResolvedValue(agenda);
     renderProfesional();
-    await screen.findByRole("heading", { name: /Hoy · jueves 13 de agosto/i });
+    await screen.findByRole("heading", { name: /Jueves, 13 de agosto de 2026/i });
     fireEvent.click(screen.getByRole("button", { name: "Fecha siguiente" }));
-    expect(screen.getByRole("navigation", { name: "Navegación temporal" })).toHaveTextContent("viernes 14 de agosto");
-    expect(screen.getByText("Ana López")).toBeInTheDocument();
-    expect(screen.getByText("Carla Sur")).toBeInTheDocument();
+    expect(screen.getByRole("navigation", { name: "Navegación temporal" })).toHaveTextContent("Viernes, 14 de agosto de 2026");
+    expect(await screen.findByText("Carla Sur")).toBeInTheDocument();
   });
 
   it("representa estados sin pills y destaca el próximo turno", async () => {
@@ -121,9 +133,6 @@ describe("agenda propia profesional Signature", () => {
     const ana = await screen.findByLabelText(/Ana López, Confirmado/);
     expect(ana.closest("li")).toHaveClass("es-proximo", "estado-confirmado");
     expect(screen.getByLabelText(/Bruno Paz, Finalizado/).closest("li")).toHaveClass("estado-finalizado");
-    expect(screen.getByLabelText(/Carla Sur, Pendiente/).closest("li")).toHaveClass("estado-reservado");
-    expect(screen.getByLabelText(/Diego Sol, Ausente/).closest("li")).toHaveClass("estado-ausente");
-    expect(screen.getByLabelText(/Eva Mar, Cancelado/).closest("li")).toHaveClass("estado-cancelado");
   });
 
   it("expande una sola fila activa por toque o teclado", async () => {
@@ -231,13 +240,13 @@ describe("agenda propia profesional Signature", () => {
     vi.mocked(profesionalService.obtenerMiPerfilProfesional).mockResolvedValue({ id: 7, nombre: "Sofía", apellido: "Ramírez", matricula: "MP", telefono: null, email: null, activo: true, especialidades: [] });
     vi.mocked(prestacionService.obtenerMisPrestaciones).mockResolvedValue([{ id: 20, nombre: "Consulta clínica", descripcion: null, duracion_minutos: 50, precio: 100, modalidad: "presencial", activa: true, profesional_id: 7, especialidad_id: 1 }]);
     vi.mocked(servicio.obtenerHorariosLibres).mockResolvedValue([{ fecha_hora: "2026-08-14T12:00:00Z" }]);
-    vi.mocked(servicio.crearMiTurnoProfesional).mockResolvedValue(turno({ id: 8, fecha_hora: "2026-08-14T12:00:00Z" }));
+    vi.mocked(servicio.crearMiTurnoProfesional).mockResolvedValue(turno({ id: 8, fecha_hora: "2026-08-13T12:00:00Z" }));
     renderProfesional();
     fireEvent.click(await screen.findByRole("button", { name: "+ Nuevo turno" }));
     await screen.findByRole("option", { name: "López, Ana" });
     fireEvent.change(screen.getByLabelText("Paciente"), { target: { value: "10" } });
     fireEvent.change(screen.getByLabelText("Prestación"), { target: { value: "20" } });
-    fireEvent.change(screen.getByLabelText("Fecha"), { target: { value: "2026-08-14" } });
+    fireEvent.change(screen.getByLabelText("Fecha"), { target: { value: "2026-08-13" } });
     fireEvent.click(await screen.findByRole("radio", { name: "09:00" }));
     fireEvent.click(screen.getByRole("button", { name: "Confirmar turno" }));
     expect(await screen.findByRole("status")).toHaveTextContent("Turno creado correctamente");
@@ -254,8 +263,8 @@ describe("agenda propia profesional Signature", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("No pudimos cargar tu agenda");
     vi.mocked(servicio.obtenerMiAgendaProfesional).mockResolvedValueOnce([]);
     fireEvent.click(screen.getByRole("button", { name: "Reintentar" }));
-    expect(await screen.findByRole("heading", { name: "Todavía no tenés turnos programados." })).toBeInTheDocument();
-    expect(screen.getByText("Cuando se asignen turnos, aparecerán ordenados por fecha y hora.")).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "No tenés turnos para este día." })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Fecha anterior" })).toBeInTheDocument();
     vista.unmount();
   });
 });
