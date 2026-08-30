@@ -73,6 +73,8 @@ class TurnoRespuesta(BaseModel):
 
     fecha_hora: datetime
 
+    fecha_fin: datetime | None = None
+
     estado: str
 
     observaciones: str | None
