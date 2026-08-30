@@ -6,8 +6,6 @@ category: configuracion
 order: 20
 ---
 
-# Prestaciones
-
 Contenido preliminar sujeto a ampliación en F11.3.
 
 Una prestación incluye nombre, duración, precio, modalidad y especialidad. Desde **Mis prestaciones** podés crearla, editarla y cambiar su estado activo.

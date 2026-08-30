@@ -1,0 +1,4 @@
+import type { ReactNode } from "react";
+import "../help.css";
+type Props = { children: ReactNode; onHome: () => void; onLogin: () => void; loggedIn?: boolean };
+export default function HelpLayout({ children, onHome, onLogin, loggedIn = false }: Props) { return <div className="help-page"><header className="help-header"><div className="help-container help-header-inner"><button className="help-brand" type="button" onClick={onHome}><img src="/brand/mediturnos-symbol.svg" alt="" aria-hidden="true" /><span>Turnelia</span><small>Centro de Ayuda</small></button><button className="help-login" type="button" onClick={onLogin}>{loggedIn ? "Ir a mi cuenta" : "Ingresar"}</button></div></header><main>{children}</main><footer className="help-footer"><div className="help-container"><strong>Turnelia</strong><span>Centro de Ayuda</span><a href="https://turnelia.com.ar/">turnelia.com.ar</a></div></footer></div>; }
