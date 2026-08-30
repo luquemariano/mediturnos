@@ -82,7 +82,8 @@ describe("agenda propia profesional Signature", () => {
     expect(await screen.findByText(/Lunes, 31 de agosto de 2026/i)).toBeInTheDocument();
     expect(servicio.obtenerMiAgendaProfesional).toHaveBeenCalledWith({ desde: "2026-08-31", hasta: "2026-08-31" });
     expect(screen.getByRole("button", { name: "Día" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByRole("button", { name: "Semana" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Semana" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Mes" })).toBeDisabled();
     fireEvent.click(screen.getByRole("button", { name: "Fecha siguiente" }));
     expect(await screen.findByText(/Martes, 1 de septiembre de 2026/i)).toBeInTheDocument();
     expect(screen.getByText("No tenés turnos para este día.")).toBeInTheDocument();
