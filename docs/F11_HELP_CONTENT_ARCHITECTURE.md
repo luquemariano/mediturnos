@@ -4,7 +4,7 @@ La fuente única de ayuda es Markdown simple, versionado dentro de `frontend/src
 
 El catálogo `helpContent.ts` importa Markdown con Vite `?raw`, ordena de forma determinística y expone lookup por slug, categoría y navegación anterior/siguiente. Los artículos iniciales (`primeros-pasos.md` y `prestaciones.md`) son contenido preliminar para probar la arquitectura y se ampliarán en F11.3.
 
-`HelpMarkdown` renderiza headings, párrafos, listas, links, strong, emphasis, inline code, bloques de código, blockquotes e imágenes con `alt`. No habilita HTML crudo, `dangerouslySetInnerHTML`, scripts, iframes ni handlers. Los enlaces externos se abren con `rel="noopener noreferrer"`.
+`HelpMarkdown` renderiza headings, párrafos, listas ordenadas y no ordenadas, links, strong, emphasis, inline code, bloques de código, blockquotes e imágenes con `alt`. No habilita HTML crudo, `dangerouslySetInnerHTML`, scripts, iframes ni handlers. Los enlaces externos se abren con `rel="noopener noreferrer"`.
 
 La página imprime el H1 desde metadata y el cuerpo Markdown no repite el título; así se evita duplicar H1 y se reutiliza la misma metadata para SEO y PDF.
 

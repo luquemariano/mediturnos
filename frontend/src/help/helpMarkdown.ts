@@ -33,26 +33,30 @@ export function renderHelpMarkdown(content: string): ReactNode[] {
   const nodes: ReactNode[] = [];
   let paragraph: string[] = [];
   let list: string[] = [];
+  let orderedList: string[] = [];
   let code: string[] = [];
   let inCode = false;
 
   const flushParagraph = () => { if (paragraph.length) { nodes.push(createElement("p", { key: `p-${nodes.length}` }, inline(paragraph.join(" ")))); paragraph = []; } };
   const flushList = () => { if (list.length) { nodes.push(createElement("ul", { key: `ul-${nodes.length}` }, list.map((item, i) => createElement("li", { key: i }, inline(item))))); list = []; } };
+  const flushOrderedList = () => { if (orderedList.length) { nodes.push(createElement("ol", { key: `ol-${nodes.length}` }, orderedList.map((item, i) => createElement("li", { key: i }, inline(item))))); orderedList = []; } };
   const flushCode = () => { if (code.length) { nodes.push(createElement("pre", { key: `pre-${nodes.length}` }, createElement("code", null, code.join("\n")))); code = []; } };
 
   lines.forEach((line) => {
     if (line.startsWith("```")) { if (inCode) flushCode(); else { flushParagraph(); flushList(); } inCode = !inCode; return; }
     if (inCode) { code.push(line); return; }
     const heading = line.match(/^(#{1,3})\s+(.+)$/);
-    if (heading) { flushParagraph(); flushList(); nodes.push(createElement(`h${heading[1].length}`, { key: `h-${nodes.length}` }, inline(heading[2]))); return; }
-    if (/^>\s?/.test(line)) { flushParagraph(); flushList(); nodes.push(createElement("blockquote", { key: `q-${nodes.length}` }, inline(line.replace(/^>\s?/, "")))); return; }
+    if (heading) { flushParagraph(); flushList(); flushOrderedList(); nodes.push(createElement(`h${heading[1].length}`, { key: `h-${nodes.length}` }, inline(heading[2]))); return; }
+    if (/^>\s?/.test(line)) { flushParagraph(); flushList(); flushOrderedList(); nodes.push(createElement("blockquote", { key: `q-${nodes.length}` }, inline(line.replace(/^>\s?/, "")))); return; }
     const item = line.match(/^[-*]\s+(.+)$/);
-    if (item) { flushParagraph(); list.push(item[1]); return; }
-    if (!line.trim()) { flushParagraph(); flushList(); return; }
+    if (item) { flushParagraph(); flushOrderedList(); list.push(item[1]); return; }
+    const orderedItem = line.match(/^\d+[.)]\s+(.+)$/);
+    if (orderedItem) { flushParagraph(); flushList(); orderedList.push(orderedItem[1]); return; }
+    if (!line.trim()) { flushParagraph(); flushList(); flushOrderedList(); return; }
     const image = line.match(/^!\[([^\]]*)\]\(([^\s)]+)\)$/);
-    if (image) { flushParagraph(); flushList(); nodes.push(createElement("img", { key: `img-${nodes.length}`, src: image[2], alt: image[1] })); return; }
+    if (image) { flushParagraph(); flushList(); flushOrderedList(); nodes.push(createElement("img", { key: `img-${nodes.length}`, src: image[2], alt: image[1] })); return; }
     paragraph.push(line);
   });
-  flushParagraph(); flushList(); if (inCode) flushCode();
+  flushParagraph(); flushList(); flushOrderedList(); if (inCode) flushCode();
   return nodes;
 }
