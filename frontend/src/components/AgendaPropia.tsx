@@ -118,20 +118,25 @@ export default function AgendaPropia({
   const [mensajeExito, setMensajeExito] = useState("");
   const [gestionTurno, setGestionTurno] = useState<{ modo: "cancelar" | "reprogramar"; turno: Turno } | null>(null);
   const [errorGestion, setErrorGestion] = useState("");
+  const rangoConsulta = useMemo(() => tipoVista === "semana"
+    ? { desde: inicioSemana(fechaSeleccionada), hasta: finSemana(fechaSeleccionada) }
+    : tipoVista === "mes"
+      ? (() => { const dias = diasGrillaMes(fechaSeleccionada); return { desde: dias[0], hasta: dias[dias.length - 1] }; })()
+      : { desde: fechaSeleccionada, hasta: fechaSeleccionada }, [fechaSeleccionada, tipoVista]);
 
   const cargar = useCallback(async () => {
     setCargando(true);
     setErrorCarga("");
     try {
       setTurnos(await (tipo === "profesional"
-        ? obtenerMiAgendaProfesional(tipoVista === "semana" ? { desde: inicioSemana(fechaSeleccionada), hasta: finSemana(fechaSeleccionada) } : tipoVista === "mes" ? { desde: diasGrillaMes(fechaSeleccionada)[0], hasta: diasGrillaMes(fechaSeleccionada).at(-1)! } : { desde: fechaSeleccionada, hasta: fechaSeleccionada })
+        ? obtenerMiAgendaProfesional(rangoConsulta)
         : obtenerMisTurnosPaciente()));
     } catch (motivo) {
       setErrorCarga(detalleError(motivo, tipo === "profesional" ? "No pudimos cargar tu agenda." : "No se pudieron cargar tus turnos."));
     } finally {
       setCargando(false);
     }
-  }, [fechaSeleccionada, tipo, tipoVista]);
+  }, [rangoConsulta, tipo]);
 
   useEffect(() => { void cargar(); }, [cargar]);
 
@@ -197,6 +202,12 @@ export default function AgendaPropia({
     setTurnoExpandido((actual) => actual === turno.id ? null : turno.id);
   }
 
+  function abrirGestionDesdeSemana(turno: Turno) {
+    if (TERMINALES.includes(turno.estado)) return;
+    setErrorGestion("");
+    setGestionTurno({ modo: "reprogramar", turno });
+  }
+
   function moverFecha(fecha: FechaCivil) {
     setFechaSeleccionada(fecha);
   }
@@ -238,13 +249,13 @@ export default function AgendaPropia({
         <button type="button" aria-label="Fecha anterior" onClick={() => moverPeriodo(tipoVista === "semana" ? semanaAnterior(fechaSeleccionada) : tipoVista === "mes" ? mesAnterior(fechaSeleccionada) : diaAnterior(fechaSeleccionada))}><Icono nombre="flecha" /></button>
         <strong>{tipoVista === "semana" ? formatearSemana(fechaSeleccionada) : tipoVista === "mes" ? formatearMes(fechaSeleccionada) : formatearFechaCivil(fechaSeleccionada)}</strong>
         <button type="button" aria-label="Fecha siguiente" onClick={() => moverPeriodo(tipoVista === "semana" ? semanaSiguiente(fechaSeleccionada) : tipoVista === "mes" ? mesSiguiente(fechaSeleccionada) : diaSiguiente(fechaSeleccionada))}><Icono nombre="flecha" /></button>
-        <button type="button" className="agenda-prof-hoy" disabled={fechaSeleccionada === hoyNegocio() && tipoVista === "dia"} onClick={() => moverFecha(hoyNegocio())}>Hoy</button>
+        <button type="button" className="agenda-prof-hoy" disabled={tipoVista === "dia" ? fechaSeleccionada === hoyNegocio() : tipoVista === "semana" ? inicioSemana(fechaSeleccionada) === inicioSemana(hoyNegocio()) : fechaSeleccionada.slice(0, 7) === hoyNegocio().slice(0, 7)} onClick={() => moverFecha(hoyNegocio())}>Hoy</button>
       </nav>
 
       {cargando ? (tipoVista === "semana" || tipoVista === "mes" ? <p className="agenda-semana-cargando" role="status">Cargando {tipoVista === "mes" ? "mes" : "semana"}…</p> : <AgendaSkeleton />) : errorCarga ? <section className="agenda-prof-estado" role="alert">
         <h2>No pudimos cargar tu agenda.</h2><p>{errorCarga}</p>
         <button type="button" onClick={() => void cargar()}><Icono nombre="recargar" />Reintentar</button>
-      </section> : tipoVista === "semana" ? <AgendaSemana turnos={turnos} fecha={fechaSeleccionada} ahora={ahora} onSeleccionarDia={(dia) => { setFechaSeleccionada(dia); setTipoVista("dia"); }} onSeleccionarTurno={seleccionarTurno} /> : tipoVista === "mes" ? <AgendaMes turnos={turnos} fecha={fechaSeleccionada} ahora={ahora} onSeleccionarDia={(dia) => { setFechaSeleccionada(dia); setTipoVista("dia"); }} /> : turnos.length === 0 ? <section className="agenda-prof-estado">
+      </section> : tipoVista === "semana" ? <AgendaSemana turnos={turnos} fecha={fechaSeleccionada} ahora={ahora} onSeleccionarDia={(dia) => { setFechaSeleccionada(dia); setTipoVista("dia"); }} onSeleccionarTurno={abrirGestionDesdeSemana} /> : tipoVista === "mes" ? <AgendaMes turnos={turnos} fecha={fechaSeleccionada} ahora={ahora} onSeleccionarDia={(dia) => { setFechaSeleccionada(dia); setTipoVista("dia"); }} /> : turnos.length === 0 ? <section className="agenda-prof-estado">
         <h2>No tenés turnos para este día.</h2>
         <p>Podés revisar otra fecha o crear un nuevo turno.</p>
       </section> : <>
