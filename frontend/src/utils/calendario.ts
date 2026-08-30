@@ -36,6 +36,35 @@ export function diasSemana(fecha: string): FechaCivil[] {
 }
 export function semanaAnterior(fecha: string): FechaCivil { return ajustar(inicioSemana(fecha), -7); }
 export function semanaSiguiente(fecha: string): FechaCivil { return ajustar(inicioSemana(fecha), 7); }
+export function minutosDesdeMedianoche(fechaHora: string): number {
+  const fecha = new Date(fechaHora);
+  return fecha.getUTCHours() * 60 + fecha.getUTCMinutes();
+}
+export type IntervaloVisual = { inicio: number; fin: number; columna: number; columnas: number };
+export function distribuirSolapamientos(intervalos: Array<{ inicio: number; fin: number }>): IntervaloVisual[] {
+  const resultado: IntervaloVisual[] = [];
+  const grupos: Array<Array<{ inicio: number; fin: number; indice: number }>> = [];
+  intervalos.forEach((intervalo, indice) => {
+    const grupo = grupos.find((items) => items.some((item) => intervalo.inicio < item.fin && item.inicio < intervalo.fin));
+    if (grupo) grupo.push({ ...intervalo, indice }); else grupos.push([{ ...intervalo, indice }]);
+  });
+  grupos.forEach((grupo) => {
+    const columnas: number[] = [];
+    grupo.sort((a, b) => a.inicio - b.inicio || a.fin - b.fin).forEach((intervalo) => {
+      let columna = columnas.findIndex((fin) => fin <= intervalo.inicio);
+      if (columna < 0) { columna = columnas.length; columnas.push(intervalo.fin); } else columnas[columna] = intervalo.fin;
+      resultado[intervalo.indice] = { ...intervalo, columna, columnas: Math.max(columnas.length, grupo.length) };
+    });
+    grupo.forEach((intervalo) => { resultado[intervalo.indice].columnas = columnas.length; });
+  });
+  return resultado;
+}
+export function formatearSemana(fecha: string): string {
+  const inicio = parsear(inicioSemana(fecha));
+  const fin = parsear(finSemana(fecha));
+  const opciones = { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" } as const;
+  return `${new Intl.DateTimeFormat("es-AR", opciones).format(inicio)} - ${new Intl.DateTimeFormat("es-AR", opciones).format(fin)}`;
+}
 
 export function primerDiaMes(fecha: string): FechaCivil {
   const valor = parsear(fecha);
