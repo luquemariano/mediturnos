@@ -4,7 +4,7 @@ Estados: **PENDIENTE**, **EN CURSO**, **COMPLETADO** y **NO DETERMINADO**. No se
 
 ## Producto
 
-- **PENDIENTE:** calendario semanal/mensual, según la evolución descrita en README.
+- **COMPLETADO:** agenda profesional con vistas Día, Semana y Mes, navegación temporal, botón Hoy, legibilidad de solapamientos y excepciones (F10).
 - **PENDIENTE:** auditoría de cambios, mencionada como evolución posible.
 - **PENDIENTE:** verificación operativa de pagos y notificaciones en producción.
 - Estrategia comercial, precios y prioridades: **NO DETERMINADOS**.
