@@ -121,3 +121,7 @@ section.agenda-prof-estado button { min-height: 40px; display: inline-flex; alig
 @media (prefers-reduced-motion: reduce) {
   .agenda-prof-contenido * { animation: none !important; scroll-behavior: auto !important; transition: none !important; }
 }
+.agenda-prof-selector { display: flex; gap: 8px; margin: 16px 0 12px; }
+.agenda-prof-selector button { border: 1px solid #d5deea; border-radius: 999px; padding: 8px 16px; background: #fff; color: #183153; font: inherit; cursor: pointer; }
+.agenda-prof-selector button[aria-pressed="true"] { border-color: #237c78; background: #237c78; color: #fff; }
+.agenda-prof-selector button:disabled:not([aria-pressed="true"]) { cursor: not-allowed; opacity: .55; }

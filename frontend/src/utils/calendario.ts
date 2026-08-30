@@ -18,6 +18,10 @@ function ajustar(fecha: string, dias: number): FechaCivil {
 }
 
 export function hoyNegocio(ahora = new Date()): FechaCivil { return fechaActualNegocio(ahora) as FechaCivil; }
+export function formatearFechaCivil(fecha: string): string {
+  return new Intl.DateTimeFormat("es-AR", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "UTC" })
+    .format(parsear(fecha)).replace(/^./, (letra) => letra.toUpperCase());
+}
 export function diaAnterior(fecha: string): FechaCivil { return ajustar(fecha, -1); }
 export function diaSiguiente(fecha: string): FechaCivil { return ajustar(fecha, 1); }
 

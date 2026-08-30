@@ -17,11 +17,9 @@ import {
 } from "../services/turnoService";
 import {
   claveFechaNegocio,
-  fechaActualNegocio,
-  formatearFechaTurno,
   formatearHoraTurno,
-  ZONA_HORARIA_NEGOCIO,
 } from "../utils/fechaTurno";
+import { diaAnterior, diaSiguiente, formatearFechaCivil, hoyNegocio, type FechaCivil } from "../utils/calendario";
 
 type AgendaPropiaProps = {
   tipo: "profesional" | "paciente";
@@ -50,22 +48,6 @@ function etiquetaEstado(estado: Turno["estado"]): string {
 function rangoTurno(turno: Turno): string {
   const inicio = formatearHoraTurno(turno.fecha_hora);
   return turno.fecha_fin ? `${inicio}–${formatearHoraTurno(turno.fecha_fin)}` : inicio;
-}
-
-function etiquetaFecha(turno: Turno, hoy: string): string {
-  const clave = claveFechaNegocio(turno.fecha_hora);
-  const fecha = new Date(turno.fecha_hora);
-  const actual = new Date();
-  const formateadorAnio = new Intl.DateTimeFormat("es-AR", {
-    timeZone: ZONA_HORARIA_NEGOCIO,
-    year: "numeric",
-  });
-  const anioFecha = formateadorAnio.format(fecha);
-  const anioActual = formateadorAnio.format(actual);
-  const texto = formatearFechaTurno(turno.fecha_hora).replace(",", "");
-  const sinAnio = texto.replace(new RegExp(` de ${anioFecha}$`), "");
-  const fechaTexto = anioFecha === anioActual ? sinAnio : texto;
-  return `${clave === hoy ? "Hoy · " : ""}${fechaTexto}`;
 }
 
 function AgendaPaciente({ turnos, cargando, error, onVolver, actualizar }: {
@@ -127,7 +109,7 @@ export default function AgendaPropia({
   const [errorAccion, setErrorAccion] = useState<{ id: number; mensaje: string } | null>(null);
   const [turnosActualizando, setTurnosActualizando] = useState<Set<number>>(() => new Set());
   const [turnoExpandido, setTurnoExpandido] = useState<number | null>(null);
-  const [fechaActiva, setFechaActiva] = useState<string | null>(null);
+  const [fechaSeleccionada, setFechaSeleccionada] = useState(() => hoyNegocio());
   const [ahora] = useState(() => new Date());
   const [mostrarNuevoTurno, setMostrarNuevoTurno] = useState(false);
   const [mensajeExito, setMensajeExito] = useState("");
@@ -138,33 +120,25 @@ export default function AgendaPropia({
     setCargando(true);
     setErrorCarga("");
     try {
-      setTurnos(await (tipo === "profesional" ? obtenerMiAgendaProfesional() : obtenerMisTurnosPaciente()));
+      setTurnos(await (tipo === "profesional"
+        ? obtenerMiAgendaProfesional({ desde: fechaSeleccionada, hasta: fechaSeleccionada })
+        : obtenerMisTurnosPaciente()));
     } catch (motivo) {
       setErrorCarga(detalleError(motivo, tipo === "profesional" ? "No pudimos cargar tu agenda." : "No se pudieron cargar tus turnos."));
     } finally {
       setCargando(false);
     }
-  }, [tipo]);
+  }, [fechaSeleccionada, tipo]);
 
   useEffect(() => { void cargar(); }, [cargar]);
 
   const ordenados = useMemo(() => [...turnos].sort((a, b) =>
     new Date(a.fecha_hora).getTime() - new Date(b.fecha_hora).getTime()
   ), [turnos]);
-  const grupos = useMemo(() => {
-    const mapa = new Map<string, Turno[]>();
-    ordenados.forEach((turno) => {
-      const clave = claveFechaNegocio(turno.fecha_hora);
-      mapa.set(clave, [...(mapa.get(clave) ?? []), turno]);
-    });
-    return [...mapa.entries()];
-  }, [ordenados]);
-  const hoy = fechaActualNegocio(ahora);
+  const grupos = useMemo(() => [[fechaSeleccionada, ordenados.filter((turno) => claveFechaNegocio(turno.fecha_hora) === fechaSeleccionada)] as [string, Turno[]]], [fechaSeleccionada, ordenados]);
   const proximoId = ordenados.find((turno) =>
     !TERMINALES.includes(turno.estado) && new Date(turno.fecha_hora).getTime() >= ahora.getTime()
   )?.id;
-  const indiceActivo = Math.max(0, grupos.findIndex(([clave]) => clave === (fechaActiva ?? (grupos.some(([clave]) => clave === hoy) ? hoy : grupos[0]?.[0]))));
-  const grupoActivo = grupos[indiceActivo];
 
   async function actualizar(turno: Turno, accion: "cancelar" | "finalizar" | "ausente") {
     if (turnosActualizando.has(turno.id)) return;
@@ -220,11 +194,8 @@ export default function AgendaPropia({
     setTurnoExpandido((actual) => actual === turno.id ? null : turno.id);
   }
 
-  function moverFecha(desplazamiento: number) {
-    const siguiente = grupos[indiceActivo + desplazamiento];
-    if (!siguiente) return;
-    setFechaActiva(siguiente[0]);
-    document.getElementById(`agenda-fecha-${siguiente[0]}`)?.scrollIntoView?.({ behavior: "smooth", block: "start" });
+  function moverFecha(fecha: FechaCivil) {
+    setFechaSeleccionada(fecha);
   }
 
   return <ProfesionalShell
@@ -251,27 +222,27 @@ export default function AgendaPropia({
 
       {mensajeExito && <p className="agenda-prof-exito" role="status">{mensajeExito}</p>}
 
+      <nav className="agenda-prof-selector" aria-label="Vista de agenda">
+        {(["Día", "Semana", "Mes"] as const).map((modo) => <button key={modo} type="button" aria-pressed={modo === "Día"} disabled={modo !== "Día"}>{modo}</button>)}
+      </nav>
+      <nav className="agenda-prof-navegacion" aria-label="Navegación temporal">
+        <button type="button" aria-label="Fecha anterior" onClick={() => moverFecha(diaAnterior(fechaSeleccionada))}><Icono nombre="flecha" /></button>
+        <strong>{formatearFechaCivil(fechaSeleccionada)}</strong>
+        <button type="button" aria-label="Fecha siguiente" onClick={() => moverFecha(diaSiguiente(fechaSeleccionada))}><Icono nombre="flecha" /></button>
+        <button type="button" className="agenda-prof-hoy" disabled={fechaSeleccionada === hoyNegocio()} onClick={() => moverFecha(hoyNegocio())}>Hoy</button>
+      </nav>
+
       {cargando ? <AgendaSkeleton /> : errorCarga ? <section className="agenda-prof-estado" role="alert">
         <h2>No pudimos cargar tu agenda.</h2><p>{errorCarga}</p>
         <button type="button" onClick={() => void cargar()}><Icono nombre="recargar" />Reintentar</button>
       </section> : turnos.length === 0 ? <section className="agenda-prof-estado">
-        <h2>Todavía no tenés turnos programados.</h2>
-        <p>Cuando se asignen turnos, aparecerán ordenados por fecha y hora.</p>
+        <h2>No tenés turnos para este día.</h2>
+        <p>Podés revisar otra fecha o crear un nuevo turno.</p>
       </section> : <>
-        <nav className="agenda-prof-navegacion" aria-label="Navegación temporal">
-          <button type="button" aria-label="Fecha anterior" disabled={indiceActivo === 0} onClick={() => moverFecha(-1)}><Icono nombre="flecha" /></button>
-          <strong>{grupoActivo ? etiquetaFecha(grupoActivo[1][0], hoy) : "Agenda"}</strong>
-          <button type="button" aria-label="Fecha siguiente" disabled={indiceActivo === grupos.length - 1} onClick={() => moverFecha(1)}><Icono nombre="flecha" /></button>
-          <button type="button" className="agenda-prof-hoy" onClick={() => {
-            const indiceHoy = grupos.findIndex(([clave]) => clave === hoy);
-            if (indiceHoy >= 0) moverFecha(indiceHoy - indiceActivo);
-          }}>Hoy</button>
-        </nav>
-
         <div className="agenda-prof-grupos">
-          {grupos.map(([clave, items]) => <section key={clave} id={`agenda-fecha-${clave}`} className={`agenda-prof-grupo${grupoActivo?.[0] === clave ? " es-activo" : ""}`} aria-labelledby={`titulo-${clave}`}>
+          {grupos.map(([clave, items]) => <section key={clave} id={`agenda-fecha-${clave}`} className="agenda-prof-grupo es-activo" aria-labelledby={`titulo-${clave}`}>
             <header>
-              <h2 id={`titulo-${clave}`}>{etiquetaFecha(items[0], hoy)}</h2>
+              <h2 id={`titulo-${clave}`}>{formatearFechaCivil(fechaSeleccionada)}</h2>
               <p>{items.length} turno{items.length === 1 ? "" : "s"}</p>
             </header>
             <ol>
