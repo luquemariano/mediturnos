@@ -60,8 +60,11 @@ export async function crearMiDisponibilidad(datos: Omit<DisponibilidadCrear, "pr
   return (await api.post<Disponibilidad>("/profesionales/me/disponibilidades", datos)).data;
 }
 
-export async function obtenerMisExcepciones(fechaDesde: string): Promise<DisponibilidadExcepcion[]> {
-  const respuesta = await api.get<DisponibilidadExcepcion[]>("/profesionales/me/excepciones-disponibilidad", { params: { fecha_desde: fechaDesde } });
+export async function obtenerMisExcepciones(rango: string | { desde: string; hasta?: string }): Promise<DisponibilidadExcepcion[]> {
+  const params = typeof rango === "string"
+    ? { fecha_desde: rango }
+    : { fecha_desde: rango.desde, ...(rango.hasta ? { fecha_hasta: rango.hasta } : {}) };
+  const respuesta = await api.get<DisponibilidadExcepcion[]>("/profesionales/me/excepciones-disponibilidad", { params });
   return respuesta.data;
 }
 
