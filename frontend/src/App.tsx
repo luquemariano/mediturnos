@@ -25,6 +25,7 @@ import ActivarSuscripcion from "./components/ActivarSuscripcion";
 import RetornoSuscripcion from "./components/RetornoSuscripcion";
 import StudyUploadAccess from "./pages/StudyUploadAccess";
 import { rutaOnboarding } from "./utils/onboarding";
+import { debeForzarOnboarding } from "./utils/rutasPublicas";
 import {
   iniciarSesion,
   obtenerUsuarioActual,
@@ -154,7 +155,7 @@ function App() {
               setBootSteps((actuales) => [...actuales, { id: "1", label: "Preparando tu espacio", status: "loading" }]);
               const estado = await obtenerOnboarding();
               completarBoot("1");
-              if (estado.onboarding_step !== "completado" && !window.location.pathname.startsWith("/onboarding/")) {
+              if (estado.onboarding_step !== "completado" && debeForzarOnboarding(window.location.pathname)) {
                 navegar(rutaOnboarding(estado.onboarding_step));
               }
             } catch { /* La sesión global manejará un eventual 401. */ }

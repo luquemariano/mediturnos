@@ -4,6 +4,7 @@ import HelpMarkdown from "../src/help/components/HelpMarkdown";
 import HelpHome from "../src/help/components/HelpHome";
 import HelpArticlePage from "../src/help/components/HelpArticlePage";
 import { getHelpArticleBySlug, getHelpArticles, getHelpArticlesByCategory, getNextHelpArticle, getPreviousHelpArticle, parseHelpFrontmatter } from "../src/help/helpContent";
+import { debeForzarOnboarding, esRutaPublica } from "../src/utils/rutasPublicas";
 
 describe("catálogo de ayuda", () => {
   it("carga artículos ordenados y sin slugs duplicados", () => { const articles = getHelpArticles(); expect(articles.length).toBeGreaterThanOrEqual(2); expect(articles.map((a) => a.order)).toEqual([10, 20]); expect(new Set(articles.map((a) => a.slug)).size).toBe(articles.length); });
@@ -33,5 +34,19 @@ describe("páginas públicas de ayuda", () => {
     const missing = render(<HelpArticlePage slug="no-existe" onHome={() => undefined} onOpenArticle={() => undefined} />);
     expect(missing.getByRole("heading", { name: "No encontramos esta guía" })).toBeTruthy();
     expect(missing.getByRole("button", { name: "Volver al Centro de Ayuda" })).toBeTruthy();
+  });
+});
+
+describe("política de rutas durante restauración", () => {
+  it("preserva la ayuda y demás rutas públicas", () => {
+    for (const path of ["/", "/ayuda", "/ayuda/primeros-pasos", "/ayuda/no-existe", "/estudios/enviar", "/suscripcion/retorno", "/login", "/registro", "/forgot-password", "/reset-password"]) {
+      expect(esRutaPublica(path)).toBe(true);
+      expect(debeForzarOnboarding(path)).toBe(false);
+    }
+  });
+  it("sólo fuerza onboarding en rutas no públicas fuera del onboarding", () => {
+    expect(debeForzarOnboarding("/app")).toBe(true);
+    expect(debeForzarOnboarding("/app/pacientes")).toBe(true);
+    expect(debeForzarOnboarding("/onboarding/perfil")).toBe(false);
   });
 });
