@@ -3,21 +3,36 @@ import prestaciones from "./content/prestaciones.md?raw";
 import type { HelpArticle, HelpArticleMeta, HelpCategory } from "./helpTypes";
 import { HELP_CATEGORIES } from "./helpTypes";
 
-function parseArticle(source: string): HelpArticle {
+const FRONTMATTER_KEYS = new Set(["slug", "title", "description", "category", "order"]);
+
+export function parseHelpFrontmatter(source: string): { values: Record<string, string>; body: string } {
   const match = source.match(/^---\s*\n([\s\S]*?)\n---\s*\n([\s\S]*)$/);
   if (!match) throw new Error("El artículo de ayuda debe tener frontmatter.");
-  const values = Object.fromEntries(match[1].split("\n").filter(Boolean).map((line) => {
+  const values: Record<string, string> = {};
+  match[1].split("\n").forEach((line) => {
+    if (!line.trim()) return;
     const separator = line.indexOf(":");
-    return [line.slice(0, separator).trim(), line.slice(separator + 1).trim()];
-  }));
+    if (separator < 0) throw new Error("Línea de frontmatter malformada.");
+    const key = line.slice(0, separator).trim();
+    const value = line.slice(separator + 1).trim();
+    if (!key || !value) throw new Error("Frontmatter incompleto.");
+    if (!FRONTMATTER_KEYS.has(key)) throw new Error(`Clave de frontmatter desconocida: ${key}`);
+    if (key in values) throw new Error(`Clave de frontmatter duplicada: ${key}`);
+    values[key] = value;
+  });
+  return { values, body: match[2].trim() };
+}
+
+function parseArticle(source: string): HelpArticle {
+  const { values, body } = parseHelpFrontmatter(source);
   const meta: HelpArticleMeta = { slug: values.slug, title: values.title, description: values.description, category: values.category as HelpCategory, order: Number(values.order) };
-  validateHelpArticle({ ...meta, body: match[2].trim() });
-  return { ...meta, body: match[2].trim() };
+  validateHelpArticle({ ...meta, body });
+  return { ...meta, body };
 }
 
 export function validateHelpArticle(article: HelpArticle): void {
   if (!article.slug || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(article.slug)) throw new Error("Slug de ayuda inválido.");
-  if (!article.title.trim() || !article.description.trim()) throw new Error("Metadata de ayuda incompleta.");
+  if (typeof article.title !== "string" || typeof article.description !== "string" || !article.title.trim() || !article.description.trim()) throw new Error("Metadata de ayuda incompleta.");
   if (!HELP_CATEGORIES.includes(article.category) || !Number.isInteger(article.order) || article.order < 0 || !article.body.trim()) throw new Error("Artículo de ayuda inválido.");
 }
 

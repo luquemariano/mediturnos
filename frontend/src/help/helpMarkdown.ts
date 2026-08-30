@@ -16,10 +16,11 @@ function inline(value: string): ReactNode[] {
       const href = link?.[2] ?? token;
       const label = link?.[1] ?? token;
       const external = /^https?:\/\//.test(href);
-      result.push(createElement("a", {
+      const safe = href.startsWith("/") || href.startsWith("#") || /^(https?:|mailto:)/i.test(href);
+      result.push(safe ? createElement("a", {
         key: `${match.index}-link`, href,
         ...(external ? { target: "_blank", rel: "noopener noreferrer" } : {}),
-      }, label));
+      }, label) : label);
     }
     last = match.index + token.length;
   }
