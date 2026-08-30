@@ -1,3 +1,5 @@
+from datetime import date
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -212,6 +214,8 @@ def crear_mi_disponibilidad(
 )
 def ver_mi_agenda(
     estado: str | None = None,
+    desde: date | None = None,
+    hasta: date | None = None,
     db: Session = Depends(obtener_db),
     usuario_actual: Usuario = Depends(
         obtener_usuario_actual
@@ -228,11 +232,9 @@ def ver_mi_agenda(
         usuario_actual.id,
     )
 
-    return obtener_agenda_de_profesional(
-        db,
-        profesional.id,
-        estado,
-    )
+    if desde is None and hasta is None:
+        return obtener_agenda_de_profesional(db, profesional.id, estado)
+    return obtener_agenda_de_profesional(db, profesional.id, estado, desde, hasta)
 
 
 @router.get(

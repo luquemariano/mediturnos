@@ -143,6 +143,8 @@ def buscar_turnos_por_profesional_id(
     db: Session,
     profesional_id: int,
     estado: str | None = None,
+    desde: datetime | None = None,
+    hasta_exclusivo: datetime | None = None,
 ) -> list[Turno]:
     consulta = (
         db.query(Turno)
@@ -153,6 +155,10 @@ def buscar_turnos_por_profesional_id(
         consulta = consulta.filter(
             Turno.estado == estado,
         )
+    if desde is not None:
+        consulta = consulta.filter(Turno.fecha_hora >= desde)
+    if hasta_exclusivo is not None:
+        consulta = consulta.filter(Turno.fecha_hora < hasta_exclusivo)
 
     return (
         consulta

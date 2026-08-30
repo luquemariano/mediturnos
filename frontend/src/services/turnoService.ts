@@ -16,8 +16,10 @@ Promise<Turno[]> {
   return respuesta.data;
 }
 
-export async function obtenerMiAgendaProfesional(): Promise<Turno[]> {
-  const respuesta = await api.get<Turno[]>("/profesionales/me/agenda");
+export type FiltroAgendaProfesional = { desde?: string; hasta?: string; estado?: EstadoTurno };
+
+export async function obtenerMiAgendaProfesional(filtros?: FiltroAgendaProfesional): Promise<Turno[]> {
+  const respuesta = await api.get<Turno[]>("/profesionales/me/agenda", filtros && Object.keys(filtros).length ? { params: filtros } : undefined);
   return respuesta.data;
 }
 

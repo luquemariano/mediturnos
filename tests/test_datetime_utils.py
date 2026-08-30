@@ -4,6 +4,7 @@ from app.core.datetime_utils import (
     ZONA_NEGOCIO,
     a_utc,
     fecha_hora_civil_a_utc,
+    rango_fechas_negocio_a_utc,
     utc_a_zona_negocio,
 )
 from app.schemas.turno import TurnoRespuesta
@@ -14,7 +15,6 @@ def test_convierte_hora_civil_argentina_a_utc():
         date(2026, 8, 15),
         time(23, 30),
     )
-
     assert resultado == datetime(
         2026,
         8,
@@ -24,6 +24,11 @@ def test_convierte_hora_civil_argentina_a_utc():
         tzinfo=UTC,
     )
 
+
+def test_rango_civil_usa_fin_exclusivo_del_dia_siguiente():
+    inicio, fin = rango_fechas_negocio_a_utc(date(2026, 8, 31), date(2026, 9, 6))
+    assert inicio == datetime(2026, 8, 31, 3, 0, tzinfo=UTC)
+    assert fin == datetime(2026, 9, 7, 3, 0, tzinfo=UTC)
 
 def test_convierte_utc_a_dia_anterior_en_buenos_aires():
     resultado = utc_a_zona_negocio(

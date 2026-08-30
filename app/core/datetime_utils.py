@@ -1,4 +1,4 @@
-from datetime import UTC, date, datetime, time
+from datetime import UTC, date, datetime, time, timedelta
 import os
 from zoneinfo import ZoneInfo
 
@@ -31,6 +31,13 @@ def fecha_hora_civil_a_utc(
         tzinfo=ZONA_NEGOCIO,
     )
     return fecha_hora.astimezone(UTC)
+
+
+def rango_fechas_negocio_a_utc(desde: date | None, hasta: date | None) -> tuple[datetime | None, datetime | None]:
+    """Convierte un rango civil inclusivo a límites UTC, con fin exclusivo."""
+    inicio = fecha_hora_civil_a_utc(desde, time.min) if desde else None
+    fin = fecha_hora_civil_a_utc(hasta + timedelta(days=1), time.min) if hasta else None
+    return inicio, fin
 
 
 def utc_a_zona_negocio(fecha_hora: datetime, zona: ZoneInfo | None = None) -> datetime:

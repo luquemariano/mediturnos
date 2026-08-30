@@ -1,4 +1,5 @@
 from datetime import datetime
+from datetime import datetime
 from types import SimpleNamespace
 
 import pytest
@@ -142,6 +143,48 @@ def test_profesional_accede_a_su_agenda(
 
     assert respuesta.status_code == 200
     assert respuesta.json() == []
+
+
+def test_agenda_profesional_propaga_rango_y_estado(
+    client,
+    usuarios,
+    monkeypatch,
+):
+    autenticar_como(usuarios["profesional"])
+    monkeypatch.setattr(profesionales, "obtener_mi_profesional", lambda db, usuario_id: SimpleNamespace(id=10))
+    recibido = {}
+    monkeypatch.setattr(profesionales, "obtener_agenda_de_profesional", lambda db, profesional_id, estado, desde=None, hasta=None: recibido.update(profesional_id=profesional_id, estado=estado, desde=desde, hasta=hasta) or [])
+
+    respuesta = client.get("/profesionales/me/agenda?estado=confirmado&desde=2026-08-31&hasta=2026-09-06")
+
+    assert respuesta.status_code == 200
+    assert recibido["profesional_id"] == 10
+    assert recibido["estado"] == "confirmado"
+    assert str(recibido["desde"]) == "2026-08-31"
+    assert str(recibido["hasta"]) == "2026-09-06"
+
+
+def test_agenda_profesional_rechaza_rango_invertido(client, usuarios, monkeypatch):
+    autenticar_como(usuarios["profesional"])
+    monkeypatch.setattr(profesionales, "obtener_mi_profesional", lambda db, usuario_id: SimpleNamespace(id=10))
+    respuesta = client.get("/profesionales/me/agenda?desde=2026-09-06&hasta=2026-08-31")
+    assert respuesta.status_code == 422
+
+
+def test_agenda_profesional_incluye_fecha_fin(client, usuarios, monkeypatch):
+    autenticar_como(usuarios["profesional"])
+    monkeypatch.setattr(profesionales, "obtener_mi_profesional", lambda db, usuario_id: SimpleNamespace(id=10))
+    monkeypatch.setattr(profesionales, "obtener_agenda_de_profesional", lambda *args: [{
+        "id": 1, "paciente_id": 2, "paciente_nombre": "Ana López",
+        "prestacion_id": 3, "prestacion_nombre": "Consulta",
+        "profesional_nombre": "Sofía Ramírez", "especialidad_nombre": "Clínica",
+        "fecha_hora": datetime.fromisoformat("2026-08-31T12:00:00+00:00"),
+        "fecha_fin": datetime.fromisoformat("2026-08-31T12:50:00+00:00"),
+        "estado": "confirmado", "observaciones": None,
+    }])
+    respuesta = client.get("/profesionales/me/agenda?desde=2026-08-31&hasta=2026-08-31")
+    assert respuesta.status_code == 200
+    assert respuesta.json()[0]["fecha_fin"] == "2026-08-31T12:50:00Z"
 
 
 def test_profesional_lista_solo_datos_minimos_de_pacientes(

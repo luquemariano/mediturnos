@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import date, timedelta
 
 from fastapi import HTTPException
 from sqlalchemy.exc import IntegrityError
@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.models.turno import Turno
 from app.core.datetime_utils import (
     ahora_utc,
+    rango_fechas_negocio_a_utc,
 )
 from app.repositories.turno_repository import (
     bloquear_agenda_profesional,
@@ -406,6 +407,8 @@ def obtener_agenda_de_profesional(
     db: Session,
     profesional_id: int,
     estado: str | None = None,
+    desde: date | None = None,
+    hasta: date | None = None,
 ) -> list[Turno]:
     estados_validos = {
         "reservado",
@@ -424,10 +427,17 @@ def obtener_agenda_de_profesional(
             detail="Estado de turno inválido.",
         )
 
+    if desde is not None and hasta is not None and desde > hasta:
+        raise HTTPException(status_code=422, detail="El inicio no puede ser posterior al fin del rango.")
+
+    inicio_utc, fin_utc = rango_fechas_negocio_a_utc(desde, hasta)
+
     return buscar_turnos_por_profesional_id(
         db,
         profesional_id,
         estado,
+        inicio_utc,
+        fin_utc,
     )
 
 
