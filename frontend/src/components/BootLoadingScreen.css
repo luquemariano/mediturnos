@@ -1,0 +1,17 @@
+.boot-loading { min-height: 100vh; display: grid; place-items: center; padding: 24px; background: #f5f7fb; color: #183153; }
+.boot-loading-card { width: min(100%, 440px); padding: 32px; border: 1px solid #dfe7f1; border-radius: 20px; background: #fff; box-shadow: 0 18px 45px rgba(24, 49, 83, .09); }
+.boot-loading-brand { margin-bottom: 28px; color: #237c78; font-size: 1.25rem; font-weight: 800; letter-spacing: .02em; }
+.boot-loading h1 { margin: 0; font-size: clamp(1.35rem, 4vw, 1.7rem); }
+.boot-loading p { color: #60718a; line-height: 1.5; }
+.boot-loading-steps { display: grid; gap: 14px; margin: 28px 0 0; padding: 0; list-style: none; }
+.boot-loading-step { display: flex; align-items: center; gap: 12px; min-height: 24px; color: #8190a5; }
+.boot-loading-step span { display: grid; width: 22px; height: 22px; place-items: center; border: 1px solid #cbd6e4; border-radius: 50%; color: #fff; font-weight: 800; }
+.boot-loading-step-complete { color: #237c78; }
+.boot-loading-step-complete span { border-color: #237c78; background: #237c78; }
+.boot-loading-step-loading { color: #183153; }
+.boot-loading-step-loading span { border-color: #237c78; }
+.boot-loading-step-loading i { width: 10px; height: 10px; border: 2px solid #d8e6e5; border-top-color: #237c78; border-radius: 50%; animation: boot-spin .8s linear infinite; }
+.boot-loading button { margin-top: 20px; border: 0; border-radius: 10px; padding: 12px 18px; background: #237c78; color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
+@keyframes boot-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .boot-loading-step-loading i { animation: none; } }
+@media (max-width: 480px) { .boot-loading-card { padding: 24px; } }
