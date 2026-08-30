@@ -7,6 +7,7 @@ import * as prestacionService from "../src/services/prestacionService";
 import * as profesionalService from "../src/services/profesionalService";
 import * as servicio from "../src/services/turnoService";
 import type { Turno } from "../src/types/turno";
+import { diasGrillaMes, finSemana, inicioSemana } from "../src/utils/calendario";
 
 vi.mock("../src/services/turnoService", () => ({
   obtenerMiAgendaProfesional: vi.fn(),
@@ -83,7 +84,7 @@ describe("agenda propia profesional Signature", () => {
     expect(servicio.obtenerMiAgendaProfesional).toHaveBeenCalledWith({ desde: "2026-08-31", hasta: "2026-08-31" });
     expect(screen.getByRole("button", { name: "Día" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("button", { name: "Semana" })).toBeEnabled();
-    expect(screen.getByRole("button", { name: "Mes" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Mes" })).toBeEnabled();
     fireEvent.click(screen.getByRole("button", { name: "Fecha siguiente" }));
     expect(await screen.findByText(/Martes, 1 de septiembre de 2026/i)).toBeInTheDocument();
     expect(screen.getByText("No tenés turnos para este día.")).toBeInTheDocument();
@@ -267,6 +268,48 @@ describe("agenda propia profesional Signature", () => {
     expect(await screen.findByRole("heading", { name: "No tenés turnos para este día." })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Fecha anterior" })).toBeInTheDocument();
     vista.unmount();
+  });
+
+  it("mantiene Mes ante error y reintenta exactamente el mismo rango visual", async () => {
+    vi.mocked(servicio.obtenerMiAgendaProfesional).mockResolvedValueOnce([]).mockRejectedValueOnce(new Error("red")).mockResolvedValueOnce([]);
+    renderProfesional();
+    await waitFor(() => expect(servicio.obtenerMiAgendaProfesional).toHaveBeenCalledOnce());
+    fireEvent.click(screen.getByRole("button", { name: "Mes" }));
+    const rango = { desde: diasGrillaMes("2026-08-13")[0], hasta: diasGrillaMes("2026-08-13").at(-1)! };
+    expect(await screen.findByRole("alert")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Mes" })).toHaveAttribute("aria-pressed", "true");
+    expect(servicio.obtenerMiAgendaProfesional).toHaveBeenLastCalledWith(rango);
+    fireEvent.click(screen.getByRole("button", { name: "Reintentar" }));
+    await waitFor(() => expect(servicio.obtenerMiAgendaProfesional).toHaveBeenCalledTimes(3));
+    expect(servicio.obtenerMiAgendaProfesional).toHaveBeenLastCalledWith(rango);
+  });
+
+  it("mantiene toolbar y navegación durante loading mensual", async () => {
+    let resolver!: (valor: Turno[]) => void;
+    vi.mocked(servicio.obtenerMiAgendaProfesional).mockResolvedValueOnce([]).mockReturnValueOnce(new Promise((resolve) => { resolver = resolve; }));
+    renderProfesional();
+    await waitFor(() => expect(servicio.obtenerMiAgendaProfesional).toHaveBeenCalledOnce());
+    fireEvent.click(screen.getByRole("button", { name: "Mes" }));
+    expect(screen.getByRole("button", { name: "Mes" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("navigation", { name: "Navegación temporal" })).toBeInTheDocument();
+    expect(await screen.findByRole("status")).toHaveTextContent("Cargando mes");
+    resolver([]);
+    expect(await screen.findByRole("grid", { name: /Calendario/ })).toBeInTheDocument();
+  });
+
+  it("cambia Mes y Semana conservando la fecha de referencia", async () => {
+    vi.mocked(servicio.obtenerMiAgendaProfesional).mockResolvedValue([]);
+    renderProfesional();
+    await waitFor(() => expect(servicio.obtenerMiAgendaProfesional).toHaveBeenCalledOnce());
+    fireEvent.click(screen.getByRole("button", { name: "Mes" }));
+    await waitFor(() => expect(servicio.obtenerMiAgendaProfesional).toHaveBeenCalledTimes(2));
+    fireEvent.click(screen.getByRole("button", { name: "Semana" }));
+    await waitFor(() => expect(servicio.obtenerMiAgendaProfesional).toHaveBeenCalledTimes(3));
+    expect(servicio.obtenerMiAgendaProfesional).toHaveBeenLastCalledWith({ desde: inicioSemana("2026-08-13"), hasta: finSemana("2026-08-13") });
+    expect(screen.getByRole("button", { name: "Semana" })).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(screen.getByRole("button", { name: "Mes" }));
+    await waitFor(() => expect(servicio.obtenerMiAgendaProfesional).toHaveBeenCalledTimes(4));
+    expect(servicio.obtenerMiAgendaProfesional).toHaveBeenLastCalledWith({ desde: diasGrillaMes("2026-08-13")[0], hasta: diasGrillaMes("2026-08-13").at(-1)! });
   });
 });
 

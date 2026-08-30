@@ -17,7 +17,8 @@ describe("calendario civil de negocio", () => {
     expect(ultimoDiaMes("2024-02-01")).toBe("2024-02-29");
     expect(ultimoDiaMes("2026-04-01")).toBe("2026-04-30");
     expect(ultimoDiaMes("2026-01-01")).toBe("2026-01-31");
-    expect(diasGrillaMes("2026-08-01").length).toBeGreaterThanOrEqual(28);
+    expect(diasGrillaMes("2026-01-01").length).toBe(35);
+    expect(diasGrillaMes("2026-08-01").length).toBe(42);
   });
   it("navega meses y respeta Buenos Aires cerca de medianoche UTC", () => {
     expect(primerDiaMes("2026-01-15")).toBe("2026-01-01");
