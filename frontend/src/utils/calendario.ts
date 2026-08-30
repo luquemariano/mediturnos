@@ -90,6 +90,10 @@ export function diasGrillaMes(fecha: string): FechaCivil[] {
   for (let actual = inicio; actual <= fin; actual = ajustar(actual, 1)) dias.push(actual);
   return dias;
 }
+export function formatearMes(fecha: string): string {
+  return new Intl.DateTimeFormat("es-AR", { month: "long", year: "numeric", timeZone: "UTC" })
+    .format(parsear(fecha)).replace(/^./, (letra) => letra.toUpperCase());
+}
 
 export function fechaTurnoEnDiaNegocio(fechaHora: string): FechaCivil {
   return claveFechaNegocio(fechaHora) as FechaCivil;
