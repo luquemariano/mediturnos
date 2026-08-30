@@ -28,4 +28,12 @@ describe("AgendaMes", () => {
     fireEvent.click(screen.getByRole("button", { name: /31 de agosto/i }));
     expect(seleccionar).toHaveBeenCalledWith("2026-08-31");
   });
+
+  it("limita el preview mensual a uno y muestra el resto como resumen", () => {
+    const turnos = Array.from({ length: 5 }, (_, indice) => turno(indice + 1, `2026-08-15T${String(9 + indice).padStart(2, "0")}:00:00Z`));
+    render(<AgendaMes fecha="2026-08-15" ahora={new Date("2026-08-14T12:00:00Z")} turnos={turnos} onSeleccionarDia={vi.fn()} />);
+    const celda = screen.getByRole("button", { name: /sábado, 15 de agosto.*5 turnos/i });
+    expect(celda.querySelectorAll(".agenda-mes-previews i")).toHaveLength(2);
+    expect(celda).toHaveTextContent("+4 más");
+  });
 });
