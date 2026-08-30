@@ -19,6 +19,9 @@ test.describe("Centro de Ayuda público", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/ayuda/primeros-pasos");
     await expect(page.getByRole("heading", { name: "Primeros pasos" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "3. Crear una prestación" })).toBeVisible();
+    await page.goto("/ayuda/prestaciones");
+    await expect(page.getByRole("heading", { name: "Crear una prestación", exact: true })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
   });
 });
