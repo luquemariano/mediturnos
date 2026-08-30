@@ -6,4 +6,6 @@ El catálogo `helpContent.ts` importa Markdown con Vite `?raw`, ordena de forma 
 
 `HelpMarkdown` renderiza headings, párrafos, listas, links, strong, emphasis, inline code, bloques de código, blockquotes e imágenes con `alt`. No habilita HTML crudo, `dangerouslySetInnerHTML`, scripts, iframes ni handlers. Los enlaces externos se abren con `rel="noopener noreferrer"`.
 
+La página imprime el H1 desde metadata y el cuerpo Markdown no repite el título; así se evita duplicar H1 y se reutiliza la misma metadata para SEO y PDF.
+
 Las imágenes futuras vivirán en `frontend/public/help/` y se referenciarán como `/help/<área>/<archivo>.webp`. F11.2 consumirá el mismo catálogo desde el routing manual existente, sin React Router; allí se incorporarán rutas y metadata SEO. F11.8 podrá reutilizar el renderer y estilos de impresión para producir PDF reproducible con Playwright/Chromium.

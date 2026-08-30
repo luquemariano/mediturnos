@@ -65,6 +65,7 @@ export default function ProfesionalShell({
           onClick={item.accion}
         ><Icono nombre={item.icono} />{item.texto}</button>)}
       </nav>
+      <a className="prof-help-link" href="/ayuda">Ayuda</a>
       <div className="prof-sidebar-perfil">
         <span className="prof-avatar">{iniciales || "P"}</span>
         <div><strong>{nombre}</strong><small>Profesional</small></div>

@@ -25,6 +25,7 @@ import ActivarSuscripcion from "./components/ActivarSuscripcion";
 import RetornoSuscripcion from "./components/RetornoSuscripcion";
 import StudyUploadAccess from "./pages/StudyUploadAccess";
 import { rutaOnboarding } from "./utils/onboarding";
+import { debeForzarOnboarding } from "./utils/rutasPublicas";
 import {
   iniciarSesion,
   obtenerUsuarioActual,
@@ -41,6 +42,7 @@ import {
 import { restaurarSesion } from "./utils/sesion";
 import { aplicarMetadatosSeo } from "./seo/routeMetadata";
 import BootLoadingScreen, { type BootStep } from "./components/BootLoadingScreen";
+import { HelpArticlePage, HelpHome, HelpLayout } from "./help";
 
 
 type Vista =
@@ -153,7 +155,7 @@ function App() {
               setBootSteps((actuales) => [...actuales, { id: "1", label: "Preparando tu espacio", status: "loading" }]);
               const estado = await obtenerOnboarding();
               completarBoot("1");
-              if (estado.onboarding_step !== "completado" && !window.location.pathname.startsWith("/onboarding/")) {
+              if (estado.onboarding_step !== "completado" && debeForzarOnboarding(window.location.pathname)) {
                 navegar(rutaOnboarding(estado.onboarding_step));
               }
             } catch { /* La sesión global manejará un eventual 401. */ }
@@ -292,6 +294,13 @@ function App() {
   }
 
   if (ruta === "/estudios/enviar") return <StudyUploadAccess />;
+
+  if (ruta === "/ayuda" || ruta.startsWith("/ayuda/")) {
+    const slug = ruta.slice("/ayuda/".length);
+    return <HelpLayout onHome={() => navegar("/ayuda")} onLogin={() => navegar(usuario ? "/app" : "/login")} loggedIn={Boolean(usuario)}>
+      {ruta === "/ayuda" ? <HelpHome onOpenArticle={(articleSlug) => navegar(`/ayuda/${articleSlug}`)} /> : <HelpArticlePage slug={slug} onHome={() => navegar("/ayuda")} onOpenArticle={(articleSlug) => navegar(`/ayuda/${articleSlug}`)} />}
+    </HelpLayout>;
+  }
 
   if (ruta === "/suscripcion/retorno") {
     return <RetornoSuscripcion

@@ -1,8 +1,12 @@
+import { getHelpArticleBySlug } from "../help/helpContent";
+
 const HOME_TITLE =
   "Turnelia | Sistema de turnos y gestión para consultorios";
 const HOME_DESCRIPTION =
   "Gestioná turnos, pacientes, historias clínicas, horarios y prestaciones desde una sola plataforma. Software de gestión para profesionales y consultorios.";
 const HOME_CANONICAL = "https://turnelia.com.ar/";
+const HELP_TITLE = "Centro de Ayuda | Turnelia";
+const HELP_DESCRIPTION = "Guías y tutoriales para configurar Turnelia, gestionar turnos, pacientes y tu agenda profesional.";
 
 export interface RouteMetadata {
   title: string;
@@ -24,6 +28,16 @@ export function obtenerMetadatosRuta(pathname: string): RouteMetadata {
       robots: "index, follow",
       canonical: HOME_CANONICAL,
     };
+  }
+
+  if (pathname === "/ayuda") return { title: HELP_TITLE, description: HELP_DESCRIPTION, robots: "index, follow", canonical: "https://turnelia.com.ar/ayuda" };
+
+  if (pathname.startsWith("/ayuda/")) {
+    const slug = pathname.slice("/ayuda/".length);
+    const article = getHelpArticleBySlug(slug);
+    return article
+      ? { title: `${article.title} | Centro de Ayuda Turnelia`, description: article.description, robots: "index, follow", canonical: `https://turnelia.com.ar/ayuda/${article.slug}` }
+      : { title: "Guía no encontrada | Centro de Ayuda Turnelia", description: "La guía solicitada no está disponible.", robots: "noindex, nofollow" };
   }
 
   if (pathname === "/login") {

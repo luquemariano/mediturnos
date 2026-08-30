@@ -6,8 +6,6 @@ category: primeros-pasos
 order: 10
 ---
 
-# Primeros pasos
-
 Este contenido es una primera versión de arquitectura y se ampliará en F11.3.
 
 Para empezar:
