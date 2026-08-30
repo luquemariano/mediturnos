@@ -36,4 +36,10 @@ describe("AgendaMes", () => {
     expect(celda.querySelectorAll(".agenda-mes-previews i")).toHaveLength(2);
     expect(celda).toHaveTextContent("+4 más");
   });
+
+  it("muestra una excepción en la celda sin perder el conteo", () => {
+    const excepciones = new Map([["2026-08-15", "feriado" as const]]);
+    render(<AgendaMes fecha="2026-08-15" ahora={new Date("2026-08-14T12:00:00Z")} turnos={[turno(1, "2026-08-15T12:00:00Z")]} excepciones={excepciones} onSeleccionarDia={vi.fn()} />);
+    expect(screen.getByRole("button", { name: /sábado, 15 de agosto, Feriado, 1 turno/i })).toHaveClass("es-feriado");
+  });
 });
