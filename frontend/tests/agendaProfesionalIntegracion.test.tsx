@@ -3,14 +3,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import AgendaPropia from "../src/components/AgendaPropia";
 import * as servicio from "../src/services/turnoService";
 import { diasGrillaMes, finSemana, inicioSemana } from "../src/utils/calendario";
+import * as disponibilidad from "../src/services/disponibilidadService";
 
 vi.mock("../src/services/turnoService", () => ({ obtenerMiAgendaProfesional: vi.fn(), obtenerMisTurnosPaciente: vi.fn(), cancelarMiTurno: vi.fn(), cancelarMiTurnoProfesional: vi.fn(), finalizarMiTurno: vi.fn(), marcarAusenteMiTurno: vi.fn(), crearMiTurnoProfesional: vi.fn(), obtenerHorariosLibres: vi.fn(), reprogramarMiTurnoProfesional: vi.fn() }));
+vi.mock("../src/services/disponibilidadService", () => ({ obtenerMisExcepciones: vi.fn() }));
 
 const props = { tipo: "profesional" as const, onVolver: vi.fn() };
 const turno = { id: 1, paciente_id: 1, paciente_nombre: "Ana López", prestacion_id: 1, prestacion_nombre: "Consulta clínica", profesional_nombre: "Profesional", especialidad_nombre: "Clínica", fecha_hora: "2026-08-13T15:00:00Z", fecha_fin: "2026-08-13T15:30:00Z", estado: "confirmado" as const, observaciones: null };
 function renderAgenda() { return render(<AgendaPropia {...props} />); }
 
-beforeEach(() => { vi.useFakeTimers({ shouldAdvanceTime: true }); vi.setSystemTime(new Date("2026-08-13T11:30:00Z")); vi.clearAllMocks(); vi.mocked(servicio.obtenerMiAgendaProfesional).mockResolvedValue([]); });
+beforeEach(() => { vi.useFakeTimers({ shouldAdvanceTime: true }); vi.setSystemTime(new Date("2026-08-13T11:30:00Z")); vi.clearAllMocks(); vi.mocked(servicio.obtenerMiAgendaProfesional).mockResolvedValue([]); vi.mocked(disponibilidad.obtenerMisExcepciones).mockResolvedValue([]); });
 afterEach(() => vi.useRealTimers());
 
 describe("integración F10.6 de agenda profesional", () => {
@@ -21,6 +23,14 @@ describe("integración F10.6 de agenda profesional", () => {
     expect(screen.getByRole("button", { name: "Hoy" })).toBeDisabled();
     fireEvent.click(screen.getByRole("button", { name: "Mes" })); await waitFor(() => expect(screen.getByRole("button", { name: "Mes" })).toHaveAttribute("aria-pressed", "true"));
     expect(screen.getByRole("button", { name: "Hoy" })).toBeDisabled();
+  });
+
+  it("carga excepciones una sola vez al cambiar de vista y no rompe la agenda si falla", async () => {
+    vi.mocked(disponibilidad.obtenerMisExcepciones).mockRejectedValue(new Error("red"));
+    renderAgenda(); await waitFor(() => expect(servicio.obtenerMiAgendaProfesional).toHaveBeenCalledOnce()); await waitFor(() => expect(disponibilidad.obtenerMisExcepciones).toHaveBeenCalledOnce());
+    fireEvent.click(screen.getByRole("button", { name: "Semana" })); await waitFor(() => expect(screen.getByRole("button", { name: "Semana" })).toHaveAttribute("aria-pressed", "true"));
+    fireEvent.click(screen.getByRole("button", { name: "Mes" })); await waitFor(() => expect(screen.getByRole("button", { name: "Mes" })).toHaveAttribute("aria-pressed", "true"));
+    expect(disponibilidad.obtenerMisExcepciones).toHaveBeenCalledOnce(); expect(screen.queryByRole("alert")).not.toBeInTheDocument(); expect(screen.getByRole("grid")).toBeInTheDocument();
   });
 
   it("habilita Hoy en períodos no actuales y vuelve con una sola carga", async () => {

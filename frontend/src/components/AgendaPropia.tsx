@@ -8,6 +8,9 @@ import ProfesionalShell from "./ProfesionalShell";
 import NuevoTurnoProfesional from "./NuevoTurnoProfesional";
 import AgendaSemana from "./AgendaSemana";
 import AgendaMes from "./AgendaMes";
+import { obtenerMisExcepciones } from "../services/disponibilidadService";
+import type { DisponibilidadExcepcion } from "../types/disponibilidad";
+import { mapaExcepciones } from "../utils/excepcionesAgenda";
 import type { Turno } from "../types/turno";
 import {
   cancelarMiTurno,
@@ -118,6 +121,7 @@ export default function AgendaPropia({
   const [mensajeExito, setMensajeExito] = useState("");
   const [gestionTurno, setGestionTurno] = useState<{ modo: "cancelar" | "reprogramar"; turno: Turno } | null>(null);
   const [errorGestion, setErrorGestion] = useState("");
+  const [excepciones, setExcepciones] = useState<DisponibilidadExcepcion[]>([]);
   const rangoConsulta = useMemo(() => tipoVista === "semana"
     ? { desde: inicioSemana(fechaSeleccionada), hasta: finSemana(fechaSeleccionada) }
     : tipoVista === "mes"
@@ -128,15 +132,18 @@ export default function AgendaPropia({
     setCargando(true);
     setErrorCarga("");
     try {
-      setTurnos(await (tipo === "profesional"
-        ? obtenerMiAgendaProfesional(rangoConsulta)
-        : obtenerMisTurnosPaciente()));
+      setTurnos(await (tipo === "profesional" ? obtenerMiAgendaProfesional(rangoConsulta) : obtenerMisTurnosPaciente()));
     } catch (motivo) {
       setErrorCarga(detalleError(motivo, tipo === "profesional" ? "No pudimos cargar tu agenda." : "No se pudieron cargar tus turnos."));
     } finally {
       setCargando(false);
     }
   }, [rangoConsulta, tipo]);
+  useEffect(() => {
+    if (tipo !== "profesional") return;
+    void obtenerMisExcepciones(hoyNegocio()).then(setExcepciones, () => setExcepciones([]));
+  }, [tipo]);
+  const excepcionesPorFecha = useMemo(() => mapaExcepciones(excepciones), [excepciones]);
 
   useEffect(() => { void cargar(); }, [cargar]);
 
@@ -255,7 +262,7 @@ export default function AgendaPropia({
       {cargando ? (tipoVista === "semana" || tipoVista === "mes" ? <p className="agenda-semana-cargando" role="status">Cargando {tipoVista === "mes" ? "mes" : "semana"}…</p> : <AgendaSkeleton />) : errorCarga ? <section className="agenda-prof-estado" role="alert">
         <h2>No pudimos cargar tu agenda.</h2><p>{errorCarga}</p>
         <button type="button" onClick={() => void cargar()}><Icono nombre="recargar" />Reintentar</button>
-      </section> : tipoVista === "semana" ? <AgendaSemana turnos={turnos} fecha={fechaSeleccionada} ahora={ahora} onSeleccionarDia={(dia) => { setFechaSeleccionada(dia); setTipoVista("dia"); }} onSeleccionarTurno={abrirGestionDesdeSemana} /> : tipoVista === "mes" ? <AgendaMes turnos={turnos} fecha={fechaSeleccionada} ahora={ahora} onSeleccionarDia={(dia) => { setFechaSeleccionada(dia); setTipoVista("dia"); }} /> : turnos.length === 0 ? <section className="agenda-prof-estado">
+      </section> : tipoVista === "semana" ? <AgendaSemana turnos={turnos} excepciones={excepcionesPorFecha} fecha={fechaSeleccionada} ahora={ahora} onSeleccionarDia={(dia) => { setFechaSeleccionada(dia); setTipoVista("dia"); }} onSeleccionarTurno={abrirGestionDesdeSemana} /> : tipoVista === "mes" ? <AgendaMes turnos={turnos} excepciones={excepcionesPorFecha} fecha={fechaSeleccionada} ahora={ahora} onSeleccionarDia={(dia) => { setFechaSeleccionada(dia); setTipoVista("dia"); }} /> : turnos.length === 0 ? <section className="agenda-prof-estado">
         <h2>No tenés turnos para este día.</h2>
         <p>Podés revisar otra fecha o crear un nuevo turno.</p>
       </section> : <>

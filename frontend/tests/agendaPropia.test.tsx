@@ -23,6 +23,7 @@ vi.mock("../src/services/turnoService", () => ({
 vi.mock("../src/services/pacienteService", () => ({ obtenerPacientesParaProfesional: vi.fn() }));
 vi.mock("../src/services/prestacionService", () => ({ obtenerMisPrestaciones: vi.fn(), obtenerPrestaciones: vi.fn() }));
 vi.mock("../src/services/profesionalService", () => ({ obtenerMiPerfilProfesional: vi.fn() }));
+vi.mock("../src/services/disponibilidadService", () => ({ obtenerMisExcepciones: vi.fn().mockResolvedValue([]) }));
 
 function turno(datos: Partial<Turno> = {}): Turno {
   return {
