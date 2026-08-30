@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import AgendaPropia from "../src/components/AgendaPropia";
 import * as servicio from "../src/services/turnoService";
@@ -25,12 +25,16 @@ describe("integración F10.6 de agenda profesional", () => {
     expect(screen.getByRole("button", { name: "Hoy" })).toBeDisabled();
   });
 
-  it("carga excepciones una sola vez al cambiar de vista y no rompe la agenda si falla", async () => {
+  it("carga excepciones por rango sin romper la agenda si falla", async () => {
     vi.mocked(disponibilidad.obtenerMisExcepciones).mockRejectedValue(new Error("red"));
     renderAgenda(); await waitFor(() => expect(servicio.obtenerMiAgendaProfesional).toHaveBeenCalledOnce()); await waitFor(() => expect(disponibilidad.obtenerMisExcepciones).toHaveBeenCalledOnce());
     fireEvent.click(screen.getByRole("button", { name: "Semana" })); await waitFor(() => expect(screen.getByRole("button", { name: "Semana" })).toHaveAttribute("aria-pressed", "true"));
     fireEvent.click(screen.getByRole("button", { name: "Mes" })); await waitFor(() => expect(screen.getByRole("button", { name: "Mes" })).toHaveAttribute("aria-pressed", "true"));
-    expect(disponibilidad.obtenerMisExcepciones).toHaveBeenCalledOnce(); expect(screen.queryByRole("alert")).not.toBeInTheDocument(); expect(screen.getByRole("grid")).toBeInTheDocument();
+    expect(disponibilidad.obtenerMisExcepciones).toHaveBeenCalledTimes(3);
+    expect(disponibilidad.obtenerMisExcepciones).toHaveBeenNthCalledWith(1, { desde: "2026-08-13", hasta: "2026-08-13" });
+    expect(disponibilidad.obtenerMisExcepciones).toHaveBeenNthCalledWith(2, { desde: "2026-08-10", hasta: "2026-08-16" });
+    expect(disponibilidad.obtenerMisExcepciones).toHaveBeenNthCalledWith(3, { desde: diasGrillaMes("2026-08-13")[0], hasta: diasGrillaMes("2026-08-13").at(-1)! });
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument(); expect(screen.getByRole("grid")).toBeInTheDocument();
   });
 
   it("habilita Hoy en períodos no actuales y vuelve con una sola carga", async () => {
@@ -72,8 +76,12 @@ describe("integración F10.6 de agenda profesional", () => {
     fireEvent.click(screen.getByRole("button", { name: "Mes" })); await screen.findByRole("grid"); expect(screen.getAllByRole("button").filter((boton) => boton.className.includes("agenda-mes-celda"))).toHaveLength(42);
   });
 
-  it("abre la gestión real al activar un turno semanal con mouse, Enter o Space", async () => {
+  it("transiciona de detalle a reprogramación sin cerrar el modal", async () => {
     vi.mocked(servicio.obtenerMiAgendaProfesional).mockResolvedValue([turno]); renderAgenda(); await waitFor(() => expect(servicio.obtenerMiAgendaProfesional).toHaveBeenCalledOnce());
-    fireEvent.click(screen.getByRole("button", { name: "Semana" })); const bloque = await screen.findByRole("button", { name: /12:00, Ana López, Consulta clínica, confirmado/i }); fireEvent.click(bloque); expect(await screen.findByRole("dialog", { name: "Reprogramar turno" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Semana" })); const bloque = await screen.findByRole("button", { name: /12:00, Ana López, Consulta clínica, confirmado/i }); fireEvent.click(bloque); const dialogo = await screen.findByRole("dialog", { name: "Detalle del turno" }); expect(screen.getByText("Confirmado")).toBeInTheDocument(); expect(screen.queryByText("Nueva fecha")).not.toBeInTheDocument(); fireEvent.click(within(dialogo).getByRole("button", { name: "Reprogramar" })); expect(await screen.findByRole("dialog", { name: "Reprogramar turno" })).toBe(dialogo); expect(screen.getByLabelText("Nueva fecha")).toBeInTheDocument(); expect(screen.getByRole("group", { name: "Nuevo horario" })).toBeInTheDocument();
+  });
+
+  it("transiciona de detalle a cancelación y conserva la advertencia", async () => {
+    vi.mocked(servicio.obtenerMiAgendaProfesional).mockResolvedValue([turno]); renderAgenda(); await waitFor(() => expect(servicio.obtenerMiAgendaProfesional).toHaveBeenCalledOnce()); fireEvent.click(screen.getByRole("button", { name: "Semana" })); const bloque = await screen.findByRole("button", { name: /12:00, Ana López, Consulta clínica, confirmado/i }); fireEvent.click(bloque); const dialogo = await screen.findByRole("dialog", { name: "Detalle del turno" }); fireEvent.click(within(dialogo).getByRole("button", { name: "Cancelar" })); expect(await screen.findByRole("dialog", { name: "Cancelar turno" })).toBe(dialogo); expect(screen.getByText(/El turno quedará cancelado/)).toBeInTheDocument(); expect(screen.queryByLabelText("Nueva fecha")).not.toBeInTheDocument();
   });
 });

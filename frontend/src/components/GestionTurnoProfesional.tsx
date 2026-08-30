@@ -5,13 +5,15 @@ import "./GestionTurnoProfesional.css";
 import { obtenerHorariosLibres, reprogramarMiTurnoProfesional } from "../services/turnoService";
 import type { HorarioLibre, Turno } from "../types/turno";
 import { fechaActualNegocio, formatearFechaTurno, formatearHoraTurno } from "../utils/fechaTurno";
+import { etiquetaEstado } from "../utils/estadoTurno";
 
 type Props = {
-  modo: "cancelar" | "reprogramar";
+  modo: "detalle" | "cancelar" | "reprogramar";
   turno: Turno;
   guardando?: boolean;
   errorExterno?: string;
   onCerrar: () => void;
+  onCambiarModo: (modo: "cancelar" | "reprogramar") => void;
   onCancelar: () => Promise<void>;
   onReprogramado: (turno: Turno) => void;
 };
@@ -29,6 +31,7 @@ export default function GestionTurnoProfesional({
   guardando = false,
   errorExterno = "",
   onCerrar,
+  onCambiarModo,
   onCancelar,
   onReprogramado,
 }: Props) {
@@ -80,7 +83,7 @@ export default function GestionTurnoProfesional({
   return <div className="gestion-turno-fondo" role="presentation">
     <section className="gestion-turno" role="dialog" aria-modal="true" aria-labelledby="gestion-turno-titulo">
       <header>
-        <div><span>MI AGENDA</span><h2 id="gestion-turno-titulo">{modo === "cancelar" ? "Cancelar turno" : "Reprogramar turno"}</h2></div>
+        <div><span>MI AGENDA</span><h2 id="gestion-turno-titulo">{modo === "detalle" ? "Detalle del turno" : modo === "cancelar" ? "Cancelar turno" : "Reprogramar turno"}</h2></div>
         <button type="button" aria-label="Cerrar" disabled={ocupado} onClick={onCerrar}>×</button>
       </header>
       <div className="gestion-turno-cuerpo">
@@ -89,9 +92,11 @@ export default function GestionTurnoProfesional({
           <div><dt>Prestación</dt><dd>{turno.prestacion_nombre}</dd></div>
           <div><dt>Fecha actual</dt><dd>{formatearFechaTurno(turno.fecha_hora)}</dd></div>
           <div><dt>Hora actual</dt><dd>{formatearHoraTurno(turno.fecha_hora)}</dd></div>
+          {modo === "detalle" && <div><dt>Estado</dt><dd>{etiquetaEstado(turno.estado)}</dd></div>}
         </dl>
 
-        {modo === "cancelar" ? <p className="gestion-turno-aviso">El turno quedará cancelado. Los pagos existentes no se eliminan ni se reembolsan automáticamente.</p>
+        {modo === "detalle" ? <p>Revisá los datos del turno y elegí una acción.</p>
+        : modo === "cancelar" ? <p className="gestion-turno-aviso">El turno quedará cancelado. Los pagos existentes no se eliminan ni se reembolsan automáticamente.</p>
         : <div className="gestion-turno-reprogramar">
           <label>Nueva fecha
             <input type="date" min={fechaActualNegocio()} value={fecha} disabled={ocupado} onChange={(evento) => void consultar(evento.target.value)} />
@@ -113,7 +118,10 @@ export default function GestionTurnoProfesional({
       </div>
       <footer>
         <button type="button" disabled={ocupado} onClick={onCerrar}>Volver</button>
-        {modo === "cancelar"
+        {modo === "detalle" ? <>
+          <button type="button" className="es-peligro" onClick={() => onCambiarModo("cancelar")}>Cancelar</button>
+          <button type="button" onClick={() => onCambiarModo("reprogramar")}>Reprogramar</button>
+        </> : modo === "cancelar"
           ? <button type="button" className="es-peligro" disabled={ocupado} onClick={() => void onCancelar()}>{guardando ? "Cancelando…" : "Cancelar turno"}</button>
           : <button type="button" disabled={ocupado || !fechaHora} onClick={() => void confirmarReprogramacion()}>{reprogramando ? "Reprogramando…" : "Confirmar cambio"}</button>}
       </footer>

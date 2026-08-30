@@ -11,6 +11,7 @@ import AgendaMes from "./AgendaMes";
 import { obtenerMisExcepciones } from "../services/disponibilidadService";
 import type { DisponibilidadExcepcion } from "../types/disponibilidad";
 import { mapaExcepciones } from "../utils/excepcionesAgenda";
+import { etiquetaEstado } from "../utils/estadoTurno";
 import type { Turno } from "../types/turno";
 import {
   cancelarMiTurno,
@@ -44,10 +45,6 @@ function detalleError(error: unknown, alternativo = "No se pudo cargar la inform
     return error.response.data.detail;
   }
   return alternativo;
-}
-
-function etiquetaEstado(estado: Turno["estado"]): string {
-  return estado === "reservado" ? "Pendiente" : estado.charAt(0).toUpperCase() + estado.slice(1);
 }
 
 function rangoTurno(turno: Turno): string {
@@ -119,7 +116,7 @@ export default function AgendaPropia({
   const [ahora] = useState(() => new Date());
   const [mostrarNuevoTurno, setMostrarNuevoTurno] = useState(false);
   const [mensajeExito, setMensajeExito] = useState("");
-  const [gestionTurno, setGestionTurno] = useState<{ modo: "cancelar" | "reprogramar"; turno: Turno } | null>(null);
+  const [gestionTurno, setGestionTurno] = useState<{ modo: "detalle" | "cancelar" | "reprogramar"; turno: Turno } | null>(null);
   const [errorGestion, setErrorGestion] = useState("");
   const [excepciones, setExcepciones] = useState<DisponibilidadExcepcion[]>([]);
   const rangoConsulta = useMemo(() => tipoVista === "semana"
@@ -141,8 +138,8 @@ export default function AgendaPropia({
   }, [rangoConsulta, tipo]);
   useEffect(() => {
     if (tipo !== "profesional") return;
-    void obtenerMisExcepciones(hoyNegocio()).then(setExcepciones, () => setExcepciones([]));
-  }, [tipo]);
+    void obtenerMisExcepciones(rangoConsulta).then(setExcepciones, () => setExcepciones([]));
+  }, [rangoConsulta, tipo]);
   const excepcionesPorFecha = useMemo(() => mapaExcepciones(excepciones), [excepciones]);
 
   useEffect(() => { void cargar(); }, [cargar]);
@@ -212,7 +209,7 @@ export default function AgendaPropia({
   function abrirGestionDesdeSemana(turno: Turno) {
     if (TERMINALES.includes(turno.estado)) return;
     setErrorGestion("");
-    setGestionTurno({ modo: "reprogramar", turno });
+    setGestionTurno({ modo: "detalle", turno });
   }
 
   function moverFecha(fecha: FechaCivil) {
@@ -328,6 +325,7 @@ export default function AgendaPropia({
       guardando={turnosActualizando.has(gestionTurno.turno.id)}
       errorExterno={errorGestion}
       onCerrar={() => { if (!turnosActualizando.has(gestionTurno.turno.id)) setGestionTurno(null); }}
+      onCambiarModo={(modo) => { setErrorGestion(""); setGestionTurno({ modo, turno: gestionTurno.turno }); }}
       onCancelar={cancelarComoProfesional}
       onReprogramado={(actualizado) => {
         setTurnos((actuales) => actuales.map((item) => item.id === actualizado.id ? actualizado : item));
