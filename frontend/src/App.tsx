@@ -40,6 +40,7 @@ import {
 } from "./api/manejoSesion";
 import { restaurarSesion } from "./utils/sesion";
 import { aplicarMetadatosSeo } from "./seo/routeMetadata";
+import BootLoadingScreen, { type BootStep } from "./components/BootLoadingScreen";
 
 
 type Vista =
@@ -54,6 +55,9 @@ type Vista =
   | "cuentas";
 
 type VistaAcceso = "login" | "forgot" | "reset";
+
+const UMBRAL_LOADER_MS = 600;
+const UMBRAL_ESPERA_PROLONGADA_MS = 7000;
 
 
 function App() {
@@ -80,11 +84,34 @@ function App() {
 
   const [validandoSesion, setValidandoSesion] =
     useState(true);
+  const [bootSteps, setBootSteps] = useState<BootStep[]>([]);
+  const [bootActivo, setBootActivo] = useState(false);
+  const [bootVisible, setBootVisible] = useState(false);
+  const [bootProlongado, setBootProlongado] = useState(false);
 
   const [vista, setVista] =
     useState<Vista>("dashboard");
   const [pacienteIdInicial, setPacienteIdInicial] = useState<number | undefined>();
   const [studyRequestIdInicial, setStudyRequestIdInicial] = useState<number | undefined>();
+
+  useEffect(() => {
+    if (!bootActivo) { setBootVisible(false); setBootProlongado(false); return; }
+    const visible = window.setTimeout(() => setBootVisible(true), UMBRAL_LOADER_MS);
+    const prolonged = window.setTimeout(() => setBootProlongado(true), UMBRAL_ESPERA_PROLONGADA_MS);
+    return () => { window.clearTimeout(visible); window.clearTimeout(prolonged); };
+  }, [bootActivo]);
+
+  function iniciarBoot(labels: string[]) {
+    setBootSteps(labels.map((label, index) => ({ id: String(index), label, status: index === 0 ? "loading" : "pending" })));
+    setBootActivo(true);
+  }
+
+  function completarBoot(id: string) {
+    setBootSteps((actuales) => {
+      const indice = actuales.findIndex((paso) => paso.id === id);
+      return actuales.map((paso, posicion) => posicion === indice ? { ...paso, status: "complete" } : posicion === indice + 1 ? { ...paso, status: "loading" } : paso);
+    });
+  }
 
   useEffect(() => {
     aplicarMetadatosSeo(window.location.pathname);
@@ -115,19 +142,24 @@ function App() {
 
     const manejarPopState = () => setRuta(window.location.pathname);
     window.addEventListener("popstate", manejarPopState);
+    if (localStorage.getItem("access_token")) iniciarBoot(["Validando tu cuenta"]);
     void restaurarSesion(obtenerUsuarioActual).then(
       async (usuarioRestaurado) => {
         if (activo) {
+          if (usuarioRestaurado) completarBoot("0");
           setUsuario(usuarioRestaurado);
           if (usuarioRestaurado?.rol === "profesional") {
             try {
+              setBootSteps((actuales) => [...actuales, { id: "1", label: "Preparando tu espacio", status: "loading" }]);
               const estado = await obtenerOnboarding();
+              completarBoot("1");
               if (estado.onboarding_step !== "completado" && !window.location.pathname.startsWith("/onboarding/")) {
                 navegar(rutaOnboarding(estado.onboarding_step));
               }
             } catch { /* La sesión global manejará un eventual 401. */ }
           }
           setValidandoSesion(false);
+          setBootActivo(false);
         }
       },
     );
@@ -154,6 +186,7 @@ function App() {
 
     setMensaje("");
     setCargando(true);
+    iniciarBoot(["Iniciando sesión", "Validando tu cuenta"]);
 
     try {
       const respuesta =
@@ -167,14 +200,18 @@ function App() {
         respuesta.access_token,
       );
       habilitarNotificacionDeSesion();
+      completarBoot("0");
 
       const usuarioActual =
         await obtenerUsuarioActual();
+      completarBoot("1");
 
       setUsuario(usuarioActual);
       setVista("dashboard");
       if (usuarioActual.rol === "profesional") {
+        setBootSteps((actuales) => [...actuales, { id: "2", label: "Preparando tu espacio", status: "loading" }]);
         const estado = await obtenerOnboarding();
+        completarBoot("2");
         navegar(estado.onboarding_step === "completado" ? "/app" : rutaOnboarding(estado.onboarding_step));
       } else navegar("/app");
     } catch (error) {
@@ -196,6 +233,7 @@ function App() {
       }
     } finally {
       setCargando(false);
+      setBootActivo(false);
     }
   }
 
@@ -264,12 +302,15 @@ function App() {
   }
 
   if (validandoSesion) {
+    if (bootActivo && bootVisible) return <BootLoadingScreen steps={bootSteps} prolonged={bootProlongado} />;
     return (
       <main className="pagina-login">
         <p>Validando sesión...</p>
       </main>
     );
   }
+
+  if (bootActivo && bootVisible) return <BootLoadingScreen steps={bootSteps} prolonged={bootProlongado} />;
 
 
   function cerrarSesion() {
