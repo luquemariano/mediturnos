@@ -1,5 +1,8 @@
 import primerosPasos from "./content/primeros-pasos.md?raw";
 import prestaciones from "./content/prestaciones.md?raw";
+import disponibilidad from "./content/disponibilidad.md?raw";
+import agenda from "./content/agenda.md?raw";
+import turnos from "./content/turnos.md?raw";
 import type { HelpArticle, HelpArticleMeta, HelpCategory } from "./helpTypes";
 import { HELP_CATEGORIES } from "./helpTypes";
 
@@ -36,7 +39,7 @@ export function validateHelpArticle(article: HelpArticle): void {
   if (!HELP_CATEGORIES.includes(article.category) || !Number.isInteger(article.order) || article.order < 0 || !article.body.trim()) throw new Error("Artículo de ayuda inválido.");
 }
 
-const ARTICLES: HelpArticle[] = [parseArticle(primerosPasos), parseArticle(prestaciones)].sort((a, b) => a.order - b.order);
+const ARTICLES: HelpArticle[] = [parseArticle(primerosPasos), parseArticle(prestaciones), parseArticle(disponibilidad), parseArticle(agenda), parseArticle(turnos)].sort((a, b) => a.order - b.order);
 const slugs = new Set<string>();
 ARTICLES.forEach((article) => { if (slugs.has(article.slug)) throw new Error(`Slug duplicado: ${article.slug}`); slugs.add(article.slug); });
 
