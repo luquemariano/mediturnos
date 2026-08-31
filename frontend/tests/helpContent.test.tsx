@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { render } from "@testing-library/react";
+import { fireEvent, render } from "@testing-library/react";
 import HelpMarkdown from "../src/help/components/HelpMarkdown";
+import HelpImage from "../src/help/components/HelpImage";
 import HelpHome from "../src/help/components/HelpHome";
 import HelpArticlePage from "../src/help/components/HelpArticlePage";
 import { getHelpArticleBySlug, getHelpArticles, getHelpArticlesByCategory, getNextHelpArticle, getPreviousHelpArticle, parseHelpFrontmatter } from "../src/help/helpContent";
@@ -49,5 +50,23 @@ describe("política de rutas durante restauración", () => {
     expect(debeForzarOnboarding("/app")).toBe(true);
     expect(debeForzarOnboarding("/app/pacientes")).toBe(true);
     expect(debeForzarOnboarding("/onboarding/perfil")).toBe(false);
+  });
+  it("abre y cierra el lightbox de una imagen Markdown", async () => {
+    const { container } = render(<HelpMarkdown content={"![Captura demo](/help/demo.png)"} />);
+    const trigger = container.querySelector('button[aria-label="Ampliar imagen: Captura demo"]') as HTMLButtonElement;
+    expect(trigger).toBeTruthy();
+    fireEvent.click(trigger);
+    expect(container.querySelector('[role="dialog"] img')?.getAttribute("alt")).toBe("Captura demo");
+    fireEvent.click(container.querySelector('button[aria-label="Cerrar"]') as HTMLButtonElement);
+    expect(container.querySelector('[role="dialog"]')).toBeNull();
+  });
+  it("no enfoca inicialmente, enfoca Cerrar al abrir y devuelve el foco al cerrar", () => {
+    const { container } = render(<HelpImage src="/help/demo.png" alt="Captura demo" />);
+    const trigger = container.querySelector('button[aria-label="Ampliar imagen: Captura demo"]') as HTMLButtonElement;
+    expect(document.activeElement).not.toBe(trigger);
+    fireEvent.click(trigger);
+    expect(document.activeElement).toBe(container.querySelector('button[aria-label="Cerrar"]'));
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(document.activeElement).toBe(trigger);
   });
 });
