@@ -37,3 +37,7 @@ En la agenda podés encontrar turnos **Pendientes** (estado reservado), **Confir
 ## Qué hacer si un turno no aparece
 
 Revisá que estés en la fecha y vista correctas. Consultá también el mes o la semana correspondiente y verificá que el turno no haya sido cancelado. Si esperabas un horario nuevo, comprobá la disponibilidad de la prestación y las excepciones de esa fecha.
+
+![Agenda diaria con turnos del profesional](/help/screenshots/05-agenda-dia.png)
+![Agenda semanal](/help/screenshots/06-agenda-semana.png)
+![Agenda mensual](/help/screenshots/07-agenda-mes.png)

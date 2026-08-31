@@ -2,7 +2,7 @@
 
 ## Estado
 
-El fixture y la suite de generación están preparados, pero las capturas S01–S17 quedaron pendientes en esta ejecución porque el daemon de Docker no estaba disponible. La suite no usa producción ni una base compartida.
+El fixture y la suite de generación están ejecutados: S01–S17 fueron generadas correctamente. La suite no usa producción ni una base compartida.
 
 ## Dataset E2E
 
@@ -29,4 +29,4 @@ La suite reserva estos nombres estables en `frontend/public/help/screenshots/`:
 
 `01-onboarding-perfil.png` · `02-prestacion-crear.png` · `03-disponibilidad-semanal.png` · `04-disponibilidad-excepciones.png` · `05-agenda-dia.png` · `06-agenda-semana.png` · `07-agenda-mes.png` · `08-turno-nuevo.png` · `09-turno-reprogramar.png` · `10-pacientes-listado.png` · `11-paciente-detalle.png` · `12-resumen-clinico.png` · `13-evolucion-clinica.png` · `14-documentos.png` · `15-estudio-solicitud.png` · `16-estudio-carga-publica.png` · `17-estudio-revision.png`.
 
-Resolución principal: `1440 × 1000`. La validación mobile prevista es `390 × 844`. No se generan PDF ni se modifican flujos productivos.
+Resolución principal generada por Playwright: `1280 × 720`. La validación mobile existente es `390 × 844`. No se generan PDF ni se modifican flujos productivos.

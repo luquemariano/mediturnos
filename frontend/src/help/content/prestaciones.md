@@ -77,3 +77,5 @@ Desactivar una prestación no elimina ni modifica los turnos ya creados. Esos tu
 - Usá nombres claros, como “Consulta inicial” o “Control”.
 - Evitá crear prestaciones con nombres casi iguales.
 - Configurá la duración real de la atención para que los horarios disponibles representen mejor tu agenda.
+
+![Configuración de prestaciones](/help/screenshots/02-prestacion-crear.png)

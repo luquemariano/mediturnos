@@ -45,3 +45,5 @@ Seleccioná **Eliminar** y confirmá la acción. El documento deja de estar disp
 ## Privacidad
 
 Los documentos quedan asociados al paciente y su acceso está restringido a perfiles autorizados. Consultá también [Pacientes](/ayuda/pacientes).
+
+![Documentos del paciente](/help/screenshots/14-documentos.png)

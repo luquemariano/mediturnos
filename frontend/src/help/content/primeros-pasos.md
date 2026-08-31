@@ -72,3 +72,5 @@ Podés volver a **Mis prestaciones** para gestionar tus servicios y a **Mi dispo
 ## Siguiente paso
 
 Empezá por [Prestaciones](/ayuda/prestaciones) para configurar los servicios que ofrecés.
+
+![Perfil profesional durante el onboarding](/help/screenshots/01-onboarding-perfil.png)

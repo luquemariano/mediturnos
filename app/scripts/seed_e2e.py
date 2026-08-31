@@ -112,8 +112,8 @@ def main() -> None:
         db.flush()
         if not db.query(Turno).filter_by(profesional_id=professional.id).first():
             base = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
-            for offset, state in [(0,"confirmado"),(0,"reservado"),(1,"confirmado"),(2,"reservado"),(3,"confirmado"),(7,"reservado"),(8,"confirmado")]:
-                start = base + timedelta(days=offset, hours=(len(patients) % 3) * 2); db.add(Turno(paciente_id=patients[offset % len(patients)].id, prestacion_id=prestations[offset % len(prestations)].id, profesional_id=professional.id, fecha_hora=start, fecha_fin=start + timedelta(minutes=30), estado=state, observaciones="Turno demo para documentación."))
+            for slot, (offset, state) in enumerate([(0,"confirmado"),(0,"reservado"),(1,"confirmado"),(2,"reservado"),(3,"confirmado"),(7,"reservado"),(8,"confirmado")]):
+                start = base + timedelta(days=offset, hours=slot * 2); db.add(Turno(paciente_id=patients[slot % len(patients)].id, prestacion_id=prestations[slot % len(prestations)].id, profesional_id=professional.id, fecha_hora=start, fecha_fin=start + timedelta(minutes=30), estado=state, observaciones="Turno demo para documentación."))
         patient = patients[0]
         if not db.query(ClinicalProfile).filter_by(paciente_id=patient.id).first(): db.add(ClinicalProfile(paciente_id=patient.id, antecedentes="Control clínico anual.", alergias="Sin alergias registradas.", medicacion_habitual="Sin medicación habitual.", condiciones_relevantes="Sin condiciones relevantes registradas.", observaciones="Paciente demo utilizado exclusivamente para documentación.", updated_at=datetime.utcnow(), updated_by_profesional_id=professional.id))
         if not db.query(EvolucionClinica).filter_by(paciente_id=patient.id).first():
