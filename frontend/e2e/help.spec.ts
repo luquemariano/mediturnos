@@ -5,7 +5,7 @@ test.describe("Centro de Ayuda público", () => {
     await page.goto("/ayuda");
     await expect(page.getByRole("heading", { name: "Centro de Ayuda" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Primeros pasos" })).toBeVisible();
-    for (const title of ["Prestaciones", "Disponibilidad", "Agenda", "Turnos", "Pacientes", "Historia clínica"]) await expect(page.getByRole("heading", { name: title, exact: true })).toBeVisible();
+    for (const title of ["Prestaciones", "Disponibilidad", "Agenda", "Turnos", "Pacientes", "Historia clínica", "Documentos", "Estudios", "Recordatorios", "Suscripción"]) await expect(page.getByRole("heading", { name: title, exact: true })).toBeVisible();
     await page.getByRole("button", { name: /Ver guía/ }).first().click();
     await expect(page).toHaveURL(/\/ayuda\/primeros-pasos$/);
     await expect(page.getByRole("heading", { name: "Primeros pasos" })).toBeVisible();
@@ -36,6 +36,14 @@ test.describe("Centro de Ayuda público", () => {
     await page.goto("/ayuda/historia-clinica");
     await expect(page.getByRole("heading", { name: "Resumen clínico", exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Agregar una evolución", exact: true })).toBeVisible();
+    await page.goto("/ayuda/documentos");
+    await expect(page.getByRole("heading", { name: "Formatos admitidos", exact: true })).toBeVisible();
+    await page.goto("/ayuda/estudios");
+    await expect(page.getByRole("heading", { name: "Crear una solicitud", exact: true })).toBeVisible();
+    await page.goto("/ayuda/recordatorios");
+    await expect(page.getByRole("heading", { name: "Qué son los recordatorios", exact: true })).toBeVisible();
+    await page.goto("/ayuda/suscripcion");
+    await expect(page.getByRole("heading", { name: "Qué es la suscripción de Turnelia", exact: true })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
   });
 });
