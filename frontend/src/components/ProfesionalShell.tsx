@@ -5,7 +5,7 @@ import Icono from "./Icono";
 import NotificationCenter from "./NotificationCenter";
 import type { NotificationItem } from "../types/paciente";
 
-type SeccionProfesional = "inicio" | "agenda" | "pacientes" | "disponibilidad" | "prestaciones" | "perfil";
+type SeccionProfesional = "inicio" | "agenda" | "pacientes" | "disponibilidad" | "prestaciones" | "perfil" | "ayuda";
 
 type ProfesionalShellProps = {
   activo: SeccionProfesional;
@@ -18,6 +18,7 @@ type ProfesionalShellProps = {
   onAbrirDisponibilidad: () => void;
   onAbrirPrestaciones: () => void;
   onAbrirPerfil: () => void;
+  onAbrirAyuda?: () => void;
   onCerrarSesion: () => void;
   accionTopbar?: ReactNode;
   onAbrirNotificacion?: (item: NotificationItem) => void;
@@ -34,6 +35,7 @@ export default function ProfesionalShell({
   onAbrirDisponibilidad,
   onAbrirPrestaciones,
   onAbrirPerfil,
+  onAbrirAyuda = () => { window.history.pushState({}, "", "/ayuda"); window.dispatchEvent(new PopStateEvent("popstate")); },
   onCerrarSesion,
   accionTopbar,
   onAbrirNotificacion,
@@ -48,6 +50,7 @@ export default function ProfesionalShell({
     { id: "disponibilidad" as const, texto: "Mi disponibilidad", icono: "reloj" as const, accion: onAbrirDisponibilidad },
     { id: "prestaciones" as const, texto: "Mis prestaciones", icono: "check" as const, accion: onAbrirPrestaciones },
     { id: "perfil" as const, texto: "Mi perfil", icono: "perfil" as const, accion: onAbrirPerfil },
+    { id: "ayuda" as const, texto: "Ayuda", icono: "ayuda" as const, accion: onAbrirAyuda },
   ];
 
   return <div className="prof-app-shell">
@@ -65,7 +68,6 @@ export default function ProfesionalShell({
           onClick={item.accion}
         ><Icono nombre={item.icono} />{item.texto}</button>)}
       </nav>
-      <a className="prof-help-link" href="/ayuda">Ayuda</a>
       <div className="prof-sidebar-perfil">
         <span className="prof-avatar">{iniciales || "P"}</span>
         <div><strong>{nombre}</strong><small>Profesional</small></div>
