@@ -46,4 +46,16 @@ test.describe("Centro de Ayuda público", () => {
     await expect(page.getByRole("heading", { name: "Qué es la suscripción de Turnelia", exact: true })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
   });
+
+  test("abre una imagen de ayuda en lightbox y permite cerrarla", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/ayuda/agenda");
+    const image = page.getByRole("button", { name: /Ampliar imagen:/ }).first();
+    await expect(image).toBeVisible();
+    await image.click();
+    await expect(page.getByRole("dialog")).toBeVisible();
+    await expect(page.getByRole("dialog").getByRole("img")).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("dialog")).toBeHidden();
+  });
 });

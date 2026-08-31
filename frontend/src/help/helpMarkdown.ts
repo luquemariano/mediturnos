@@ -1,4 +1,5 @@
 import { createElement, type ReactNode } from "react";
+import HelpImage from "./components/HelpImage";
 
 function inline(value: string): ReactNode[] {
   const result: ReactNode[] = [];
@@ -54,7 +55,7 @@ export function renderHelpMarkdown(content: string): ReactNode[] {
     if (orderedItem) { flushParagraph(); flushList(); orderedList.push(orderedItem[1]); return; }
     if (!line.trim()) { flushParagraph(); flushList(); flushOrderedList(); return; }
     const image = line.match(/^!\[([^\]]*)\]\(([^\s)]+)\)$/);
-    if (image) { flushParagraph(); flushList(); flushOrderedList(); nodes.push(createElement("img", { key: `img-${nodes.length}`, src: image[2], alt: image[1] })); return; }
+    if (image) { flushParagraph(); flushList(); flushOrderedList(); nodes.push(createElement(HelpImage, { key: `img-${nodes.length}`, src: image[2], alt: image[1] })); return; }
     paragraph.push(line);
   });
   flushParagraph(); flushList(); flushOrderedList(); if (inCode) flushCode();
