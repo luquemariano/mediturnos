@@ -69,3 +69,6 @@ Seleccioná **Agregar horario especial**, elegí la fecha y completá **Desde** 
 En la lista de cambios puntuales, una fecha cerrada muestra **Reabrir fecha**. Seleccioná esa acción para que vuelva a usar la disponibilidad habitual. En un período de vacaciones, usá **Reabrir período**.
 
 Consultá también [Agenda](/ayuda/agenda) para revisar cómo se reflejan estos cambios en tus turnos.
+
+![Configuración de disponibilidad semanal](/help/screenshots/03-disponibilidad-semanal.png)
+![Excepciones de disponibilidad](/help/screenshots/04-disponibilidad-excepciones.png)

@@ -62,3 +62,6 @@ Un paciente activo de tu listado puede seleccionarse al crear un turno. Consult�
 - Un paciente desactivado deja de estar disponible en el listado activo y no se puede seleccionar para nuevas operaciones.
 
 Consultá [Historia clínica](/ayuda/historia-clinica) para conocer cómo registrar información clínica.
+
+![Listado de pacientes](/help/screenshots/10-pacientes-listado.png)
+![Detalle de paciente](/help/screenshots/11-paciente-detalle.png)

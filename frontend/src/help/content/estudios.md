@@ -61,3 +61,7 @@ Mientras está **Pendiente**, podés seleccionar **Cerrar** cuando el flujo se d
 El enlace utiliza un token asociado a la solicitud y permite al paciente enviar los archivos sin ingresar al panel profesional. No compartas el enlace fuera del paciente correspondiente.
 
 Volvé a [Historia clínica](/ayuda/historia-clinica).
+
+![Solicitud de estudio](/help/screenshots/15-estudio-solicitud.png)
+![Carga pública de resultados](/help/screenshots/16-estudio-carga-publica.png)
+![Revisión de resultados](/help/screenshots/17-estudio-revision.png)

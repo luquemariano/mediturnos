@@ -85,3 +85,6 @@ Registros sucesivos del seguimiento clínico. Cada nueva anotación se agrega co
 Las secciones de documentos y estudios existen en el detalle del paciente, pero su funcionamiento se documentará en F11.6.
 
 Volvé a [Pacientes](/ayuda/pacientes) para conocer la gestión general de pacientes.
+
+![Resumen clínico](/help/screenshots/12-resumen-clinico.png)
+![Nueva evolución clínica](/help/screenshots/13-evolucion-clinica.png)

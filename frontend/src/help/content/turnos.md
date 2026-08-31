@@ -68,3 +68,6 @@ Una prestación **Inactiva** no debe utilizarse para nuevas reservas. Desactivar
 - **Fecha u horario inválido:** revisá la fecha y la disponibilidad configurada.
 
 Si necesitás cambiar tus horarios habituales, consultá [Disponibilidad](/ayuda/disponibilidad).
+
+![Nuevo turno](/help/screenshots/08-turno-nuevo.png)
+![Acciones de un turno](/help/screenshots/09-turno-reprogramar.png)
