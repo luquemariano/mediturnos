@@ -122,6 +122,9 @@ def main() -> None:
         if request is None:
             now = datetime.utcnow(); request = StudyRequest(paciente_id=patient.id, profesional_id=professional.id, title="Laboratorio de control", instructions="Adjuntar resultados cuando estén disponibles.", status="submitted", requested_at=now-timedelta(days=1), submitted_at=now, created_at=now-timedelta(days=1), updated_at=now); db.add(request); db.flush()
             db.add(PatientDocument(paciente_id=patient.id, study_request_id=request.id, origin="patient", storage_key=f"screenshots/{request.id}.pdf", original_filename="DOCUMENTO_DE_EJEMPLO.pdf", mime_type="application/pdf", size_bytes=1024, category="study_result", status="available", available_at=now, created_at=now))
+        pending_request = db.query(StudyRequest).filter_by(paciente_id=patient.id, profesional_id=professional.id, title="Radiografía de control").first()
+        if pending_request is None:
+            now = datetime.utcnow(); db.add(StudyRequest(paciente_id=patient.id, profesional_id=professional.id, title="Radiografía de control", instructions="Subí el resultado cuando esté disponible.", status="pending", requested_at=now, created_at=now, updated_at=now))
         db.commit()
     finally:
         db.close()

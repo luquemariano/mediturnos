@@ -25,7 +25,7 @@ El script comprueba los puertos, recrea únicamente PostgreSQL del proyecto `tur
 
 ## Inventario
 
-La suite reserva estos nombres estables en `frontend/public/help/screenshots/`:
+La suite reserva estos nombres estables en `frontend/public/help/screenshots/`. S09 representa el formulario real de reprogramación abierto desde una tarjeta de turno expandida; S16 representa el formulario público de carga usando un enlace E2E válido generado durante la ejecución para la solicitud pendiente ficticia.
 
 `01-onboarding-perfil.png` · `02-prestacion-crear.png` · `03-disponibilidad-semanal.png` · `04-disponibilidad-excepciones.png` · `05-agenda-dia.png` · `06-agenda-semana.png` · `07-agenda-mes.png` · `08-turno-nuevo.png` · `09-turno-reprogramar.png` · `10-pacientes-listado.png` · `11-paciente-detalle.png` · `12-resumen-clinico.png` · `13-evolucion-clinica.png` · `14-documentos.png` · `15-estudio-solicitud.png` · `16-estudio-carga-publica.png` · `17-estudio-revision.png`.
 
