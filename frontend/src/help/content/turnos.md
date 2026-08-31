@@ -37,7 +37,7 @@ Turnelia vuelve a validar el horario al guardar. Si otra reserva ocupó ese hora
 
 ## Cancelar un turno
 
-Desde el detalle del turno, seleccioná **Cancelar** y luego confirmá la acción. El turno queda en estado **Cancelado**; no se elimina físicamente. Los pagos existentes no se eliminan ni se reembolsan automáticamente.
+Desde el detalle del turno, seleccioná **Cancelar** y luego confirmá la acción. El turno queda en estado **Cancelado**; no se elimina físicamente.
 
 ## Marcar como ausente
 
