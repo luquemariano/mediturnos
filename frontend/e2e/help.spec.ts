@@ -5,7 +5,7 @@ test.describe("Centro de Ayuda público", () => {
     await page.goto("/ayuda");
     await expect(page.getByRole("heading", { name: "Centro de Ayuda" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Primeros pasos" })).toBeVisible();
-    for (const title of ["Prestaciones", "Disponibilidad", "Agenda", "Turnos"]) await expect(page.getByRole("heading", { name: title, exact: true })).toBeVisible();
+    for (const title of ["Prestaciones", "Disponibilidad", "Agenda", "Turnos", "Pacientes", "Historia clínica"]) await expect(page.getByRole("heading", { name: title, exact: true })).toBeVisible();
     await page.getByRole("button", { name: /Ver guía/ }).first().click();
     await expect(page).toHaveURL(/\/ayuda\/primeros-pasos$/);
     await expect(page.getByRole("heading", { name: "Primeros pasos" })).toBeVisible();
@@ -31,6 +31,11 @@ test.describe("Centro de Ayuda público", () => {
     await expect(page.getByRole("heading", { name: "Vista Mes", exact: true })).toBeVisible();
     await page.goto("/ayuda/turnos");
     await expect(page.getByRole("heading", { name: "Crear un turno", exact: true })).toBeVisible();
+    await page.goto("/ayuda/pacientes");
+    await expect(page.getByRole("heading", { name: "Crear un paciente", exact: true })).toBeVisible();
+    await page.goto("/ayuda/historia-clinica");
+    await expect(page.getByRole("heading", { name: "Resumen clínico", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Agregar una evolución", exact: true })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
   });
 });
