@@ -10,7 +10,7 @@ function cargarAnalytics(): Promise<void> {
   if (inicializando) return inicializando;
   inicializando = new Promise((resolve) => {
     window.dataLayer = window.dataLayer || [];
-    window.gtag = (...args: unknown[]) => window.dataLayer?.push(args);
+    window.gtag = function gtag() { window.dataLayer?.push(arguments); };
     window.gtag("js", new Date());
     window.gtag("config", MEASUREMENT_ID, { send_page_view: false });
     const script = document.createElement("script"); script.async = true;
