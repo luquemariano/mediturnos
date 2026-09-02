@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { LANDING_ASSETS, PLANES, WHATSAPP_URL } from "./landingConfig";
+import { trackEvent } from "../analytics";
 import "./LandingPage.css";
 
 const funciones = [
@@ -114,7 +115,11 @@ function FAQ() {
 }
 
 export default function LandingPage() {
-  return <div className="landing-page">
+  function medirRegistro(evento: React.MouseEvent<HTMLDivElement>) {
+    const enlace = (evento.target as Element).closest<HTMLAnchorElement>('a[href="/registro"]');
+    if (enlace) trackEvent("sign_up_click", { source: "landing" });
+  }
+  return <div className="landing-page" onClick={medirRegistro}>
     <LandingHeader />
     <main>
       <section id="inicio" className="hero"><div className="landing-container hero__grid">

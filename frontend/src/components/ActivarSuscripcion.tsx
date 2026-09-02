@@ -8,6 +8,7 @@ import {
   obtenerSuscripcion,
 } from "../services/suscripcionService";
 import { montarFormularioMercadoPago } from "../services/mercadoPagoCardForm";
+import { trackEvent } from "../analytics";
 import type { CuentaActual, PlanCode } from "../types/cuenta";
 import type { EstadoSuscripcionSaas } from "../types/suscripcion";
 
@@ -77,7 +78,9 @@ export default function ActivarSuscripcion({ onVolver }: { onVolver: () => void 
         setError("");
         setMensaje("");
         try {
+          trackEvent("subscription_start", { plan });
           const respuesta = await iniciarSuscripcion(cuenta.cuenta_id, plan, cardTokenId);
+          trackEvent("subscription_complete", { plan });
           setMensaje(respuesta.estado === "trial"
             ? "El medio de pago quedó asociado. Tu cuenta continúa en período de prueba y todavía no se realizó ningún cobro."
             : "El medio de pago quedó asociado correctamente.");
