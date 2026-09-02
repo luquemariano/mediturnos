@@ -43,6 +43,7 @@ import { restaurarSesion } from "./utils/sesion";
 import { aplicarMetadatosSeo } from "./seo/routeMetadata";
 import BootLoadingScreen, { type BootStep } from "./components/BootLoadingScreen";
 import { HelpArticlePage, HelpHome, HelpLayout } from "./help";
+import { trackEvent, trackPageView } from "./analytics";
 
 
 type Vista =
@@ -117,6 +118,7 @@ function App() {
 
   useEffect(() => {
     aplicarMetadatosSeo(window.location.pathname);
+    trackPageView(window.location.pathname);
   }, [ruta, vistaAcceso]);
 
   const navegar = useCallback((destino: string) => {
@@ -209,6 +211,7 @@ function App() {
       completarBoot("1");
 
       setUsuario(usuarioActual);
+      trackEvent("login_success");
       setVista("dashboard");
       if (usuarioActual.rol === "profesional") {
         setBootSteps((actuales) => [...actuales, { id: "2", label: "Preparando tu espacio", status: "loading" }]);
@@ -337,6 +340,7 @@ function App() {
   async function manejarRegistroExitoso(respuesta: RegistroProfesionalResponse) {
     localStorage.setItem("access_token", respuesta.access_token);
     habilitarNotificacionDeSesion();
+    trackEvent("sign_up_complete");
     setUsuario(await obtenerUsuarioActual());
     navegar("/onboarding/perfil");
   }
