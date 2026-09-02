@@ -71,7 +71,7 @@ function HeroDevice({ tipo, asset, label }: { tipo: "notebook" | "tablet" | "pho
   return (
     <figure className={`hero-device hero-device--${tipo}`}>
       <div className="hero-device__screen">
-        <img src={asset} alt={label} />
+        <img src={asset} alt={label} loading={tipo === "notebook" ? "eager" : "lazy"} fetchPriority={tipo === "notebook" ? "high" : "auto"} decoding="async" />
       </div>
       {tipo === "notebook" && <span className="hero-device__base" aria-hidden="true" />}
       {tipo === "phone" && <span className="hero-device__speaker" aria-hidden="true" />}
