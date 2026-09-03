@@ -23,6 +23,7 @@
 - [`docs/SECURITY.md`](docs/SECURITY.md): autenticación, autorización y datos sensibles.
 - [`docs/TESTING.md`](docs/TESTING.md): comandos, cobertura y limitaciones de validación.
 - [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md): Render, Aiven, variables e integraciones declaradas.
+- [`docs/deployment/VPS_OVH.md`](docs/deployment/VPS_OVH.md): despliegue paralelo de staging en VPS OVH.
 - [`docs/ROADMAP.md`](docs/ROADMAP.md): trabajo pendiente y estado del Harness.
 
 Consultar primero este archivo; luego el documento específico de la tarea.

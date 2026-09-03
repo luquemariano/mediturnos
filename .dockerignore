@@ -20,4 +20,9 @@ __pycache__/
 *.backup
 *.sql.gz
 .env
+.env.*
+!.env.example
+!.env.vps.example
 .vscode/
+node_modules/
+frontend/dist/
