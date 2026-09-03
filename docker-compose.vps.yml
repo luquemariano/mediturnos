@@ -1,0 +1,75 @@
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: turnelia-ovh-db
+    restart: unless-stopped
+    env_file:
+      - .env.vps
+    volumes:
+      - turnelia_vps_postgres_data:/var/lib/postgresql/data
+    networks:
+      - turnelia_internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: turnelia-ovh-api
+    restart: unless-stopped
+    env_file:
+      - .env.vps
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - turnelia_internal
+      - proxy
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/ready', timeout=5)\""]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.vps
+      args:
+        VITE_API_URL: ${VITE_API_URL}
+        VITE_MERCADOPAGO_PUBLIC_KEY: ${VITE_MERCADOPAGO_PUBLIC_KEY}
+    container_name: turnelia-ovh-frontend
+    restart: unless-stopped
+    networks:
+      - proxy
+
+  reminders:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: turnelia-ovh-reminders
+    profiles:
+      - reminders
+    env_file:
+      - .env.vps
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - turnelia_internal
+    command: ["python", "-m", "app.scripts.process_appointment_reminders"]
+
+volumes:
+  turnelia_vps_postgres_data:
+
+networks:
+  turnelia_internal:
+    internal: true
+  proxy:
+    external: true
+    name: proxy
