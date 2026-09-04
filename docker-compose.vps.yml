@@ -1,12 +1,12 @@
 services:
   db:
-    image: postgres:17-alpine
+    image: postgres:18-alpine
     container_name: turnelia-ovh-db
     restart: unless-stopped
     env_file:
       - .env.vps
     volumes:
-      - turnelia_vps_postgres_data:/var/lib/postgresql/data
+      - turnelia_vps_postgres18_data:/var/lib/postgresql
     networks:
       - turnelia_internal
     healthcheck:
@@ -65,7 +65,7 @@ services:
     command: ["python", "-m", "app.scripts.process_appointment_reminders"]
 
 volumes:
-  turnelia_vps_postgres_data:
+  turnelia_vps_postgres18_data:
 
 networks:
   turnelia_internal:
