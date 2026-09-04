@@ -10,3 +10,5 @@ Trabajar siempre desde una rama `feature/` o `chore/` y verificar:
 git status
 git branch --show-current
 git pull --ff-only
+
+python3 scripts/check_env_duplicates.py .env.vps
