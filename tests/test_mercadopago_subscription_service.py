@@ -17,12 +17,45 @@ def crear_gateway(handler):
 @pytest.mark.parametrize(
     ("invocacion", "method", "path", "body"),
     [
-        (lambda servicio: servicio.crear_plan({"reason": "Plan"}), "POST", "/preapproval_plan", {"reason": "Plan"}),
-        (lambda servicio: servicio.consultar_plan("plan-1"), "GET", "/preapproval_plan/plan-1", None),
-        (lambda servicio: servicio.crear_preapproval({"reason": "Alta"}, idempotency_key="key-1"), "POST", "/preapproval", {"reason": "Alta"}),
-        (lambda servicio: servicio.consultar_preapproval("pre-1"), "GET", "/preapproval/pre-1", None),
-        (lambda servicio: servicio.cancelar_preapproval("pre-1"), "PUT", "/preapproval/pre-1", {"status": "canceled"}),
-        (lambda servicio: servicio.consultar_authorized_payment("pay-1"), "GET", "/authorized_payments/pay-1", None),
+        (
+            lambda servicio: servicio.crear_plan({"reason": "Plan"}),
+            "POST",
+            "/preapproval_plan",
+            {"reason": "Plan"},
+        ),
+        (
+            lambda servicio: servicio.consultar_plan("plan-1"),
+            "GET",
+            "/preapproval_plan/plan-1",
+            None,
+        ),
+        (
+            lambda servicio: servicio.crear_preapproval(
+                {"reason": "Alta"},
+                idempotency_key="key-1",
+            ),
+            "POST",
+            "/preapproval",
+            {"reason": "Alta"},
+        ),
+        (
+            lambda servicio: servicio.consultar_preapproval("pre-1"),
+            "GET",
+            "/preapproval/pre-1",
+            None,
+        ),
+        (
+            lambda servicio: servicio.cancelar_preapproval("pre-1"),
+            "PUT",
+            "/preapproval/pre-1",
+            {"status": "canceled"},
+        ),
+        (
+            lambda servicio: servicio.consultar_authorized_payment("pay-1"),
+            "GET",
+            "/authorized_payments/pay-1",
+            None,
+        ),
     ],
 )
 def test_operaciones_gateway(invocacion, method, path, body):
@@ -30,12 +63,15 @@ def test_operaciones_gateway(invocacion, method, path, body):
         assert request.method == method
         assert request.url.path == path
         assert request.headers["Authorization"] == "Bearer token-secreto"
+
         if path == "/preapproval":
             assert request.headers["X-Idempotency-Key"] == "key-1"
+
         if body is not None:
             import json
 
             assert json.loads(request.content) == body
+
         return httpx.Response(200, json={"id": "resultado"})
 
     servicio = crear_gateway(handler)
@@ -56,7 +92,12 @@ def test_preapproval_no_envia_x_scope_y_usa_idempotencia():
         return httpx.Response(200, json={"id": "pre-1"})
 
     servicio = crear_gateway(handler)
-    assert servicio.crear_preapproval({"status": "authorized"}, idempotency_key="key-1") == {"id": "pre-1"}
+
+    assert servicio.crear_preapproval(
+        {"status": "authorized"},
+        idempotency_key="key-1",
+    ) == {"id": "pre-1"}
+
     servicio.close()
 
 
@@ -64,10 +105,17 @@ def test_buscar_preapprovals_por_referencia():
     def handler(request: httpx.Request) -> httpx.Response:
         assert request.url.path == "/preapproval/search"
         assert request.url.params["q"] == "referencia-1"
-        return httpx.Response(200, json={"results": [{"id": "pre-1"}]})
+        return httpx.Response(
+            200,
+            json={"results": [{"id": "pre-1"}]},
+        )
 
     servicio = crear_gateway(handler)
-    assert servicio.buscar_preapprovals("referencia-1") == [{"id": "pre-1"}]
+
+    assert servicio.buscar_preapprovals(
+        "referencia-1"
+    ) == [{"id": "pre-1"}]
+
     servicio.close()
 
 
@@ -75,14 +123,18 @@ def test_error_http_es_sanitizado():
     secreto_remoto = "detalle-privado-del-proveedor"
 
     def handler(_request: httpx.Request) -> httpx.Response:
-        return httpx.Response(401, json={
-            "message": secreto_remoto,
-            "error": "bad_request",
-            "cause": [{"code": "invalid_parameter"}],
-            "authorization": "Bearer no-debe-aparecer",
-        })
+        return httpx.Response(
+            401,
+            json={
+                "message": secreto_remoto,
+                "error": "bad_request",
+                "cause": [{"code": "invalid_parameter"}],
+                "authorization": "Bearer no-debe-aparecer",
+            },
+        )
 
     servicio = crear_gateway(handler)
+
     with pytest.raises(MercadoPagoSubscriptionError) as captura:
         servicio.consultar_plan("plan-1")
 
@@ -95,14 +147,20 @@ def test_error_http_es_sanitizado():
         "cause": [{"code": "invalid_parameter"}],
         "authorization": "[REDACTED]",
     }
-    assert "no-debe-aparecer" not in repr(captura.value.provider_response)
+    assert "no-debe-aparecer" not in repr(
+        captura.value.provider_response
+    )
 
 
 def test_timeout_es_sanitizado():
     def handler(request: httpx.Request) -> httpx.Response:
-        raise httpx.ReadTimeout("incluye secreto", request=request)
+        raise httpx.ReadTimeout(
+            "incluye secreto",
+            request=request,
+        )
 
     servicio = crear_gateway(handler)
+
     with pytest.raises(MercadoPagoSubscriptionError) as captura:
         servicio.consultar_preapproval("pre-1")
 
@@ -112,20 +170,30 @@ def test_timeout_es_sanitizado():
 
 def test_respuesta_no_json_es_rechazada():
     def handler(_request: httpx.Request) -> httpx.Response:
-        return httpx.Response(200, text="respuesta inesperada")
+        return httpx.Response(
+            200,
+            text="respuesta inesperada",
+        )
 
     servicio = crear_gateway(handler)
+
     with pytest.raises(MercadoPagoSubscriptionError):
         servicio.consultar_authorized_payment("pay-1")
 
 
 def test_id_de_recurso_se_codifica_en_la_url():
     def handler(request: httpx.Request) -> httpx.Response:
-        assert request.url.raw_path == b"/preapproval_plan/plan%2Fcon%20barra"
+        assert (
+            request.url.raw_path
+            == b"/preapproval_plan/plan%2Fcon%20barra"
+        )
         return httpx.Response(200, json={})
 
     servicio = crear_gateway(handler)
-    assert servicio.consultar_plan("plan/con barra") == {}
+
+    assert servicio.consultar_plan(
+        "plan/con barra"
+    ) == {}
 
 
 def test_settings_carga_configuracion_saas_separada():
@@ -140,24 +208,69 @@ def test_settings_carga_configuracion_saas_separada():
         mercadopago_webhook_secret="webhook-saas",
     )
 
-    assert configuracion.mercado_pago_access_token == "token-clinico"
+    assert (
+        configuracion.mercado_pago_access_token
+        == "token-clinico"
+    )
     assert configuracion.mercadopago_access_token is not None
     assert (
-        configuracion.mercadopago_access_token.get_secret_value()
+        configuracion.mercadopago_access_token
+        .get_secret_value()
         == "APP_USR-fake-access-token"
     )
-    assert configuracion.mercadopago_public_key == "APP_USR-fake-public-key"
+    assert (
+        configuracion.mercadopago_public_key
+        == "APP_USR-fake-public-key"
+    )
     assert configuracion.mercadopago_env == "production"
     assert configuracion.mercadopago_webhook_secret is not None
 
 
-@pytest.mark.parametrize("env", ["sandbox", "production"])
-def test_settings_rechaza_token_test_para_mercadopago(env):
-    with pytest.raises(ValueError, match="APP_USR"):
+def test_settings_acepta_token_test_en_sandbox():
+    configuracion = Settings(
+        _env_file=None,
+        jwt_secret_key="test-secret",
+        mercadopago_env="sandbox",
+        mercadopago_access_token="TEST-fake-access-token",
+        mercadopago_public_key="APP_USR-fake-public-key",
+    )
+
+    assert configuracion.mercadopago_env == "sandbox"
+    assert configuracion.mercadopago_access_token is not None
+    assert (
+        configuracion.mercadopago_access_token
+        .get_secret_value()
+        == "TEST-fake-access-token"
+    )
+
+
+def test_settings_acepta_token_app_usr_en_sandbox():
+    configuracion = Settings(
+        _env_file=None,
+        jwt_secret_key="test-secret",
+        mercadopago_env="sandbox",
+        mercadopago_access_token="APP_USR-fake-access-token",
+        mercadopago_public_key="APP_USR-fake-public-key",
+    )
+
+    assert configuracion.mercadopago_env == "sandbox"
+    assert configuracion.mercadopago_access_token is not None
+    assert (
+        configuracion.mercadopago_access_token
+        .get_secret_value()
+        == "APP_USR-fake-access-token"
+    )
+
+
+def test_settings_rechaza_token_test_en_production():
+    with pytest.raises(
+        ValueError,
+        match="no corresponde al entorno configurado",
+    ):
         Settings(
             _env_file=None,
             jwt_secret_key="test-secret",
-            mercadopago_env=env,
+            mercadopago_env="production",
             mercadopago_access_token="TEST-fake-access-token",
             mercadopago_public_key="APP_USR-fake-public-key",
         )
@@ -165,11 +278,18 @@ def test_settings_rechaza_token_test_para_mercadopago(env):
 
 def test_settings_rechaza_entorno_mercadopago_invalido():
     with pytest.raises(ValueError):
-        Settings(_env_file=None, jwt_secret_key="test-secret", mercadopago_env="qa")
+        Settings(
+            _env_file=None,
+            jwt_secret_key="test-secret",
+            mercadopago_env="qa",
+        )
 
 
 def test_settings_requiere_public_key_si_mercadopago_esta_configurado():
-    with pytest.raises(ValueError, match="MERCADOPAGO_PUBLIC_KEY"):
+    with pytest.raises(
+        ValueError,
+        match="MERCADOPAGO_PUBLIC_KEY",
+    ):
         Settings(
             _env_file=None,
             jwt_secret_key="test-secret",
