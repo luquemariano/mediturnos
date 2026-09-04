@@ -201,6 +201,7 @@ class Settings(BaseSettings):
             else ""
         )
         public_key = (self.mercadopago_public_key or "").strip()
+
         if access_token or public_key:
             if not access_token:
                 raise ValueError("MERCADOPAGO_ACCESS_TOKEN es obligatorio cuando Mercado Pago está configurado.")
@@ -214,7 +215,8 @@ class Settings(BaseSettings):
 
             if not access_token.startswith(prefijos_permitidos):
                 raise ValueError(
-                    "MERCADOPAGO_ACCESS_TOKEN no corresponde al entorno configurado."
+                    "MERCADOPAGO_ACCESS_TOKEN no corresponde "
+                    "al entorno configurado."
                 )
 
         if self.app_env == "production" and self.object_storage_provider == "r2":
@@ -225,6 +227,7 @@ class Settings(BaseSettings):
                 adaptador_origen_http.validate_python(self.r2_endpoint)
             except ValueError as error:
                 raise ValueError("R2_ENDPOINT debe ser una URL HTTP o HTTPS válida.") from error
+
         if self.app_env != "production":
             return self
 
@@ -295,10 +298,16 @@ class Settings(BaseSettings):
             raise ValueError("En production, APPOINTMENT_ACTION_SECRET debe tener al menos 32 caracteres.")
         if not self.study_access_secret or len(self.study_access_secret.get_secret_value().strip()) < 32:
             raise ValueError("En production, STUDY_ACCESS_SECRET debe tener al menos 32 caracteres.")
-        self.public_api_url = validar_public_api_url(self.public_api_url, production=True)
+
+        self.public_api_url = validar_public_api_url(
+            self.public_api_url,
+            production=True,
+        )
+
         frontend_host = adaptador_origen_http.validate_python(
             self.frontend_url
         ).host
+
         if frontend_host is not None and es_host_loopback(frontend_host):
             raise ValueError(
                 "En production, FRONTEND_URL no puede usar localhost ni loopback."
