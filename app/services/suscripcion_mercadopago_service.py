@@ -45,29 +45,44 @@ PRECIOS_PLANES: dict[str, Decimal] = {
     "centro": Decimal("149900.00"),
 }
 MONEDA = "ARS"
-logger = logging.getLogger("turnelia.mercadopago.suscripciones")
+logger = logging.getLogger("uvicorn.error")
 
 
 def _registrar_error_proveedor(
     error: MercadoPagoSubscriptionError,
 ) -> None:
-    if settings.app_env != "development":
-        return
     respuesta = error.provider_response
+
     detalle = {
         "http_status": error.status_code,
         "operation": error.operation,
-        "message": respuesta.get("message")
-        if isinstance(respuesta, dict) else None,
-        "error": respuesta.get("error")
-        if isinstance(respuesta, dict) else None,
-        "cause": respuesta.get("cause")
-        if isinstance(respuesta, dict) else None,
-        "provider_response": respuesta,
+        "message": (
+            respuesta.get("message")
+            if isinstance(respuesta, dict)
+            else None
+        ),
+        "error": (
+            respuesta.get("error")
+            if isinstance(respuesta, dict)
+            else None
+        ),
+        "cause": (
+            respuesta.get("cause")
+            if isinstance(respuesta, dict)
+            else None
+        ),
     }
+
+    if settings.app_env == "development":
+        detalle["provider_response"] = respuesta
+
     logger.warning(
         "Mercado Pago rechazó una operación de suscripción: %s",
-        json.dumps(detalle, ensure_ascii=False, default=str),
+        json.dumps(
+            detalle,
+            ensure_ascii=False,
+            default=str,
+        ),
     )
 
 
