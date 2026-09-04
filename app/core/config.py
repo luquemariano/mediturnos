@@ -206,8 +206,12 @@ class Settings(BaseSettings):
                 raise ValueError("MERCADOPAGO_ACCESS_TOKEN es obligatorio cuando Mercado Pago está configurado.")
             if not public_key:
                 raise ValueError("MERCADOPAGO_PUBLIC_KEY es obligatoria cuando Mercado Pago está configurado.")
-            if not access_token.startswith("APP_USR-"):
-                raise ValueError("MERCADOPAGO_ACCESS_TOKEN debe ser una credencial APP_USR del entorno configurado.")
+            prefijo_esperado = "APP_USR-" if self.mercadopago_env == "production" else "TEST-"
+            if not access_token.startswith(prefijo_esperado):
+                raise ValueError(
+                    "MERCADOPAGO_ACCESS_TOKEN debe ser una credencial "
+                    f"{prefijo_esperado} del entorno configurado."
+                )
         if self.app_env == "production" and self.object_storage_provider == "r2":
             faltantes = [n for n, v in (("R2_ACCESS_KEY_ID", self.r2_access_key_id), ("R2_SECRET_ACCESS_KEY", self.r2_secret_access_key), ("R2_BUCKET_NAME", self.r2_bucket_name), ("R2_ENDPOINT", self.r2_endpoint)) if v is None or not str(v).strip()]
             if faltantes:

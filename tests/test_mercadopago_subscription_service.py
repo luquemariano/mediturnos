@@ -151,14 +151,46 @@ def test_settings_carga_configuracion_saas_separada():
     assert configuracion.mercadopago_webhook_secret is not None
 
 
-@pytest.mark.parametrize("env", ["sandbox", "production"])
-def test_settings_rechaza_token_test_para_mercadopago(env):
+def test_settings_acepta_token_app_usr_en_produccion():
+    configuracion = Settings(
+        _env_file=None,
+        jwt_secret_key="test-secret",
+        mercadopago_env="production",
+        mercadopago_access_token="APP_USR-fake-access-token",
+        mercadopago_public_key="APP_USR-fake-public-key",
+    )
+    assert configuracion.mercadopago_env == "production"
+
+
+def test_settings_rechaza_token_test_en_produccion():
     with pytest.raises(ValueError, match="APP_USR"):
         Settings(
             _env_file=None,
             jwt_secret_key="test-secret",
-            mercadopago_env=env,
+            mercadopago_env="production",
             mercadopago_access_token="TEST-fake-access-token",
+            mercadopago_public_key="APP_USR-fake-public-key",
+        )
+
+
+def test_settings_acepta_token_test_en_sandbox():
+    configuracion = Settings(
+        _env_file=None,
+        jwt_secret_key="test-secret",
+        mercadopago_env="sandbox",
+        mercadopago_access_token="TEST-fake-access-token",
+        mercadopago_public_key="APP_USR-fake-public-key",
+    )
+    assert configuracion.mercadopago_env == "sandbox"
+
+
+def test_settings_rechaza_token_app_usr_en_sandbox():
+    with pytest.raises(ValueError, match="TEST"):
+        Settings(
+            _env_file=None,
+            jwt_secret_key="test-secret",
+            mercadopago_env="sandbox",
+            mercadopago_access_token="APP_USR-fake-access-token",
             mercadopago_public_key="APP_USR-fake-public-key",
         )
 
@@ -175,4 +207,13 @@ def test_settings_requiere_public_key_si_mercadopago_esta_configurado():
             jwt_secret_key="test-secret",
             mercadopago_access_token="APP_USR-fake-access-token",
             mercadopago_public_key="",
+        )
+
+
+def test_settings_requiere_access_token_si_public_key_esta_configurada():
+    with pytest.raises(ValueError, match="MERCADOPAGO_ACCESS_TOKEN"):
+        Settings(
+            _env_file=None,
+            jwt_secret_key="test-secret",
+            mercadopago_public_key="APP_USR-fake-public-key",
         )
