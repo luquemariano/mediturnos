@@ -256,7 +256,7 @@ def test_timeout_conserva_clave_y_retry_reutiliza_el_mismo_intento(escenario):
     assert cuenta.suscripcion.mp_idempotency_key is None
 
 
-def test_error_proveedor_se_loguea_sanitizado_solo_en_desarrollo(
+def test_error_proveedor_se_loguea_sanitizado_en_todos_los_entornos(
     escenario, monkeypatch, caplog
 ):
     db, cuenta, propietario, _, _, gateway = escenario
@@ -279,8 +279,10 @@ def test_error_proveedor_se_loguea_sanitizado_solo_en_desarrollo(
         operation="crear_preapproval",
         provider_response=respuesta,
     )
+
+    caplog.set_level("WARNING", logger="uvicorn.error")
+
     monkeypatch.setattr(servicio.settings, "app_env", "development")
-    caplog.set_level("WARNING", logger="turnelia.mercadopago.suscripciones")
 
     with pytest.raises(HTTPException) as error:
         servicio.iniciar_suscripcion(
@@ -294,13 +296,23 @@ def test_error_proveedor_se_loguea_sanitizado_solo_en_desarrollo(
     assert "unprocessable_entity" in caplog.text
     assert "invalid_payer_email" in caplog.text
     assert "[REDACTED]" in caplog.text
+    assert "provider_response" in caplog.text
+
     for secreto in (*secretos.values(), CARD_TOKEN):
         assert secreto not in caplog.text
 
     caplog.clear()
     monkeypatch.setattr(servicio.settings, "app_env", "production")
     servicio._registrar_error_proveedor(gateway.error_creacion)
-    assert caplog.text == ""
+
+    assert "422" in caplog.text
+    assert "Invalid payer" in caplog.text
+    assert "unprocessable_entity" in caplog.text
+    assert "invalid_payer_email" in caplog.text
+    assert "provider_response" not in caplog.text
+
+    for secreto in (*secretos.values(), CARD_TOKEN):
+        assert secreto not in caplog.text
 
 
 def test_retry_reconcilia_por_referencia_antes_de_recrear(escenario):
