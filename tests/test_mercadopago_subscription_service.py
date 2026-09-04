@@ -163,7 +163,10 @@ def test_settings_acepta_token_app_usr_en_produccion():
 
 
 def test_settings_rechaza_token_test_en_produccion():
-    with pytest.raises(ValueError, match="APP_USR"):
+    with pytest.raises(
+        ValueError,
+        match="no corresponde al entorno configurado",
+    ):
         Settings(
             _env_file=None,
             jwt_secret_key="test-secret",
@@ -184,15 +187,21 @@ def test_settings_acepta_token_test_en_sandbox():
     assert configuracion.mercadopago_env == "sandbox"
 
 
-def test_settings_rechaza_token_app_usr_en_sandbox():
-    with pytest.raises(ValueError, match="TEST"):
-        Settings(
-            _env_file=None,
-            jwt_secret_key="test-secret",
-            mercadopago_env="sandbox",
-            mercadopago_access_token="APP_USR-fake-access-token",
-            mercadopago_public_key="APP_USR-fake-public-key",
-        )
+def test_settings_acepta_token_app_usr_en_sandbox():
+    configuracion = Settings(
+        _env_file=None,
+        jwt_secret_key="test-secret",
+        mercadopago_env="sandbox",
+        mercadopago_access_token="APP_USR-fake-access-token",
+        mercadopago_public_key="APP_USR-fake-public-key",
+    )
+
+    assert configuracion.mercadopago_env == "sandbox"
+    assert configuracion.mercadopago_access_token is not None
+    assert (
+        configuracion.mercadopago_access_token.get_secret_value()
+        == "APP_USR-fake-access-token"
+    )
 
 
 def test_settings_rechaza_entorno_mercadopago_invalido():
