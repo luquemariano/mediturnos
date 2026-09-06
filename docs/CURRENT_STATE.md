@@ -1,56 +1,235 @@
 # Estado actual de Turnelia
 
-Fecha de referencia: **2026-08-22**. Es una fotografía del repositorio, no una certificación operativa de producción.
+Fecha de referencia: **2026-09-06**.
+
+Este documento combina estado del repositorio con evidencia operativa validada durante la migración productiva a OVH.
 
 ## Convención de estados
 
 - **IMPLEMENTADO EN CÓDIGO:** existe código y, cuando corresponde, tests.
 - **DECLARADO EN CONFIGURACIÓN:** aparece en configuración de deployment o entorno, sin verificar ejecución real.
-- **VERIFICADO EN PRODUCCIÓN:** comprobado mediante evidencia operativa de producción; no se asigna sin esa evidencia.
-- **NO DETERMINADO:** el repositorio no permite concluir el estado.
-- **NO INCORPORADO:** capacidad prevista o mencionada que todavía no existe en el repositorio.
-- **LEGACY:** referencia histórica o técnica que no representa necesariamente el producto actual.
+- **VERIFICADO EN PRODUCCIÓN:** comprobado mediante evidencia operativa real.
+- **NO DETERMINADO:** no hay evidencia suficiente.
+- **NO INCORPORADO:** capacidad prevista que todavía no existe.
+- **LEGACY:** referencia histórica que ya no representa la infraestructura productiva actual.
+
+## Estado funcional
 
 | Área | Estado | Evidencia/límite |
 |---|---|---|
-| Landing, autenticación, profesionales, pacientes | IMPLEMENTADO EN CÓDIGO | Código, componentes y tests |
-| Especialidades, prestaciones, disponibilidad, turnos | IMPLEMENTADO EN CÓDIGO | Routers, servicios, modelos y tests |
-| Pagos clínicos, suscripciones SaaS | IMPLEMENTADO EN CÓDIGO | Servicios, webhooks y tests |
-| Evoluciones, perfiles clínicos, documentos | IMPLEMENTADO EN CÓDIGO | Modelos, endpoints y tests |
-| Solicitudes y carga pública de estudios | IMPLEMENTADO EN CÓDIGO | Flujos tokenizados y tests |
-| Notificaciones, recordatorios y email | IMPLEMENTADO EN CÓDIGO | Servicios, worker, Resend/in-memory |
-| R2 | DECLARADO EN CONFIGURACIÓN | Adaptador R2 y fake; uso real NO DETERMINADO |
-| Deployment Render | DECLARADO EN CONFIGURACIÓN | Blueprint declarado; ejecución real NO DETERMINADA |
-| PostgreSQL de producción | DECLARADO EN CONFIGURACIÓN | Proveedor/ubicación documentados: Aiven; conexión y salud actuales NO DETERMINADAS |
-| E2E / Playwright | IMPLEMENTADO EN CÓDIGO | Suite local validada en Fase 3; Playwright E2E CI incorporado en GitHub Actions |
-| Documentación Harness | IMPLEMENTADO EN CÓDIGO | AGENTS y documentos de esta fase |
-| Protección de `main` | DECLARADO EN CONFIGURACIÓN | Ruleset `Turnelia main protection` activo y verificado; PR, `Backend CI` y `Frontend CI` requeridos, approvals 0, `up-to-date` OFF, force-push y eliminación bloqueados, bypass sólo vía Pull Request |
-| PostgreSQL CI | DECLARADO EN CONFIGURACIÓN | Job separado required con PostgreSQL `17-alpine`, Alembic y suites selectivas; run `32597419679` verde y PR #4 validado |
-| Playwright E2E CI | DECLARADO EN CONFIGURACIÓN | Fases 7A y 7B completadas; PR #6 y run `32600285274` (`pull_request`) verdes, cuatro jobs y Playwright `3 passed`; no required. Fase 7C pendiente de evidencia de estabilidad |
+| Landing, autenticación, profesionales, pacientes | VERIFICADO EN PRODUCCIÓN | Smoke test posterior al cutover |
+| Agenda, turnos, prestaciones, disponibilidad | VERIFICADO EN PRODUCCIÓN | Navegación y uso posterior al cutover |
+| Evoluciones y flujos clínicos | IMPLEMENTADO EN CÓDIGO | Código y tests; no todos los subflujos se repitieron durante el cutover |
+| Solicitudes y carga pública de estudios | IMPLEMENTADO EN CÓDIGO | Código y tests |
+| Suscripciones SaaS / Mercado Pago | VERIFICADO EN PRODUCCIÓN | Asociación real de medio de pago y persistencia `authorized` |
+| Email / Resend | VERIFICADO EN PRODUCCIÓN | Recuperación de contraseña real de punta a punta |
+| Recordatorios automáticos | VERIFICADO EN PRODUCCIÓN | Cron del VPS ejecutado y log sin errores |
+| Backups PostgreSQL | VERIFICADO EN PRODUCCIÓN | Dump manual, SHA256 y programación diaria validados |
+| R2 | DECLARADO EN CONFIGURACIÓN | Producción actual mantiene `OBJECT_STORAGE_PROVIDER=fake`; no hay uso productivo real validado |
+| E2E / Playwright | IMPLEMENTADO EN CÓDIGO | Suite y CI existentes |
 
-## Snapshot Git de la inspección
+## Infraestructura productiva
 
-- Rama: `feature/mvp`.
-- HEAD: `be5068a feat: improve clinical study review experience and notifications`.
-- Snapshot tomado el 2026-08-22 mediante `git status --short`, `git log -1` y `git rev-list --left-right --count main...HEAD`.
-- En ese snapshot, la rama estaba 85 commits adelante y 0 atrás de `main`.
-- También aparecían `.vscode/`, `scripts/` y `tests/test_debug_preapproval_payload.py` como no trackeados. Este dato es histórico del snapshot, no una verdad permanente.
+Turnelia está desplegado en un VPS OVH con Ubuntu 24.04.
 
-## Interpretación
+### Servicios
 
-La presencia de código/configuración/tests demuestra **IMPLEMENTADO EN CÓDIGO**. La configuración de Render/R2/cron demuestra **DECLARADO EN CONFIGURACIÓN**. La ubicación/proveedor productivo documentado para PostgreSQL es Aiven, según la historia operativa del proyecto y no como inferencia de `render.yaml`. No hay evidencia suficiente para marcar componentes como **VERIFICADO EN PRODUCCIÓN**; estado actual de Render, conexión/salud de PostgreSQL, cron, email, R2 y Mercado Pago: **NO DETERMINADO**.
+- Frontend: Docker + Nginx.
+- API: Docker + FastAPI/Uvicorn.
+- Base: PostgreSQL 18 en Docker.
+- Reverse proxy / TLS: Caddy.
+- DNS: Cloudflare.
+- Email: Resend.
+- Suscripciones: Mercado Pago.
+- Recordatorios: cron del host cada 15 minutos.
+- Backups: `pg_dump` diario + SHA256.
 
-La protección de `main` se encuentra activa en GitHub mediante el Ruleset
-`Turnelia main protection`, dirigido a `main`. Su configuración efectiva es:
-PR obligatorio, `Backend CI` requerido, `Frontend CI` requerido, approvals = 0,
-`up-to-date` = OFF, force-push y delete bloqueados, y bypass sólo vía Pull
-Request. La verificación roja del PR #2 confirmó el bloqueo por checks
-fallidos. La verificación verde del PR #3 confirmó el camino permitido con
-run `32595185386`; ambos PR fueron cerrados sin merge y sin bypass. Los SHA
-remotos finales fueron `main = 8f10b983af884beb751911e96309f078f31bbf96` y
-`feature/mvp = ec6522f01b5d208ad8b77065fa13bf9249a3fb1f`. La rama local `main`
-no se presenta como sincronizada en este documento.
+Contenedores esperados:
 
-## Deuda y riesgos
+```text
+turnelia-ovh-api
+turnelia-ovh-db
+turnelia-ovh-frontend
+```
 
-Conviven MediTurnos/Turnelia en branding, nombres técnicos, emails de prueba y servicios Render. También existen dos familias de variables Mercado Pago. SQLite no sustituye una validación PostgreSQL completa. Playwright E2E CI está incorporado en GitHub Actions, pero sigue siendo informativo/no required según DEC-013.
+Caddy es compartido con otros proyectos del VPS.
+
+## Dominios verificados
+
+Producción:
+
+```text
+https://turnelia.com.ar
+https://www.turnelia.com.ar
+https://api.turnelia.com.ar
+```
+
+Técnicos/contingencia temporal:
+
+```text
+https://ovh.turnelia.com.ar
+https://api-ovh.turnelia.com.ar
+```
+
+Verificaciones finales:
+
+- `turnelia.com.ar`: HTTP/2 200.
+- `www.turnelia.com.ar`: HTTP/2 301 hacia el dominio raíz.
+- `api.turnelia.com.ar/health/ready`: HTTP/2 200 + `{"status":"ok"}`.
+- dominios `ovh.*`: HTTP/2 200.
+
+## PostgreSQL
+
+Producción usa PostgreSQL local del stack Docker OVH.
+
+La API productiva conecta contra el host interno `db:5432/turnelia`. Aiven ya no forma parte del circuito de producción.
+
+Migración final realizada con PostgreSQL 18.6 en origen y destino y Alembic:
+
+```text
+m3b4c5d6e7f8
+```
+
+El dump final se tomó después de suspender API y cron de Render, evitando escrituras concurrentes en Aiven durante el corte.
+
+## Mercado Pago
+
+Entorno productivo:
+
+```text
+MERCADOPAGO_ENV=production
+```
+
+Planes productivos:
+
+- Profesional: ARS 34.900/mes.
+- Consultorio: ARS 69.900/mes.
+- Centro: ARS 149.900/mes.
+
+Se verificó una asociación real de medio de pago. La suscripción quedó persistida con:
+
+```text
+plan_code=profesional
+status=trial
+billing_provider=mercadopago
+mp_status=authorized
+```
+
+El primer cobro queda programado al finalizar el trial.
+
+## Resend
+
+Verificado en producción mediante recuperación de contraseña:
+
+```text
+From: Turnelia <no-reply@mail.turnelia.com.ar>
+```
+
+El enlace generado apuntó a `https://turnelia.com.ar/reset-password` y el flujo finalizó sin errores.
+
+## Recordatorios
+
+Render Cron está suspendido.
+
+OVH ejecuta cada 15 minutos:
+
+```cron
+*/15 * * * * cd /srv/apps/turnelia && /usr/bin/docker compose --env-file .env.vps -f docker-compose.vps.yml --profile reminders run --rm reminders >> /var/log/turnelia-reminders.log 2>&1
+```
+
+El cron fue comprobado mediante `journalctl` y el log del worker.
+
+## Backups
+
+Script:
+
+```text
+/usr/local/bin/backup-turnelia.sh
+```
+
+Programación:
+
+```cron
+30 3 * * * /usr/local/bin/backup-turnelia.sh >> /var/log/backup-turnelia.log 2>&1
+```
+
+Destino:
+
+```text
+/srv/apps/turnelia/backups/automatic
+```
+
+Política actual:
+
+- dump PostgreSQL custom format;
+- SHA256 por backup;
+- retención local de 14 días.
+
+## Health check del VPS
+
+Script:
+
+```text
+/usr/local/bin/health-vps.sh
+```
+
+Alias operativo:
+
+```bash
+health
+```
+
+Primera validación final registrada después del cutover:
+
+```text
+OK:      25
+WARN:    0
+ERROR:   0
+ESTADO GENERAL: SALUDABLE
+```
+
+En esa comprobación:
+
+- disco raíz: 15 % usado;
+- RAM: 14 % usada;
+- carga CPU: prácticamente nula;
+- UFW activo;
+- Fail2ban activo;
+- API y DB Turnelia healthy;
+- Orienta operativo;
+- reminders recientes;
+- backup reciente con checksum válido.
+
+## Infraestructura legacy
+
+### Render
+
+Estado: **LEGACY / SUSPENDIDO**.
+
+La API histórica responde:
+
+```text
+HTTP/2 503
+x-render-routing: suspend-by-user
+```
+
+El cron histórico también está suspendido.
+
+### Aiven
+
+Estado: **LEGACY / FUERA DEL CIRCUITO PRODUCTIVO**.
+
+Se conserva temporalmente por contingencia y referencia, pero no está sincronizado con las nuevas escrituras que ocurran después del cutover en OVH.
+
+## Rollback actual
+
+Ya no es seguro volver simplemente DNS a Render + Aiven, porque OVH contiene escrituras posteriores al corte.
+
+Ante una contingencia grave se debe preservar primero la base actual OVH y luego decidir restauración/sincronización.
+
+## Documentación relacionada
+
+- `docs/MIGRATION_RENDER_AIVEN_TO_OVH.md`: historia completa del cutover.
+- `docs/DEPLOYMENT.md`: arquitectura y operación productiva actual.
+- `docs/VPS_DEPLOY_CHECKLIST.md`: checklist para despliegues y verificaciones.
+- `.env.vps.example`: contrato de variables productivas sin secretos.
