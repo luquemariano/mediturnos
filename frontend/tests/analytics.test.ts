@@ -17,7 +17,15 @@ describe("analytics", () => {
     expect(esRutaPublica("/app/pacientes")).toBe(false);
     expect(esRutaPublica("/suscripcion/retorno")).toBe(false);
     expect(esRutaPublica("/ayuda/agenda")).toBe(true);
+    expect(esRutaPublica("/software-para-consultorios")).toBe(true);
     expect(() => trackPageView("/app/pacientes?paciente_id=42#evolucion")).not.toThrow();
+  });
+
+  it("permite medir el CTA de la landing SEO con un source sin PII", async () => {
+    window.gtag = vi.fn();
+    trackEvent("sign_up_click", { source: "software_consultorios", email: "no-enviar@example.com" });
+    await Promise.resolve();
+    expect(window.gtag).toHaveBeenCalledWith("event", "sign_up_click", { source: "software_consultorios" });
   });
 
   it("filtra parámetros a campos comerciales permitidos", () => {

@@ -16,6 +16,7 @@ vi.mock("../src/utils/sesion", () => ({ restaurarSesion: vi.fn() }));
 vi.mock("../src/components/DashboardProfesional", () => ({ default: () => <div>Dashboard profesional listo</div> }));
 vi.mock("../src/components/Dashboard", () => ({ default: () => <div>Dashboard listo</div> }));
 vi.mock("../src/components/LandingPage", () => ({ default: () => <div>Landing</div> }));
+vi.mock("../src/landing/SoftwareConsultoriosPage", () => ({ default: () => <div>Software para consultorios</div> }));
 
 const profesional = { nombre: "Sofía", rol: "profesional" } as const;
 const onboardingCompleto = { onboarding_step: "completado" } as const;
@@ -49,6 +50,12 @@ describe("App boot loading", () => {
     localStorage.clear();
     vi.mocked(restaurarSesion).mockResolvedValue(null);
     vi.mocked(obtenerOnboarding).mockResolvedValue(onboardingCompleto);
+  });
+
+  it("renderiza la landing SEO en su ruta pública directa", () => {
+    window.history.replaceState({}, "", "/software-para-consultorios");
+    render(<App />);
+    expect(screen.getByText("Software para consultorios")).toBeInTheDocument();
   });
 
   it("no muestra loader ni agrega espera en login rápido", async () => {
