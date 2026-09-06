@@ -118,6 +118,7 @@ celerybeat.pid
 .env.*.local
 !.env.example
 !.env.vps.example
+private/
 .venv
 env/
 venv/
