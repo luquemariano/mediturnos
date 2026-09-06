@@ -19,6 +19,7 @@ describe("analytics", () => {
     expect(esRutaPublica("/ayuda/agenda")).toBe(true);
     expect(esRutaPublica("/software-para-consultorios")).toBe(true);
     expect(esRutaPublica("/sistema-de-turnos")).toBe(true);
+    expect(esRutaPublica("/para-psicopedagogos")).toBe(true);
     expect(() => trackPageView("/app/pacientes?paciente_id=42#evolucion")).not.toThrow();
   });
 
