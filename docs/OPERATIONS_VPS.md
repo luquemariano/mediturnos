@@ -375,3 +375,36 @@ Orden recomendado:
 9. evitar un rollback hacia Aiven sin reconciliar datos posteriores al cutover.
 
 Para la historia completa de migración consultar `docs/MIGRATION_RENDER_AIVEN_TO_OVH.md`.
+
+## 19. Trabajo desde otra estación
+
+No copiar `.env.vps` a una desktop o notebook para desarrollar.
+
+En una estación nueva:
+
+```powershell
+git clone https://github.com/luquemariano/mediturnos.git
+cd mediturnos
+Copy-Item .env.example .env
+```
+
+La estación utiliza `.env` con configuración local/development. Producción conserva sus secretos en:
+
+```text
+/srv/apps/turnelia/.env.vps
+```
+
+La plantilla `.env.vps.example` es sólo el contrato versionado del entorno productivo y nunca contiene secretos reales.
+
+Antes de comenzar una tarea:
+
+```powershell
+git switch main
+git pull --ff-only
+git status
+git switch -c feature/nombre-cambio
+```
+
+La guía completa de reconstrucción de una desktop/notebook está en `docs/NEW_WORKSTATION.md`.
+
+Para recuperación total ante pérdida del VPS, además del código y los backups se necesita una copia externa segura de los secretos productivos. Esa copia no debe almacenarse en GitHub.
