@@ -1,10 +1,12 @@
 # Turnelia VPS Deploy Checklist
 
-Checklist operativo para despliegues y cambios de configuración en el VPS de Turnelia.
+Checklist operativo para despliegues y cambios de configuración en el VPS productivo de Turnelia.
+
+Estado de referencia: **producción en OVH desde 2026-09-05/06**.
 
 ## 1. Antes de desplegar
 
-Trabajar siempre desde una rama `feature/` o `chore/` y verificar:
+Trabajar desde una rama `feature/`, `fix/`, `chore/` o `docs/` y verificar:
 
 ```bash
 git status
@@ -16,88 +18,48 @@ El working tree debe estar limpio antes de comenzar.
 
 ## 2. Validar variables de entorno
 
-Antes de cualquier build o recreación de servicios en el VPS:
+Producción usa:
+
+```text
+/srv/apps/turnelia/.env.vps
+```
+
+Antes de cualquier build o recreación:
 
 ```bash
 python3 scripts/check_env_duplicates.py .env.vps
 ```
 
-La validación debe terminar con:
+Esperado:
 
 ```text
 [OK] Sin variables duplicadas: .env.vps
 ```
 
-No continuar el deploy si hay variables duplicadas.
+No continuar si hay variables duplicadas.
 
-Variables especialmente sensibles a duplicación:
+Variables especialmente sensibles:
 
-- `MERCADOPAGO_ACCESS_TOKEN`
-- `MERCADOPAGO_PUBLIC_KEY`
-- `MERCADOPAGO_WEBHOOK_SECRET`
-- `VITE_MERCADOPAGO_PUBLIC_KEY`
 - `DATABASE_URL`
 - `FRONTEND_URL`
 - `PUBLIC_API_URL`
+- `CORS_ALLOWED_ORIGINS`
+- `RESEND_API_KEY`
+- `MERCADOPAGO_ACCESS_TOKEN`
+- `MERCADOPAGO_PUBLIC_KEY`
+- `MERCADOPAGO_WEBHOOK_SECRET`
+- `VITE_API_URL`
+- `VITE_MERCADOPAGO_PUBLIC_KEY`
 
-En la notebook, donde `.env.vps` no existe, validar la plantilla con:
+La plantilla versionada es `.env.vps.example`.
 
-```powershell
-python scripts/check_env_duplicates.py .env.vps.example
-```
-
-## 3. Validar configuración efectiva de Docker Compose
-
-Antes de recrear servicios:
+## 3. Validar Docker Compose
 
 ```bash
 docker compose --env-file .env.vps -f docker-compose.vps.yml config
 ```
 
-Para revisar una variable puntual:
-
-```bash
-docker compose --env-file .env.vps -f docker-compose.vps.yml config | grep NOMBRE_VARIABLE
-```
-
-## 4. Mercado Pago en staging
-
-Staging utiliza:
-
-```text
-MERCADOPAGO_ENV=sandbox
-```
-
-Las credenciales deben pertenecer a la misma aplicación Seller Test.
-
-La Public Key usada por el frontend y el Access Token usado por el backend deben pertenecer a la misma aplicación.
-
-## 5. Webhooks Mercado Pago
-
-URL de staging:
-
-```text
-https://api-ovh.turnelia.com.ar/webhooks/mercadopago/suscripciones
-```
-
-Eventos habilitados:
-
-- Planes y suscripciones
-- Pagos (legacy)
-
-La clave secreta configurada en Mercado Pago debe coincidir con:
-
-```text
-MERCADOPAGO_WEBHOOK_SECRET
-```
-
-Después de modificar esta variable hay que recrear la API:
-
-```bash
-docker compose --env-file .env.vps -f docker-compose.vps.yml up -d api
-```
-
-## 6. Verificación de servicios
+Revisar servicios:
 
 ```bash
 docker compose --env-file .env.vps -f docker-compose.vps.yml ps
@@ -105,14 +67,29 @@ docker compose --env-file .env.vps -f docker-compose.vps.yml ps
 
 Esperado:
 
-- `turnelia-ovh-api`: healthy
-- `turnelia-ovh-db`: healthy
-- `turnelia-ovh-frontend`: running
+- `turnelia-ovh-api`: healthy.
+- `turnelia-ovh-db`: healthy.
+- `turnelia-ovh-frontend`: running.
 
-Healthcheck público:
+## 4. URLs productivas
+
+```text
+https://turnelia.com.ar
+https://www.turnelia.com.ar
+https://api.turnelia.com.ar
+```
+
+Accesos técnicos temporales:
+
+```text
+https://ovh.turnelia.com.ar
+https://api-ovh.turnelia.com.ar
+```
+
+Health productivo:
 
 ```bash
-curl -s https://api-ovh.turnelia.com.ar/health/ready
+curl -s https://api.turnelia.com.ar/health/ready
 ```
 
 Esperado:
@@ -121,72 +98,157 @@ Esperado:
 {"status":"ok"}
 ```
 
-## 7. Validación de suscripción Mercado Pago
+## 5. Mercado Pago
 
-Una suscripción creada correctamente debe tener:
+Producción debe usar:
 
+```text
+MERCADOPAGO_ENV=production
+```
+
+Frontend y backend deben pertenecer a la misma aplicación Mercado Pago.
+
+Planes productivos actuales:
+
+- profesional: ARS 34.900.
+- consultorio: ARS 69.900.
+- centro: ARS 149.900.
+
+Una asociación correcta debe persistir:
+
+- `billing_provider=mercadopago`
 - `mp_preapproval_id`
 - `mp_preapproval_plan_id`
-- `mp_status=authorized`
-- monto y moneda configurados
-- próxima fecha de pago
+- `mp_status=authorized` cuando corresponda
+- `next_payment_at`
 
-## 8. Validación de cobros
+No confundir la familia de variables de suscripciones SaaS `MERCADOPAGO_*` con integraciones legacy que puedan usar otros nombres.
 
-Un cobro exitoso debe mostrar:
+## 6. Webhooks Mercado Pago
 
-```text
-status=processed
-payment.status=approved
-payment.status_detail=accredited
-```
-
-## 9. Validación de Webhooks
-
-Los eventos recibidos deben quedar registrados en:
+URL productiva esperada para suscripciones:
 
 ```text
-notificaciones_mercadopago_suscripcion
+https://api.turnelia.com.ar/webhooks/mercadopago/suscripciones
 ```
 
-con:
+La clave configurada en Mercado Pago debe coincidir con:
 
 ```text
-processing_status=processed
+MERCADOPAGO_WEBHOOK_SECRET
 ```
 
-Los pagos deben quedar registrados en:
-
-```text
-cobros_suscripcion
-```
-
-con:
-
-```text
-status=approved
-status_detail=accredited
-```
-
-## 10. Deploy seguro
-
-Para cambios de backend:
+Después de cambiar configuración backend recrear sólo la API:
 
 ```bash
 docker compose --env-file .env.vps -f docker-compose.vps.yml build api
 docker compose --env-file .env.vps -f docker-compose.vps.yml up -d api
 ```
 
-Para cambios de frontend:
+## 7. Resend
+
+Producción debe tener:
+
+```text
+EMAIL_PROVIDER=resend
+EMAIL_FROM=Turnelia <no-reply@mail.turnelia.com.ar>
+```
+
+Verificar periódicamente un flujo real que genere email, por ejemplo recuperación de contraseña.
+
+El enlace generado debe usar `https://turnelia.com.ar`.
+
+## 8. Recordatorios
+
+Render Cron está suspendido. El único scheduler productivo debe ser el cron del VPS:
+
+```cron
+*/15 * * * * cd /srv/apps/turnelia && /usr/bin/docker compose --env-file .env.vps -f docker-compose.vps.yml --profile reminders run --rm reminders >> /var/log/turnelia-reminders.log 2>&1
+```
+
+Comprobar:
+
+```bash
+journalctl -u cron --since "40 minutes ago" --no-pager | grep turnelia
+tail -n 50 /var/log/turnelia-reminders.log
+```
+
+No reactivar simultáneamente el cron de Render.
+
+## 9. Backups
+
+Script:
+
+```text
+/usr/local/bin/backup-turnelia.sh
+```
+
+Crontab:
+
+```cron
+30 3 * * * /usr/local/bin/backup-turnelia.sh >> /var/log/backup-turnelia.log 2>&1
+```
+
+Comprobar:
+
+```bash
+ls -lh /srv/apps/turnelia/backups/automatic
+```
+
+Cada dump debe tener `.sha256` asociado.
+
+## 10. Caddy y HTTPS
+
+Caddy es compartido con otros proyectos. No sobrescribir bloques ajenos.
+
+Validar:
+
+```bash
+docker exec caddy caddy validate --config /etc/caddy/Caddyfile
+```
+
+Recargar:
+
+```bash
+docker exec caddy caddy reload --config /etc/caddy/Caddyfile
+```
+
+Comprobar:
+
+```bash
+curl -I https://turnelia.com.ar
+curl -I https://www.turnelia.com.ar
+curl -i https://api.turnelia.com.ar/health/ready
+```
+
+## 11. Deploy seguro backend
+
+```bash
+docker compose --env-file .env.vps -f docker-compose.vps.yml build api
+docker compose --env-file .env.vps -f docker-compose.vps.yml up -d api
+```
+
+Después:
+
+```bash
+docker compose --env-file .env.vps -f docker-compose.vps.yml ps
+curl -s https://api.turnelia.com.ar/health/ready
+```
+
+## 12. Deploy seguro frontend
 
 ```bash
 docker compose --env-file .env.vps -f docker-compose.vps.yml build frontend
 docker compose --env-file .env.vps -f docker-compose.vps.yml up -d frontend
 ```
 
-Evitar recrear servicios que no cambiaron.
+Después:
 
-## 11. Regla crítica de base de datos
+```bash
+curl -I https://turnelia.com.ar
+```
+
+## 13. Regla crítica de base de datos
 
 No ejecutar:
 
@@ -194,18 +256,53 @@ No ejecutar:
 docker compose down -v
 ```
 
-porque elimina volúmenes persistentes.
+porque puede eliminar los volúmenes persistentes.
 
-## 12. Checklist final
+Antes de restores, recreaciones o cambios destructivos generar un dump verificable.
 
+## 14. Health check general
+
+Ejecutar:
+
+```bash
+health
+```
+
+El script `/usr/local/bin/health-vps.sh` comprueba recursos, Docker, Turnelia, Orienta, cron, reminders, backups, checksum, UFW, Fail2ban y logs recientes.
+
+Un estado normal debe terminar en:
+
+```text
+ESTADO GENERAL: SALUDABLE
+```
+
+## 15. Infraestructura legacy
+
+Render API: suspendida.  
+Render Cron: suspendido.  
+Aiven: fuera del circuito productivo.
+
+Después del cutover OVH recibe nuevas escrituras, por lo que Aiven no debe tratarse como réplica sincronizada.
+
+## 16. Checklist final de cada deploy
+
+- [ ] repo actualizado y working tree limpio
 - [ ] `.env.vps` sin variables duplicadas
-- [ ] Docker Compose resuelve correctamente las variables
+- [ ] `docker compose ... config` válido
+- [ ] servicio modificado reconstruido y recreado
 - [ ] API healthy
 - [ ] DB healthy
 - [ ] frontend accesible
-- [ ] `/health/ready` responde OK
+- [ ] HTTPS correcto
 - [ ] login funciona
-- [ ] suscripción puede crearse
-- [ ] Mercado Pago devuelve preapproval autorizado
-- [ ] cobro aprobado registrado
-- [ ] webhook validado y procesado
+- [ ] funciones afectadas por el cambio probadas
+- [ ] cron de reminders sigue activo
+- [ ] backup reciente disponible
+- [ ] `health` sin errores críticos
+
+## 17. Referencias
+
+- `docs/MIGRATION_RENDER_AIVEN_TO_OVH.md`
+- `docs/DEPLOYMENT.md`
+- `docs/OPERATIONS_VPS.md`
+- `docs/CURRENT_STATE.md`
