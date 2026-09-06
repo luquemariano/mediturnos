@@ -9,6 +9,7 @@ const HELP_TITLE = "Centro de Ayuda | Turnelia";
 const HELP_DESCRIPTION = "Guías y tutoriales para configurar Turnelia, gestionar turnos, pacientes y tu agenda profesional.";
 const SOFTWARE_DESCRIPTION = "Gestioná turnos, pacientes, historia clínica, horarios y prestaciones desde una sola plataforma. Turnelia simplifica la gestión diaria de tu consultorio.";
 const TURNOS_DESCRIPTION = "Organizá turnos, horarios y disponibilidad desde una agenda simple. Creá, reprogramá y gestioná citas con Turnelia.";
+const PSICOPEDAGOGOS_DESCRIPTION = "Organizá turnos, pacientes, horarios e historias clínicas con Turnelia. Un software simple para psicopedagogos que gestionan su práctica profesional.";
 
 export interface RouteMetadata {
   title: string;
@@ -37,6 +38,8 @@ export function obtenerMetadatosRuta(pathname: string): RouteMetadata {
   if (pathname === "/software-para-consultorios") return { title: "Software para consultorios | Turnelia", description: SOFTWARE_DESCRIPTION, robots: "index, follow", canonical: "https://turnelia.com.ar/software-para-consultorios" };
 
   if (pathname === "/sistema-de-turnos") return { title: "Sistema de turnos para consultorios | Turnelia", description: TURNOS_DESCRIPTION, robots: "index, follow", canonical: "https://turnelia.com.ar/sistema-de-turnos" };
+
+  if (pathname === "/para-psicopedagogos") return { title: "Software para psicopedagogos | Turnelia", description: PSICOPEDAGOGOS_DESCRIPTION, robots: "index, follow", canonical: "https://turnelia.com.ar/para-psicopedagogos" };
 
   if (pathname.startsWith("/ayuda/")) {
     const slug = pathname.slice("/ayuda/".length);

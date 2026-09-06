@@ -18,6 +18,7 @@ vi.mock("../src/components/Dashboard", () => ({ default: () => <div>Dashboard li
 vi.mock("../src/components/LandingPage", () => ({ default: () => <div>Landing</div> }));
 vi.mock("../src/landing/SoftwareConsultoriosPage", () => ({ default: () => <div>Software para consultorios</div> }));
 vi.mock("../src/landing/SistemaTurnosPage", () => ({ default: () => <div>Sistema de turnos</div> }));
+vi.mock("../src/landing/ParaPsicopedagogosPage", () => ({ default: () => <div>Para psicopedagogos</div> }));
 
 const profesional = { nombre: "Sofía", rol: "profesional" } as const;
 const onboardingCompleto = { onboarding_step: "completado" } as const;
@@ -63,6 +64,12 @@ describe("App boot loading", () => {
     window.history.replaceState({}, "", "/sistema-de-turnos");
     render(<App />);
     expect(screen.getByText("Sistema de turnos")).toBeInTheDocument();
+  });
+
+  it("renderiza la landing para psicopedagogos en su ruta pública directa", () => {
+    window.history.replaceState({}, "", "/para-psicopedagogos");
+    render(<App />);
+    expect(screen.getByText("Para psicopedagogos")).toBeInTheDocument();
   });
 
   it("no muestra loader ni agrega espera en login rápido", async () => {

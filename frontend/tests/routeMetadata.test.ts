@@ -52,6 +52,15 @@ describe("metadatos SEO por ruta", () => {
     });
   });
 
+  it("indexa la landing para psicopedagogos con metadata exacta", () => {
+    expect(obtenerMetadatosRuta("/para-psicopedagogos")).toEqual({
+      title: "Software para psicopedagogos | Turnelia",
+      description: "Organizá turnos, pacientes, horarios e historias clínicas con Turnelia. Un software simple para psicopedagogos que gestionan su práctica profesional.",
+      robots: "index, follow",
+      canonical: "https://turnelia.com.ar/para-psicopedagogos",
+    });
+  });
+
   it("actualiza y limpia los elementos del head al navegar", () => {
     aplicarMetadatosSeo("/reset-password");
     expect(document.title).toBe("Restablecer contraseña | Turnelia");

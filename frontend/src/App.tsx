@@ -20,6 +20,7 @@ import "./responsiveAudit.css";
 import LandingPage from "./landing/LandingPage";
 import SoftwareConsultoriosPage from "./landing/SoftwareConsultoriosPage";
 import SistemaTurnosPage from "./landing/SistemaTurnosPage";
+import ParaPsicopedagogosPage from "./landing/ParaPsicopedagogosPage";
 import RegistroProfesional from "./components/RegistroProfesional";
 import OnboardingProfesional from "./components/OnboardingProfesional";
 import CuentasAdmin from "./components/CuentasAdmin";
@@ -304,6 +305,10 @@ function App() {
 
   if (ruta === "/sistema-de-turnos") {
     return <SistemaTurnosPage />;
+  }
+
+  if (ruta === "/para-psicopedagogos") {
+    return <ParaPsicopedagogosPage />;
   }
 
   if (ruta === "/estudios/enviar") return <StudyUploadAccess />;
