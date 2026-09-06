@@ -34,6 +34,15 @@ describe("metadatos SEO por ruta", () => {
     expect(obtenerMetadatosRuta(ruta).robots).toBe(robots);
   });
 
+  it("indexa la landing de software para consultorios con metadata propia", () => {
+    expect(obtenerMetadatosRuta("/software-para-consultorios")).toEqual({
+      title: "Software para consultorios | Turnelia",
+      description: "Gestioná turnos, pacientes, historia clínica, horarios y prestaciones desde una sola plataforma. Turnelia simplifica la gestión diaria de tu consultorio.",
+      robots: "index, follow",
+      canonical: "https://turnelia.com.ar/software-para-consultorios",
+    });
+  });
+
   it("actualiza y limpia los elementos del head al navegar", () => {
     aplicarMetadatosSeo("/reset-password");
     expect(document.title).toBe("Restablecer contraseña | Turnelia");

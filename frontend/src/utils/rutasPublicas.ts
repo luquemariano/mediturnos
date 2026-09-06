@@ -7,6 +7,7 @@ const RUTAS_PUBLICAS_EXACTAS = new Set([
   "/registro",
   "/forgot-password",
   "/reset-password",
+  "/software-para-consultorios",
 ]);
 
 export function esRutaPublica(pathname: string): boolean {

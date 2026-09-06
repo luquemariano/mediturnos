@@ -18,6 +18,7 @@ import DashboardProfesional from "./components/DashboardProfesional";
 import MisPrestaciones from "./components/MisPrestaciones";
 import "./responsiveAudit.css";
 import LandingPage from "./landing/LandingPage";
+import SoftwareConsultoriosPage from "./landing/SoftwareConsultoriosPage";
 import RegistroProfesional from "./components/RegistroProfesional";
 import OnboardingProfesional from "./components/OnboardingProfesional";
 import CuentasAdmin from "./components/CuentasAdmin";
@@ -294,6 +295,10 @@ function App() {
 
   if (ruta === "/") {
     return <LandingPage />;
+  }
+
+  if (ruta === "/software-para-consultorios") {
+    return <SoftwareConsultoriosPage />;
   }
 
   if (ruta === "/estudios/enviar") return <StudyUploadAccess />;
