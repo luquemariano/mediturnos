@@ -8,6 +8,7 @@ const RUTAS_PUBLICAS_EXACTAS = new Set([
   "/forgot-password",
   "/reset-password",
   "/software-para-consultorios",
+  "/sistema-de-turnos",
 ]);
 
 export function esRutaPublica(pathname: string): boolean {

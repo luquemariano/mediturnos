@@ -12,4 +12,14 @@ describe("sitemap público", () => {
     expect(parsed.querySelector("parsererror")).toBeNull();
     expect(locations.filter((location) => location === url)).toHaveLength(1);
   });
+
+  it("contiene la landing de sistema de turnos", () => {
+    const xml = readFileSync(resolve(__dirname, "../public/sitemap.xml"), "utf8");
+    const parsed = new DOMParser().parseFromString(xml, "application/xml");
+    const url = "https://turnelia.com.ar/sistema-de-turnos";
+    const locations = Array.from(parsed.getElementsByTagNameNS("*", "loc"), (element) => element.textContent);
+
+    expect(parsed.querySelector("parsererror")).toBeNull();
+    expect(locations.filter((location) => location === url)).toHaveLength(1);
+  });
 });

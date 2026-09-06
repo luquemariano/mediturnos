@@ -43,6 +43,15 @@ describe("metadatos SEO por ruta", () => {
     });
   });
 
+  it("indexa la landing de sistema de turnos con metadata propia", () => {
+    expect(obtenerMetadatosRuta("/sistema-de-turnos")).toEqual({
+      title: "Sistema de turnos para consultorios | Turnelia",
+      description: "Organizá turnos, horarios y disponibilidad desde una agenda simple. Creá, reprogramá y gestioná citas con Turnelia.",
+      robots: "index, follow",
+      canonical: "https://turnelia.com.ar/sistema-de-turnos",
+    });
+  });
+
   it("actualiza y limpia los elementos del head al navegar", () => {
     aplicarMetadatosSeo("/reset-password");
     expect(document.title).toBe("Restablecer contraseña | Turnelia");

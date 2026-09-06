@@ -8,6 +8,7 @@ const HOME_CANONICAL = "https://turnelia.com.ar/";
 const HELP_TITLE = "Centro de Ayuda | Turnelia";
 const HELP_DESCRIPTION = "Guías y tutoriales para configurar Turnelia, gestionar turnos, pacientes y tu agenda profesional.";
 const SOFTWARE_DESCRIPTION = "Gestioná turnos, pacientes, historia clínica, horarios y prestaciones desde una sola plataforma. Turnelia simplifica la gestión diaria de tu consultorio.";
+const TURNOS_DESCRIPTION = "Organizá turnos, horarios y disponibilidad desde una agenda simple. Creá, reprogramá y gestioná citas con Turnelia.";
 
 export interface RouteMetadata {
   title: string;
@@ -34,6 +35,8 @@ export function obtenerMetadatosRuta(pathname: string): RouteMetadata {
   if (pathname === "/ayuda") return { title: HELP_TITLE, description: HELP_DESCRIPTION, robots: "index, follow", canonical: "https://turnelia.com.ar/ayuda" };
 
   if (pathname === "/software-para-consultorios") return { title: "Software para consultorios | Turnelia", description: SOFTWARE_DESCRIPTION, robots: "index, follow", canonical: "https://turnelia.com.ar/software-para-consultorios" };
+
+  if (pathname === "/sistema-de-turnos") return { title: "Sistema de turnos para consultorios | Turnelia", description: TURNOS_DESCRIPTION, robots: "index, follow", canonical: "https://turnelia.com.ar/sistema-de-turnos" };
 
   if (pathname.startsWith("/ayuda/")) {
     const slug = pathname.slice("/ayuda/".length);

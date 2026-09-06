@@ -17,6 +17,7 @@ vi.mock("../src/components/DashboardProfesional", () => ({ default: () => <div>D
 vi.mock("../src/components/Dashboard", () => ({ default: () => <div>Dashboard listo</div> }));
 vi.mock("../src/components/LandingPage", () => ({ default: () => <div>Landing</div> }));
 vi.mock("../src/landing/SoftwareConsultoriosPage", () => ({ default: () => <div>Software para consultorios</div> }));
+vi.mock("../src/landing/SistemaTurnosPage", () => ({ default: () => <div>Sistema de turnos</div> }));
 
 const profesional = { nombre: "Sofía", rol: "profesional" } as const;
 const onboardingCompleto = { onboarding_step: "completado" } as const;
@@ -56,6 +57,12 @@ describe("App boot loading", () => {
     window.history.replaceState({}, "", "/software-para-consultorios");
     render(<App />);
     expect(screen.getByText("Software para consultorios")).toBeInTheDocument();
+  });
+
+  it("renderiza la landing de sistema de turnos en su ruta pública directa", () => {
+    window.history.replaceState({}, "", "/sistema-de-turnos");
+    render(<App />);
+    expect(screen.getByText("Sistema de turnos")).toBeInTheDocument();
   });
 
   it("no muestra loader ni agrega espera en login rápido", async () => {
