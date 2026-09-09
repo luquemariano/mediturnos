@@ -116,6 +116,38 @@ def construir_enlace_recuperacion(token: str) -> str:
     return f"{settings.frontend_url.rstrip('/')}/reset-password?{query}"
 
 
+def construir_enlace_verificacion_email(token: str) -> str:
+    from app.core.config import settings
+    return f"{settings.frontend_url.rstrip('/')}/verificar-email?{urlencode({'token': token})}"
+
+
+def construir_email_verificacion(email: str, nombre: str, token: str) -> TransactionalEmail:
+    enlace = construir_enlace_verificacion_email(token)
+    enlace_html = escape(enlace, quote=True)
+    nombre_html = escape(nombre)
+    asunto = "Verificá tu correo electrónico — Turnelia"
+    texto = (f"Hola, {nombre}.\n\nConfirmá tu correo electrónico para activar tu cuenta de Turnelia.\n\n"
+             f"Verificar correo: {enlace}\n\nEste enlace vence en 24 horas.")
+    html = f'''<!doctype html><html lang="es"><body style="margin:0;background:#f6f5f0;color:#1d2927;font-family:Arial,sans-serif">
+<div style="max-width:560px;margin:0 auto;padding:32px 20px"><div style="background:#fff;border:1px solid #d9e0dc;border-radius:10px;padding:32px">
+<p style="margin:0 0 24px;color:#176f6a;font-size:18px;font-weight:700">Turnelia</p>
+<h1 style="margin:0 0 16px;color:#153e3b;font-size:26px">Verificá tu correo</h1>
+<p style="line-height:1.6">Hola, {nombre_html}. Confirmá tu correo electrónico para activar tu cuenta.</p>
+<p><a href="{enlace_html}" style="display:inline-block;padding:12px 18px;border-radius:7px;background:#176f6a;color:#fff;text-decoration:none;font-weight:700">Verificar correo</a></p>
+<p style="color:#65716d;line-height:1.5">Este enlace vence en 24 horas.</p><p style="color:#65716d;font-size:12px;word-break:break-all">Si el botón no funciona, copiá este enlace:<br>{enlace_html}</p>
+</div></div></body></html>'''
+    return TransactionalEmail(email, asunto, html, texto)
+
+
+def enviar_verificacion_email(email: str, nombre: str, token: str) -> None:
+    try:
+        obtener_email_provider().enviar(construir_email_verificacion(email, nombre, token))
+    except EmailDeliveryError:
+        raise
+    except Exception as error:
+        raise EmailDeliveryError("No se pudo entregar el email transaccional.") from error
+
+
 def construir_email_recuperacion(
     email: str,
     token: str,

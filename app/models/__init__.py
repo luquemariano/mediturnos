@@ -24,3 +24,4 @@ from app.models.notificacion_mercadopago_suscripcion import NotificacionMercadoP
 from app.models.appointment_reminder import AppointmentReminder
 from app.models.study_review import StudyReview
 from app.models.notification import Notification
+from app.models.email_verification_token import EmailVerificationToken

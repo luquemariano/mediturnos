@@ -23,6 +23,7 @@ def crear_usuario(email: str = "profesional@example.com") -> Usuario:
             password_hash=generar_hash_password(PASSWORD_ACTUAL),
             rol="profesional",
             activo=True,
+            email_verificado=True,
         )
         db.add(usuario)
         db.commit()

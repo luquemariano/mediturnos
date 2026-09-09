@@ -1,10 +1,12 @@
 import pytest
+from urllib.parse import parse_qs, urlparse
 
 from app.core.security import verificar_password
 from app.models.especialidad import Especialidad
 from app.models.profesional import Profesional
 from app.models.usuario import Usuario
 from tests.conftest import SessionTest
+from app.services.email_service import development_email_outbox
 
 
 def especialidad(activa=True, nombre="Clínica"):
@@ -25,13 +27,24 @@ def registrar(client, **cambios):
     return client.post("/auth/register/profesional", json=datos(especialidad(), **cambios))
 
 
+def autenticar_registro(client, respuesta):
+    assert "access_token" not in respuesta.json()
+    token = parse_qs(urlparse(_email_registro()).query)["token"][0]
+    assert client.post("/auth/verify-email", json={"token": token}).status_code == 200
+    return {"Authorization": f"Bearer {client.post('/auth/login', json={'email': 'ana@ejemplo.com', 'password': 'secreto123'}).json()['access_token']}"}
+
+
+def _email_registro():
+    return development_email_outbox["ana@ejemplo.com"].split("Verificar correo: ", 1)[1].splitlines()[0]
+
+
 def test_registro_profesional_atomico_normaliza_y_autentica(client):
     respuesta = registrar(client)
     assert respuesta.status_code == 201
     body = respuesta.json()
     assert body["rol"] == "profesional"
     assert body["onboarding_step"] == "perfil"
-    headers = {"Authorization": f"Bearer {body['access_token']}"}
+    headers = autenticar_registro(client, respuesta)
     assert client.get("/auth/me", headers=headers).status_code == 200
     with SessionTest() as db:
         usuario = db.query(Usuario).one(); profesional = db.query(Profesional).one()
@@ -87,7 +100,7 @@ def test_catalogo_publico_ordena_alfabeticamente_sin_otro(client):
 
 
 def test_onboarding_avanza_sin_retroceder_y_completa_idempotente(client):
-    body = registrar(client).json(); headers={"Authorization":f"Bearer {body['access_token']}"}
+    respuesta = registrar(client); headers = autenticar_registro(client, respuesta)
     assert client.get("/onboarding/me", headers=headers).json()["onboarding_step"] == "perfil"
     for paso in ["prestaciones","disponibilidad","listo"]:
         respuesta=client.patch("/onboarding/me",headers=headers,json={"siguiente_paso":paso})
@@ -109,6 +122,6 @@ def test_no_profesional_no_accede_onboarding(client):
 
 
 def test_profesional_actualiza_solo_su_perfil(client):
-    body=registrar(client).json(); headers={"Authorization":f"Bearer {body['access_token']}"}
+    respuesta=registrar(client); headers = autenticar_registro(client, respuesta)
     respuesta=client.patch("/profesionales/me",headers=headers,json={"telefono":"1199999999"})
     assert respuesta.status_code == 200 and respuesta.json()["telefono"] == "1199999999"

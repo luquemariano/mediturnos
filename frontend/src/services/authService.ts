@@ -50,6 +50,14 @@ export async function restablecerPassword(
   return (await api.post<MensajeResponse>("/auth/reset-password", datos)).data;
 }
 
+export async function verificarEmail(token: string): Promise<MensajeResponse> {
+  return (await api.post<MensajeResponse>("/auth/verify-email", { token })).data;
+}
+
+export async function reenviarVerificacion(email: string): Promise<MensajeResponse> {
+  return (await api.post<MensajeResponse>("/auth/resend-verification", { email })).data;
+}
+
 export async function cambiarPassword(
   datos: ChangePasswordRequest,
 ): Promise<MensajeResponse> {

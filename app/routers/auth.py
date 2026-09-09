@@ -5,17 +5,18 @@ from app.database.connection import obtener_db
 from app.schemas.auth import (
     ChangePasswordDatos, ForgotPasswordDatos, LoginDatos, MensajeRespuesta,
     RegistroProfesionalDatos, RegistroProfesionalRespuesta,
-    ResetPasswordDatos, TokenRespuesta,
+    ResetPasswordDatos, TokenRespuesta, VerificarEmailDatos, ResendVerificationDatos,
 )
 from app.services.auth_service import (
     MENSAJE_FORGOT, autenticar_usuario, cambiar_password, resetear_password,
-    solicitar_reset_password,
+    solicitar_reset_password, reenviar_verificacion, MENSAJE_VERIFICACION,
 )
 from app.core.dependencies import obtener_usuario_actual
 from app.models.usuario import Usuario
 from app.schemas.usuario import UsuarioRespuesta
 from app.services.registro_service import registrar_profesional_publico
 from app.core.rate_limit import limitar_login, limitar_recuperacion, limitar_registro
+from app.services.email_verification_service import verificar_email
 
 
 router = APIRouter(
@@ -85,6 +86,17 @@ def forgot_password(
 def reset_password(datos: ResetPasswordDatos, db: Session = Depends(obtener_db)):
     resetear_password(db, datos.token, datos.new_password)
     return MensajeRespuesta(mensaje="Tu contraseña fue actualizada.")
+
+
+@router.post("/verify-email", response_model=MensajeRespuesta)
+def verify_email(datos: VerificarEmailDatos, db: Session = Depends(obtener_db)):
+    usuario = verificar_email(db, datos.token)
+    return MensajeRespuesta(mensaje="Tu correo fue verificado correctamente. Ya podés iniciar sesión.")
+
+
+@router.post("/resend-verification", response_model=MensajeRespuesta)
+def resend_verification(datos: ResendVerificationDatos, _: None = Depends(limitar_recuperacion), db: Session = Depends(obtener_db)):
+    return MensajeRespuesta(mensaje=reenviar_verificacion(db, datos.email))
 
 
 @router.post("/change-password", response_model=MensajeRespuesta)

@@ -28,12 +28,21 @@ class RegistroProfesionalDatos(BaseModel):
         return valor.strip().lower()
 
 
-class RegistroProfesionalRespuesta(TokenRespuesta):
+class RegistroProfesionalRespuesta(BaseModel):
+    mensaje: str
     usuario_id: int
     usuario: str
     rol: str
     profesional_id: int
     onboarding_step: OnboardingStep
+
+
+class VerificarEmailDatos(BaseModel):
+    token: str = Field(min_length=1)
+
+
+class ResendVerificationDatos(BaseModel):
+    email: EmailStr
 
 
 class ForgotPasswordDatos(BaseModel):

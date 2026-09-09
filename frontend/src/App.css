@@ -161,6 +161,9 @@
 .pagina-login .mensaje-error { color: #a94e49; }
 .pagina-login .mensaje-exito { color: #176f6a; }
 .acceso-pie { margin: 17px 0 0; color: #65716d; font-size: 13px; text-align: center; }
+.verificacion-email h2 { margin: 0 0 10px; color: #153e3b; font-family: Manrope, sans-serif; font-size: 25px; }
+.verificacion-descripcion { margin: 0 0 24px; color: #65716d; line-height: 1.55; }
+.verificacion-email > button { width: 100%; min-height: 48px; border: 1px solid #176f6a; border-radius: 8px; background: #176f6a; color: #fff; font: inherit; font-weight: 700; }
 
 @media (max-width: 768px) {
   .pagina-login { padding: 40px 22px; }
