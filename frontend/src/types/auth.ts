@@ -19,7 +19,7 @@ export interface UsuarioActual {
 
 export type OnboardingStep = "perfil" | "prestaciones" | "disponibilidad" | "listo" | "completado";
 export interface RegistroProfesionalRequest { nombre: string; apellido: string; email: string; password: string; telefono?: string; matricula: string; especialidad_id: number; }
-export interface RegistroProfesionalResponse extends LoginResponse { usuario_id: number; usuario: string; rol: string; profesional_id: number; onboarding_step: OnboardingStep; }
+export interface RegistroProfesionalResponse { usuario_id: number; usuario: string; rol: string; profesional_id: number; onboarding_step: OnboardingStep; }
 
 export interface MensajeResponse { mensaje: string; }
 export interface ForgotPasswordRequest { email: string; }

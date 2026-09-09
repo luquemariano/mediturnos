@@ -1,4 +1,5 @@
 from datetime import UTC, datetime, timedelta
+from urllib.parse import parse_qs, urlparse
 
 import pytest
 from sqlalchemy.exc import IntegrityError
@@ -10,6 +11,7 @@ from app.models.suscripcion import Suscripcion
 from app.models.usuario import Usuario
 from app.services.cuenta_service import dias_trial_restantes, estado_efectivo
 from tests.conftest import SessionTest
+from app.services.email_service import development_email_outbox
 
 
 def test_registro_crea_estructura_comercial_y_endpoint(client):
@@ -31,7 +33,12 @@ def test_registro_crea_estructura_comercial_y_endpoint(client):
         inicio = suscripcion.trial_started_at.replace(tzinfo=UTC) if suscripcion.trial_started_at.tzinfo is None else suscripcion.trial_started_at
         fin = suscripcion.trial_ends_at.replace(tzinfo=UTC) if suscripcion.trial_ends_at.tzinfo is None else suscripcion.trial_ends_at
         assert fin - inicio == timedelta(days=14)
-    headers = {"Authorization": f"Bearer {respuesta.json()['access_token']}"}
+    assert "access_token" not in respuesta.json()
+    enlace = development_email_outbox["ana.cuenta@example.com"].split("Verificar correo: ", 1)[1].splitlines()[0]
+    token = parse_qs(urlparse(enlace).query)["token"][0]
+    assert client.post("/auth/verify-email", json={"token": token}).status_code == 200
+    login = client.post("/auth/login", json={"email": "ana.cuenta@example.com", "password": "secreto123"})
+    headers = {"Authorization": f"Bearer {login.json()['access_token']}"}
     actual = client.get("/cuentas/me/actual", headers=headers)
     assert actual.status_code == 200
     assert actual.json()["trial_days_remaining"] == 14

@@ -2,7 +2,6 @@ from fastapi import HTTPException
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.core.jwt import crear_access_token
 from app.core.security import generar_hash_password
 from app.models.profesional import Profesional
 from app.models.profesional_especialidad import ProfesionalEspecialidad
@@ -11,6 +10,8 @@ from app.services.cuenta_service import crear_cuenta_individual_con_trial
 from app.repositories.especialidad_repository import buscar_por_id
 from app.repositories.usuario_repository import buscar_usuario_por_email
 from app.schemas.auth import RegistroProfesionalDatos, RegistroProfesionalRespuesta
+from app.services.email_verification_service import generar_token_verificacion
+from app.services.email_service import EmailDeliveryError, enviar_verificacion_email
 
 
 def normalizar_email(email: str) -> str:
@@ -57,6 +58,9 @@ def registrar_profesional_publico(
     )
     db.add(profesional)
     try:
+        db.flush()
+        token = generar_token_verificacion(db, usuario)
+        enviar_verificacion_email(usuario.email, usuario.nombre, token)
         db.commit()
         db.refresh(usuario)
         db.refresh(profesional)
@@ -68,10 +72,12 @@ def registrar_profesional_publico(
         else:
             detalle = "Ya existe una cuenta con ese email."
         raise HTTPException(status_code=409, detail=detalle) from None
+    except EmailDeliveryError as error:
+        db.rollback()
+        raise HTTPException(status_code=503, detail="No pudimos enviar el correo de verificación. Intentá nuevamente.") from error
 
-    token = crear_access_token(usuario.id, usuario.email, usuario.rol)
     return RegistroProfesionalRespuesta(
-        access_token=token,
+        mensaje="Cuenta creada. Revisá tu correo para verificarla antes de iniciar sesión.",
         usuario_id=usuario.id,
         usuario=usuario.nombre,
         rol=usuario.rol,

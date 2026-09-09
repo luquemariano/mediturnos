@@ -17,6 +17,8 @@ from app.repositories.password_reset_repository import (
 )
 from app.repositories.usuario_repository import buscar_usuario_por_email
 from app.services.email_service import EmailDeliveryError, enviar_recuperacion_password
+from app.services.email_verification_service import generar_token_verificacion
+from app.services.email_service import enviar_verificacion_email
 
 
 MENSAJE_FORGOT = (
@@ -129,8 +131,26 @@ def autenticar_usuario(
             detail="Email o contraseña incorrectos.",
         )
 
+    if not usuario.email_verificado:
+        raise HTTPException(status_code=403, detail="EMAIL_NOT_VERIFIED")
+
     return crear_access_token(
         usuario_id=usuario.id,
         email=usuario.email,
         rol=usuario.rol,
     )
+
+
+MENSAJE_VERIFICACION = "Si la cuenta existe y aún no está verificada, recibirás un nuevo correo de verificación."
+
+def reenviar_verificacion(db: Session, email: str) -> str:
+    usuario = buscar_usuario_por_email(db, email)
+    if usuario is None or not usuario.activo or usuario.email_verificado:
+        return MENSAJE_VERIFICACION
+    try:
+        token = generar_token_verificacion(db, usuario)
+        enviar_verificacion_email(usuario.email, usuario.nombre, token)
+        db.commit()
+    except EmailDeliveryError:
+        db.rollback()
+    return MENSAJE_VERIFICACION

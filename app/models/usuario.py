@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from app.models.paciente import Paciente
     from app.models.password_reset_token import PasswordResetToken
     from app.models.profesional import Profesional
+    from app.models.email_verification_token import EmailVerificationToken
 
 class Usuario(Base):
     __tablename__ = "usuarios"
@@ -48,6 +49,16 @@ class Usuario(Base):
         nullable=False,
         default=True,
     )
+    email_verificado: Mapped[bool] = mapped_column(
+    Boolean,
+    nullable=False,
+    default=False,
+    )
+
+    email_verificado_en: Mapped[datetime | None] = mapped_column(
+    DateTime(timezone=True),
+    nullable=True,
+    )
 
     creado_en: Mapped[datetime] = mapped_column(
         DateTime,
@@ -68,6 +79,10 @@ class Usuario(Base):
     password_reset_tokens: Mapped[list["PasswordResetToken"]] = relationship(
         back_populates="usuario",
         cascade="all, delete-orphan",
+    )
+    email_verification_tokens: Mapped[list["EmailVerificationToken"]] = relationship(
+    back_populates="usuario",
+    cascade="all, delete-orphan",
     )
 
     membresias_cuenta: Mapped[list["CuentaUsuario"]] = relationship(

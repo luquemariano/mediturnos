@@ -47,6 +47,8 @@ import { aplicarMetadatosSeo } from "./seo/routeMetadata";
 import BootLoadingScreen, { type BootStep } from "./components/BootLoadingScreen";
 import { HelpArticlePage, HelpHome, HelpLayout } from "./help";
 import { trackEvent, trackPageView } from "./analytics";
+import VerificarEmail from "./pages/VerificarEmail";
+import { reenviarVerificacion } from "./services/authService";
 
 
 type Vista =
@@ -260,6 +262,8 @@ function App() {
     }
   }
 
+  async function manejarReenvio() { setCargando(true); try { setMensaje((await reenviarVerificacion(email)).mensaje); } catch { setMensaje("No pudimos reenviar el correo. Intentá nuevamente."); } finally { setCargando(false); } }
+
   async function manejarReset(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault();
     if (cargando) return;
@@ -352,17 +356,15 @@ function App() {
     navegar("/login");
   }
 
-  async function manejarRegistroExitoso(respuesta: RegistroProfesionalResponse) {
-    localStorage.setItem("access_token", respuesta.access_token);
-    habilitarNotificacionDeSesion();
+  async function manejarRegistroExitoso(_respuesta: RegistroProfesionalResponse) {
     trackEvent("sign_up_complete");
-    setUsuario(await obtenerUsuarioActual());
-    navegar("/onboarding/perfil");
+    setEmail(""); setMensaje("Cuenta creada. Revisá tu correo para verificarla antes de iniciar sesión."); setVistaAcceso("login"); navegar("/login");
   }
 
   const pasoRuta = ruta.startsWith("/onboarding/") ? ruta.split("/").pop() as OnboardingStep : null;
 
   if (!usuario && ruta === "/registro") return <RegistroProfesional onRegistrado={manejarRegistroExitoso}/>;
+  if (!usuario && ruta === "/verificar-email") return <VerificarEmail onLogin={() => { setVistaAcceso("login"); navegar("/login"); }} />;
 
   if (usuario && usuario.rol === "profesional" && pasoRuta && ["perfil","prestaciones","disponibilidad","listo"].includes(pasoRuta)) {
     return <OnboardingProfesional pasoRuta={pasoRuta} onNavegar={navegar} onCompletado={abrirDashboard}/>;
@@ -656,9 +658,10 @@ function App() {
 
           {mensaje && (
             <p className="mensaje-login mensaje-error" role="alert">
-              {mensaje}
+              {mensaje === "EMAIL_NOT_VERIFIED" ? "Tu correo todavía no está verificado." : mensaje}
             </p>
           )}
+          {mensaje === "EMAIL_NOT_VERIFIED" && <button type="button" className="boton-secundario" onClick={() => void manejarReenvio()} disabled={cargando}>Reenviar correo de verificación</button>}
         </form>}
         </section>
         <p className="acceso-pie">Gestión profesional con una experiencia humana.</p>

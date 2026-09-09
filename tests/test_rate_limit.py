@@ -17,6 +17,7 @@ def crear_usuario() -> None:
             password_hash=generar_hash_password(PASSWORD),
             rol="profesional",
             activo=True,
+            email_verificado=True,
         ))
         db.commit()
 
