@@ -1,6 +1,6 @@
 import os
 import sys
-from datetime import datetime, timedelta, time
+from datetime import UTC, datetime, timedelta, time
 from decimal import Decimal
 
 from sqlalchemy import text
@@ -58,9 +58,14 @@ def main() -> None:
                 password_hash=generar_hash_password(password),
                 rol="administrador",
                 activo=True,
+                email_verificado=True,
+                email_verificado_en=datetime.now(UTC),
             )
             db.add(admin)
             db.flush()
+        else:
+            admin.email_verificado = True
+            admin.email_verificado_en = admin.email_verificado_en or datetime.now(UTC)
 
         cuenta = db.query(Cuenta).filter(Cuenta.nombre == "Cuenta E2E").one_or_none()
         if cuenta is None:
