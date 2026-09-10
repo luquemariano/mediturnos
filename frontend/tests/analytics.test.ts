@@ -13,13 +13,15 @@ describe("analytics", () => {
     expect(() => trackPageView("/")).not.toThrow();
   });
 
-  it("excluye rutas privadas y URLs con parámetros", () => {
+  it("excluye rutas privadas y permite rutas públicas", () => {
     expect(esRutaPublica("/app/pacientes")).toBe(false);
     expect(esRutaPublica("/suscripcion/retorno")).toBe(false);
     expect(esRutaPublica("/ayuda/agenda")).toBe(true);
     expect(esRutaPublica("/software-para-consultorios")).toBe(true);
     expect(esRutaPublica("/sistema-de-turnos")).toBe(true);
     expect(esRutaPublica("/para-psicopedagogos")).toBe(true);
+    expect(esRutaPublica("/terminos")).toBe(true);
+    expect(esRutaPublica("/privacidad")).toBe(true);
     expect(() => trackPageView("/app/pacientes?paciente_id=42#evolucion")).not.toThrow();
   });
 
