@@ -18,7 +18,7 @@ describe("páginas legales", () => {
 
     expect(screen.getByRole("heading", { level: 1, name: /Política de Privacidad de Turnelia/i })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /Derechos de los titulares/i })).toBeInTheDocument();
-    expect(screen.getByText(/Ley N.º 25.326/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Ley N.º 25.326/i).length).toBeGreaterThan(0);
   });
 
   it("expone metadata indexable y canonical para ambas rutas", () => {
