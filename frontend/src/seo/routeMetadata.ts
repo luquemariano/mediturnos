@@ -10,6 +10,8 @@ const HELP_DESCRIPTION = "Guías y tutoriales para configurar Turnelia, gestiona
 const SOFTWARE_DESCRIPTION = "Gestioná turnos, pacientes, historia clínica, horarios y prestaciones desde una sola plataforma. Turnelia simplifica la gestión diaria de tu consultorio.";
 const TURNOS_DESCRIPTION = "Organizá turnos, horarios y disponibilidad desde una agenda simple. Creá, reprogramá y gestioná citas con Turnelia.";
 const PSICOPEDAGOGOS_DESCRIPTION = "Organizá turnos, pacientes, horarios e historias clínicas con Turnelia. Un software simple para psicopedagogos que gestionan su práctica profesional.";
+const TERMS_DESCRIPTION = "Consultá los Términos y Condiciones de uso de Turnelia, la plataforma de agenda y gestión profesional.";
+const PRIVACY_DESCRIPTION = "Conocé cómo Turnelia trata y protege los datos personales, incluidos los datos vinculados con la gestión profesional y de pacientes.";
 
 export interface RouteMetadata {
   title: string;
@@ -40,6 +42,10 @@ export function obtenerMetadatosRuta(pathname: string): RouteMetadata {
   if (pathname === "/sistema-de-turnos") return { title: "Sistema de turnos para consultorios | Turnelia", description: TURNOS_DESCRIPTION, robots: "index, follow", canonical: "https://turnelia.com.ar/sistema-de-turnos" };
 
   if (pathname === "/para-psicopedagogos") return { title: "Software para psicopedagogos | Turnelia", description: PSICOPEDAGOGOS_DESCRIPTION, robots: "index, follow", canonical: "https://turnelia.com.ar/para-psicopedagogos" };
+
+  if (pathname === "/terminos") return { title: "Términos y Condiciones | Turnelia", description: TERMS_DESCRIPTION, robots: "index, follow", canonical: "https://turnelia.com.ar/terminos" };
+
+  if (pathname === "/privacidad") return { title: "Política de Privacidad | Turnelia", description: PRIVACY_DESCRIPTION, robots: "index, follow", canonical: "https://turnelia.com.ar/privacidad" };
 
   if (pathname.startsWith("/ayuda/")) {
     const slug = pathname.slice("/ayuda/".length);
