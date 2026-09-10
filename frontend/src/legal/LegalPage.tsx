@@ -32,7 +32,7 @@ const termsSections: Section[] = [
     bullets: [
       "No realizar actividades ilegales ni acceder a cuentas o información de terceros sin autorización.",
       "No introducir código malicioso ni intentar alterar el funcionamiento del sistema.",
-      "No realizar ataques o pruebas de intrusión no autorizizadas ni acciones destinadas a comprometer la seguridad de Turnelia.",
+      "No realizar ataques o pruebas de intrusión no autorizadas ni acciones destinadas a comprometer la seguridad de Turnelia.",
       "No cargar o tratar información respecto de la cual el usuario no posea autorización o fundamento suficiente para hacerlo.",
     ],
   },
