@@ -10,6 +10,8 @@ const RUTAS_PUBLICAS_EXACTAS = new Set([
   "/software-para-consultorios",
   "/sistema-de-turnos",
   "/para-psicopedagogos",
+  "/terminos",
+  "/privacidad",
 ]);
 
 export function esRutaPublica(pathname: string): boolean {
