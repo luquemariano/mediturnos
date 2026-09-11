@@ -15,6 +15,7 @@ export default function SelfService({ token }: { token: string }) {
   const [horarios, setHorarios] = useState<string[]>([]);
   const [horaSeleccionada, setHoraSeleccionada] = useState("");
   const [cargandoDisponibilidad, setCargandoDisponibilidad] = useState(false);
+  const [mostrarReprogramacion, setMostrarReprogramacion] = useState(true);
 
   useEffect(() => {
     void obtenerReservaPublica(token).then(setR).catch(() => setErrorCarga("No encontramos esta reserva."));
@@ -61,6 +62,7 @@ export default function SelfService({ token }: { token: string }) {
       setMensajeExito("Tu turno fue reprogramado correctamente.");
       setMensajeError("");
       setHoraSeleccionada("");
+      setMostrarReprogramacion(false);
       trackEvent("public_booking_reschedule", { source: "self_service" });
     } catch (e) {
       const status = axios.isAxiosError(e) ? e.response?.status : undefined;
@@ -68,5 +70,5 @@ export default function SelfService({ token }: { token: string }) {
     }
   }
 
-  return <main className="public-booking"><section className="public-card"><p className="public-kicker">Turnelia</p><h1>Tu reserva</h1><h2>{r.profesional.nombre} {r.profesional.apellido}</h2><p>{r.prestacion.nombre} · {r.prestacion.modalidad}</p><p>{formatoFechaHoraPublica(r.fecha_hora)}</p><strong>{r.estado}</strong>{mensajeExito && <p role="status">{mensajeExito}</p>}{mensajeError && <p role="alert">{mensajeError}</p>}{["reservado", "confirmado"].includes(r.estado) && <><label>Nueva fecha<input type="date" value={nuevaFecha} onChange={e => void consultarDisponibilidad(e.target.value)} /></label>{cargandoDisponibilidad ? <p>Cargando horarios disponibles…</p> : <fieldset><legend>Horarios disponibles</legend>{horarios.length ? horarios.map(h => <button type="button" key={h} disabled={h === r.fecha_hora} className={horaSeleccionada === h ? "selected" : ""} onClick={() => setHoraSeleccionada(h)}>{formatoHoraPublica(h)}</button>) : nuevaFecha && <p>No hay horarios disponibles para este día.</p>}</fieldset>}<button type="button" onClick={reprogramar} disabled={!horaSeleccionada}>Reprogramar</button><button type="button" onClick={cancelar}>Cancelar turno</button></>}</section></main>;
+  return <main className="public-booking"><section className="public-card"><p className="public-kicker">Turnelia</p><h1>Tu reserva</h1><h2>{r.profesional.nombre} {r.profesional.apellido}</h2><p>{r.prestacion.nombre} · {r.prestacion.modalidad}</p><p>{formatoFechaHoraPublica(r.fecha_hora)}</p><strong>{r.estado}</strong>{mensajeExito && <div className="public-feedback public-feedback-success" role="status"><strong>{mensajeExito}</strong><span>Nueva fecha: {formatoFechaHoraPublica(r.fecha_hora)}.</span></div>}{mensajeError && <p className="public-feedback public-feedback-error" role="alert">{mensajeError}</p>}{["reservado", "confirmado"].includes(r.estado) && <>{mostrarReprogramacion ? <><label>Nueva fecha<input type="date" value={nuevaFecha} onChange={e => void consultarDisponibilidad(e.target.value)} /></label>{cargandoDisponibilidad ? <p>Cargando horarios disponibles…</p> : <fieldset><legend>Horarios disponibles</legend>{horarios.length ? horarios.map(h => <button type="button" key={h} disabled={h === r.fecha_hora} className={horaSeleccionada === h ? "selected" : ""} onClick={() => setHoraSeleccionada(h)}>{formatoHoraPublica(h)}</button>) : nuevaFecha && <p>No hay horarios disponibles para este día.</p>}</fieldset>}<div className="public-actions"><button type="button" onClick={reprogramar} disabled={!horaSeleccionada}>Reprogramar</button><button type="button" className="public-button-secondary" onClick={cancelar}>Cancelar turno</button></div></> : <div className="public-actions"><button type="button" className="public-button-secondary" onClick={() => { setMostrarReprogramacion(true); setMensajeExito(""); setNuevaFecha(""); setHorarios([]); }}>Volver a reprogramar</button><button type="button" className="public-button-secondary" onClick={cancelar}>Cancelar turno</button></div>}</>}</section></main>;
 }

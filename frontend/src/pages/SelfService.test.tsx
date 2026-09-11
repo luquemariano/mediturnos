@@ -30,6 +30,11 @@ describe("SelfService", () => {
     expect(screen.getByRole("button", { name: "Reprogramar" })).toBeEnabled();
     fireEvent.click(screen.getByRole("button", { name: "Reprogramar" }));
     await waitFor(() => expect(api.reprogramarReservaPublica).toHaveBeenCalledWith("secret", "2026-09-16T16:00:00-03:00"));
+    expect(await screen.findByText("Tu turno fue reprogramado correctamente.")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Reprogramar" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Volver a reprogramar" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Volver a reprogramar" }));
+    expect(screen.getByLabelText("Nueva fecha")).toBeInTheDocument();
     expect(analytics.trackEvent).toHaveBeenCalledWith("public_booking_reschedule", { source: "self_service" });
     expect(localStorage.getItem("secret")).toBeNull();
     expect(sessionStorage.getItem("secret")).toBeNull();
