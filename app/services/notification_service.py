@@ -3,13 +3,15 @@ from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 
 from app.models.notification import Notification
+from app.core.datetime_utils import desde_base_utc, utc_a_zona_negocio
 
 def create_public_booking_notification(db: Session, turno, tipo: str, titulo: str, accion: str) -> None:
     user_id = getattr(turno.profesional, "usuario_id", None)
     if user_id is None:
         return
-    fecha = turno.fecha_hora.strftime("%d/%m/%Y")
-    hora = turno.fecha_hora.strftime("%H:%M")
+    fecha_hora_local = utc_a_zona_negocio(desde_base_utc(turno.fecha_hora))
+    fecha = fecha_hora_local.strftime("%d/%m/%Y")
+    hora = fecha_hora_local.strftime("%H:%M")
     paciente = f"{turno.paciente.nombre} {turno.paciente.apellido}".strip()
     mensaje = f"{paciente} {accion} {turno.prestacion.nombre} para el {fecha} a las {hora}."
     db.add(Notification(user_id=user_id, type=tipo, title=titulo, message=mensaje, entity_type="turno", entity_id=turno.id))

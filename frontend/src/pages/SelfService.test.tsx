@@ -23,10 +23,10 @@ describe("SelfService", () => {
     render(<SelfService token="secret" />);
     expect(await screen.findByText("Laura Gómez")).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText("Nueva fecha"), { target: { value: "2026-09-16" } });
-    expect(await screen.findByRole("button", { name: /03:30/ })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: /15:30/ })).toBeInTheDocument();
     expect(screen.queryByLabelText("Nueva fecha y hora")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Reprogramar" })).toBeDisabled();
-    fireEvent.click(screen.getByRole("button", { name: /04:00/ }));
+    fireEvent.click(screen.getByRole("button", { name: /16:00/ }));
     expect(screen.getByRole("button", { name: "Reprogramar" })).toBeEnabled();
     fireEvent.click(screen.getByRole("button", { name: "Reprogramar" }));
     await waitFor(() => expect(api.reprogramarReservaPublica).toHaveBeenCalledWith("secret", "2026-09-16T16:00:00-03:00"));
@@ -67,7 +67,7 @@ describe("SelfService", () => {
     fireEvent.change(await screen.findByLabelText("Nueva fecha"), { target: { value: "2026-09-16" } });
     const slotActual = await screen.findByRole("button", { name: /10:00/ });
     expect(slotActual).toBeDisabled();
-    fireEvent.click(screen.getByRole("button", { name: /04:00/ }));
+    fireEvent.click(screen.getByRole("button", { name: /16:00/ }));
     fireEvent.click(screen.getByRole("button", { name: "Reprogramar" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("El horario seleccionado ya no está disponible.");
     expect(screen.getByText("Tu reserva")).toBeInTheDocument();
