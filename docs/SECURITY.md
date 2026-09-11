@@ -10,6 +10,7 @@ Estado: **ACTUAL**, basado en código, configuración, tests y documentación re
 - Existen login, cambio de contraseña, `forgot-password` y `reset-password`.
 - Los tokens de recuperación tienen expiración y uso controlado por el servicio.
 - Hay rate limiting configurable para registro, login y recuperación. La clave se forma con el nombre de la operación y la IP del cliente. Por defecto se usa `request.client.host`; con `TRUST_PROXY_HEADERS=true` se intenta usar el primer valor válido de `X-Forwarded-For` y, si no es una IP válida, se conserva la IP directa. Por tanto, detrás de un proxy la identificación depende de esa configuración; una configuración incorrecta puede afectar la identificación del cliente.
+- Las rutas públicas de disponibilidad, creación, consulta, cancelación y reprogramación usan buckets separados. Los eventos de rate limit registran únicamente el scope, nunca la IP completa, el token ni el cuerpo de la petición. `TRUST_PROXY_HEADERS=true` sólo debe habilitarse detrás de un proxy confiable (por ejemplo, Caddy configurado para sobrescribir X-Forwarded-For). Antes de producción se deben auditar/redactar los access logs de `/public/reservas/{token}` porque el token bearer viaja en la URL.
 
 ## Roles y ownership
 

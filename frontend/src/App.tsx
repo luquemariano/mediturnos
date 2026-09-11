@@ -49,6 +49,8 @@ import { HelpArticlePage, HelpHome, HelpLayout } from "./help";
 import { trackEvent, trackPageView } from "./analytics";
 import VerificarEmail from "./pages/VerificarEmail";
 import { reenviarVerificacion } from "./services/authService";
+import PublicBooking from "./pages/PublicBooking";
+import SelfService from "./pages/SelfService";
 
 
 type Vista =
@@ -316,6 +318,8 @@ function App() {
   }
 
   if (ruta === "/estudios/enviar") return <StudyUploadAccess />;
+  if (ruta.startsWith("/reservar/")) return <PublicBooking slug={ruta.slice("/reservar/".length)} />;
+  if (ruta.startsWith("/reserva/")) return <SelfService token={ruta.slice("/reserva/".length)} />;
 
   if (ruta === "/ayuda" || ruta.startsWith("/ayuda/")) {
     const slug = ruta.slice("/ayuda/".length);

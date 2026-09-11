@@ -74,6 +74,14 @@ class Profesional(Base):
         default=True,
     )
 
+    reserva_online_activa: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="false",
+    )
+
+    slug_publico: Mapped[str | None] = mapped_column(
+        String(120), nullable=True, unique=True,
+    )
+
     especialidades_asignadas: Mapped[
         list["ProfesionalEspecialidad"]
     ] = relationship(

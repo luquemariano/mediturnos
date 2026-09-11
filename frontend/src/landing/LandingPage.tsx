@@ -7,6 +7,7 @@ const funciones = [
   ["Agenda profesional", "Visualizá tus turnos del día y gestioná cada atención."],
   ["Pacientes", "Creá pacientes y encontralos rápidamente por nombre, DNI o teléfono."],
   ["Disponibilidad", "Definí días, horarios de atención, excepciones y vacaciones."],
+  ["Reserva online", "Compartí tu enlace de reservas y permití que tus pacientes elijan un horario disponible sin llamadas ni mensajes."],
   ["Prestaciones", "Configurá los servicios que ofrecés y organizá tu actividad profesional."],
   ["Recordatorios automáticos", "Recordá cada turno por email y permití que tus pacientes confirmen o cancelen con un clic."],
   ["Multidispositivo", "Usá Turnelia desde computadora, tablet o celular."],

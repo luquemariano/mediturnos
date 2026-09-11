@@ -221,6 +221,7 @@ def obtener_horarios_libres(
     prestacion_id: int,
     fecha: date,
     turno_id_excluido: int | None = None,
+    fecha_actual: date | None = None,
 ) -> list[dict]:
     turno_excluido = None
 
@@ -259,7 +260,7 @@ def obtener_horarios_libres(
             detail="El profesional está inactivo.",
         )
 
-    if fecha < fecha_actual_negocio():
+    if fecha < (fecha_actual or fecha_actual_negocio()):
         raise HTTPException(
             status_code=400,
             detail="La fecha no puede ser anterior a hoy.",

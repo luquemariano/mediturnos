@@ -3,10 +3,13 @@ from collections.abc import Callable
 from ipaddress import ip_address
 from threading import Lock
 from time import monotonic
+import logging
 
 from fastapi import HTTPException, Request
 
 from app.core.config import settings
+
+logger = logging.getLogger("mediturnos.rate_limit")
 
 
 class RateLimiter:
@@ -54,7 +57,12 @@ def obtener_ip_cliente(request: Request) -> str:
 def limitar(nombre: str, limite: int, ventana_segundos: int) -> Callable:
     def dependencia(request: Request) -> None:
         ip = obtener_ip_cliente(request)
-        rate_limiter.verificar(f"{nombre}:{ip}", limite, ventana_segundos)
+        try:
+            rate_limiter.verificar(f"{nombre}:{ip}", limite, ventana_segundos)
+        except HTTPException as error:
+            if error.status_code == 429:
+                logger.warning("rate_limit_exceeded scope=%s", nombre)
+            raise
 
     return dependencia
 
@@ -73,4 +81,21 @@ limitar_recuperacion = limitar(
     "recuperacion",
     settings.rate_limit_password_reset_attempts,
     settings.rate_limit_window_seconds,
+)
+limitar_public_reserva = limitar(
+    "public_reserva",
+    10,
+    settings.rate_limit_window_seconds,
+)
+limitar_public_consulta_reserva = limitar(
+    "public_consulta_reserva", 30, settings.rate_limit_window_seconds,
+)
+limitar_public_cancelar_reserva = limitar(
+    "public_cancelar_reserva", 10, settings.rate_limit_window_seconds,
+)
+limitar_public_reprogramar_reserva = limitar(
+    "public_reprogramar_reserva", 10, settings.rate_limit_window_seconds,
+)
+limitar_public_disponibilidad = limitar(
+    "public_disponibilidad", 60, settings.rate_limit_window_seconds,
 )

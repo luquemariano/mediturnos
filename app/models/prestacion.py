@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, ForeignKey, Integer, Numeric, String, Text
+from uuid import uuid4
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database.base import Base
@@ -50,6 +51,15 @@ class Prestacion(Base):
         Boolean,
         nullable=False,
         default=True,
+    )
+
+    habilitada_online: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="false",
+    )
+
+    identificador_publico: Mapped[str] = mapped_column(
+        String(36), nullable=False, unique=True,
+        default=lambda: str(uuid4()),
     )
 
     profesional_id: Mapped[int] = mapped_column(

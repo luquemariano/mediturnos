@@ -1,0 +1,11 @@
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import "@testing-library/jest-dom/vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import SelfService from "./SelfService";
+import * as api from "../services/publicBookingService";
+vi.mock("../services/publicBookingService");
+const base={reserva_id:"r-1",estado:"reservado",fecha_hora:"2026-09-15T10:00:00-03:00",fecha_fin:"2026-09-15T10:30:00-03:00",profesional:{nombre:"Laura",apellido:"Gómez"},prestacion:{nombre:"Consulta",modalidad:"presencial"}};
+describe("SelfService",()=>{beforeEach(()=>{vi.clearAllMocks();vi.mocked(api.obtenerReservaPublica).mockResolvedValue(base);vi.mocked(api.cancelarReservaPublica).mockResolvedValue({...base,estado:"cancelado"});vi.mocked(api.reprogramarReservaPublica).mockResolvedValue({...base,fecha_hora:"2026-09-15T11:00:00-03:00"})});
+it("carga reserva y cancela conservando la vista",async()=>{vi.spyOn(window,"confirm").mockReturnValue(true);render(<SelfService token="secret"/>);expect(await screen.findByText("Laura Gómez")).toBeInTheDocument();expect(screen.getByRole("button",{name:"Cancelar turno"})).toBeInTheDocument();fireEvent.click(screen.getByRole("button",{name:"Cancelar turno"}));await waitFor(()=>expect(api.cancelarReservaPublica).toHaveBeenCalledWith("secret"));expect(await screen.findByText("cancelado")).toBeInTheDocument()});
+it("muestra estados terminales sólo lectura y token inválido",async()=>{vi.mocked(api.obtenerReservaPublica).mockResolvedValue({...base,estado:"finalizado"});render(<SelfService token="t"/>);expect(await screen.findByText("finalizado")).toBeInTheDocument();expect(screen.queryByRole("button",{name:"Cancelar turno"})).not.toBeInTheDocument();vi.mocked(api.obtenerReservaPublica).mockRejectedValueOnce(new Error("429"));render(<SelfService token="bad"/>);expect(await screen.findByText("No encontramos esta reserva.")).toBeInTheDocument()});
+});
