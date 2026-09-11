@@ -10,6 +10,7 @@ import estudios from "./content/estudios.md?raw";
 import recordatorios from "./content/recordatorios.md?raw";
 import suscripcion from "./content/suscripcion.md?raw";
 import reservaOnline from "./content/reserva-online.md?raw";
+import reservaOnlinePaciente from "./content/reserva-online-paciente.md?raw";
 import type { HelpArticle, HelpArticleMeta, HelpCategory } from "./helpTypes";
 import { HELP_CATEGORIES } from "./helpTypes";
 
@@ -46,7 +47,7 @@ export function validateHelpArticle(article: HelpArticle): void {
   if (!HELP_CATEGORIES.includes(article.category) || !Number.isInteger(article.order) || article.order < 0 || !article.body.trim()) throw new Error("Artículo de ayuda inválido.");
 }
 
-const ARTICLES: HelpArticle[] = [parseArticle(primerosPasos), parseArticle(prestaciones), parseArticle(disponibilidad), parseArticle(agenda), parseArticle(turnos), parseArticle(pacientes), parseArticle(historiaClinica), parseArticle(documentos), parseArticle(estudios), parseArticle(recordatorios), parseArticle(suscripcion), parseArticle(reservaOnline)].sort((a, b) => a.order - b.order);
+const ARTICLES: HelpArticle[] = [parseArticle(primerosPasos), parseArticle(prestaciones), parseArticle(disponibilidad), parseArticle(agenda), parseArticle(turnos), parseArticle(pacientes), parseArticle(historiaClinica), parseArticle(documentos), parseArticle(estudios), parseArticle(recordatorios), parseArticle(suscripcion), parseArticle(reservaOnline), parseArticle(reservaOnlinePaciente)].sort((a, b) => a.order - b.order);
 const slugs = new Set<string>();
 ARTICLES.forEach((article) => { if (slugs.has(article.slug)) throw new Error(`Slug duplicado: ${article.slug}`); slugs.add(article.slug); });
 
