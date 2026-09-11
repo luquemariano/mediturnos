@@ -2,7 +2,7 @@
 slug: reserva-online-paciente
 title: Cómo reservar, reprogramar o cancelar un turno online
 description: Guía breve para gestionar un turno desde el enlace público de tu profesional.
-category: turnos
+category: agenda
 order: 13
 ---
 

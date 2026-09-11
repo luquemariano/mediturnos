@@ -13,7 +13,7 @@ const funciones = [
   ["Multidispositivo", "Usá Turnelia desde computadora, tablet o celular."],
 ];
 
-const iconos = ["calendar", "users", "clock", "briefcase", "bell", "devices"];
+const iconos = ["calendar", "users", "clock", "calendar", "briefcase", "bell", "devices"];
 
 const preguntasFrecuentes = [
   ["¿Qué es Turnelia y para qué sirve?", "Turnelia es una plataforma pensada para simplificar la gestión diaria de tu consultorio. Te permite organizar turnos, pacientes, agenda y seguimiento de la atención desde un solo lugar."],
