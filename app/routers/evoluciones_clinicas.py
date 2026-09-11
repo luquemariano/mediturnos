@@ -26,4 +26,4 @@ def registrar_evolucion(paciente_id: int, datos: EvolucionClinicaCrear, db: Sess
     if usuario_actual.rol != "profesional":
         raise HTTPException(status_code=403, detail="Permisos insuficientes.")
     profesional = obtener_mi_profesional(db, usuario_actual.id)
-    return crear_evolucion(db, profesional.id, paciente_id, datos)
+    return crear_evolucion(db, profesional.id, paciente_id, datos, usuario_actual.id, profesional.cuenta_id)

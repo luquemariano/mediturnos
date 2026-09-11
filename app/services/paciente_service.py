@@ -77,7 +77,7 @@ def obtener_mi_paciente(
 def obtener_pacientes_profesional(db: Session, profesional_id: int, q: str | None = None):
     return buscar_propios(db, profesional_id, q)
 
-def crear_paciente_profesional(db: Session, profesional_id: int, datos: PacienteProfesionalCrear):
+def crear_paciente_profesional(db: Session, profesional_id: int, datos: PacienteProfesionalCrear, usuario_id: int | None = None, cuenta_id: int | None = None):
     if datos.dni and buscar_por_dni(db, datos.dni):
         raise HTTPException(status_code=409, detail="Ya existe un paciente con ese DNI.")
     paciente = Paciente(**datos.model_dump(), activo=True)
@@ -85,6 +85,9 @@ def crear_paciente_profesional(db: Session, profesional_id: int, datos: Paciente
     try:
         db.flush()
         db.add(ProfesionalPaciente(profesional_id=profesional_id, paciente_id=paciente.id))
+        if usuario_id is not None:
+            from app.services.user_activity_service import registrar_evento_actividad
+            registrar_evento_actividad(db, usuario_id, "patient_created", profesional_id, cuenta_id, "paciente", paciente.id)
         db.commit()
         db.refresh(paciente)
         return paciente
