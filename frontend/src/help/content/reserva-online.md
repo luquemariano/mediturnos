@@ -8,7 +8,7 @@ order: 12
 
 ## Activar la reserva online
 
-Desde **Mi perfil**, abrí la sección **Reserva online** y activá el control principal. El enlace público se genera y conserva desde el backend.
+Desde **Reserva online**, en la navegación profesional, activá el control principal. El enlace público se genera y conserva desde el backend.
 
 ## Elegir prestaciones
 

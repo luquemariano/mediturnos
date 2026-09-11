@@ -14,7 +14,6 @@ import { cambiarPassword } from "../services/authService";
 import { obtenerCuentaActual } from "../services/cuentaService";
 import type { CuentaActual } from "../types/cuenta";
 import { etiquetaPlan, etiquetaSuscripcion, fechaTrial } from "../utils/suscripcion";
-import ReservaOnlinePanel from "./ReservaOnlinePanel";
 
 type PerfilPacienteProps = {
   tipo: "paciente";
@@ -240,7 +239,6 @@ function PerfilProfesional(props: PerfilProfesionalProps) {
           </ul>}
         </section>
       </section>}
-      {perfil && <ReservaOnlinePanel />}
       {modalPassword && <div className="perfil-modal-fondo" role="presentation">
         <section className="perfil-modal" role="dialog" aria-modal="true" aria-labelledby="cambiar-password-titulo">
           <header><p>Seguridad</p><h2 id="cambiar-password-titulo">Cambiar contraseña</h2></header>

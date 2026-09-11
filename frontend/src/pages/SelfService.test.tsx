@@ -51,4 +51,26 @@ describe("SelfService", () => {
     expect(await screen.findByText("cancelado")).toBeInTheDocument();
     expect(analytics.trackEvent).toHaveBeenCalledWith("public_booking_cancel", { source: "self_service" });
   });
+
+  it("reemplaza la pantalla sólo ante error de carga inicial", async () => {
+    vi.mocked(api.obtenerReservaPublica).mockRejectedValue(new Error("404"));
+    render(<SelfService token="invalid" />);
+    expect(await screen.findByText("No encontramos esta reserva.")).toBeInTheDocument();
+    expect(screen.queryByText("Tu reserva")).not.toBeInTheDocument();
+  });
+
+  it("mantiene la tarjeta ante error de reprogramación y bloquea el slot actual", async () => {
+    const error = { isAxiosError: true, response: { status: 409 } };
+    vi.mocked(api.reprogramarReservaPublica).mockRejectedValue(error);
+    vi.mocked(api.obtenerDisponibilidadPublica).mockResolvedValue({ zona_horaria: base.zona_horaria, dias: [{ fecha: "2026-09-16", horarios: [base.fecha_hora, "2026-09-16T16:00:00-03:00"] }] });
+    render(<SelfService token="secret" />);
+    fireEvent.change(await screen.findByLabelText("Nueva fecha"), { target: { value: "2026-09-16" } });
+    const slotActual = await screen.findByRole("button", { name: /10:00/ });
+    expect(slotActual).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: /04:00/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Reprogramar" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("El horario seleccionado ya no está disponible.");
+    expect(screen.getByText("Tu reserva")).toBeInTheDocument();
+    expect(analytics.trackEvent).not.toHaveBeenCalledWith("public_booking_reschedule", expect.anything());
+  });
 });

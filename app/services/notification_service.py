@@ -4,6 +4,17 @@ from sqlalchemy.orm import Session
 
 from app.models.notification import Notification
 
+def create_public_booking_notification(db: Session, turno, tipo: str, titulo: str, accion: str) -> None:
+    user_id = getattr(turno.profesional, "usuario_id", None)
+    if user_id is None:
+        return
+    fecha = turno.fecha_hora.strftime("%d/%m/%Y")
+    hora = turno.fecha_hora.strftime("%H:%M")
+    paciente = f"{turno.paciente.nombre} {turno.paciente.apellido}".strip()
+    mensaje = f"{paciente} {accion} {turno.prestacion.nombre} para el {fecha} a las {hora}."
+    db.add(Notification(user_id=user_id, type=tipo, title=titulo, message=mensaje, entity_type="turno", entity_id=turno.id))
+    db.commit()
+
 
 def create_study_results_notification(db: Session, request) -> None:
     user_id = getattr(request.profesional, "usuario_id", None)

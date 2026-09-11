@@ -18,6 +18,7 @@ from app.repositories.public_booking_repository import buscar_prestacion_publica
 from app.schemas.public_booking import HabilitacionPrestacionActualizar, ReservaOnlineActualizar, ReservaOnlineRespuesta, PublicReservaConsultaResponse, PublicReservaCanceladaResponse
 from app.models.turno import Turno
 from app.services.email_service import EmailDeliveryError, enviar_confirmacion_reserva_publica
+from app.services.notification_service import create_public_booking_notification
 from pydantic import TypeAdapter, EmailStr, ValidationError
 import logging
 
@@ -144,6 +145,10 @@ def crear_reserva_publica(db: Session, slug: str, datos: PublicReservaCreate) ->
     token = generar_token_autogestion()
     turno.autogestion_token_hash = hash_token_autogestion(token)
     db.commit(); db.refresh(turno)
+    try:
+        create_public_booking_notification(db, turno, "public_booking_created", "Nuevo turno reservado", "reservó")
+    except Exception:
+        logger.warning("No se pudo crear la notificación de reserva pública.")
     local_inicio = utc_a_zona_negocio(desde_base_utc(turno.fecha_hora)); local_fin = utc_a_zona_negocio(desde_base_utc(turno.fecha_fin))
     try:
         destinatario = str(EMAIL_ADAPTER.validate_python(email)).lower()
@@ -172,6 +177,10 @@ def cancelar_reserva_por_token(db: Session, token: str) -> PublicReservaCancelad
     if turno.estado not in {"reservado", "confirmado"}:
         raise HTTPException(status_code=409, detail="El turno no puede cancelarse en su estado actual.")
     turno = cancelar_turno_profesional(db, turno.id, turno.profesional_id)
+    try:
+        create_public_booking_notification(db, turno, "public_booking_cancelled", "Turno cancelado", "canceló su turno de")
+    except Exception:
+        logger.warning("No se pudo crear la notificación de cancelación pública.")
     inicio = utc_a_zona_negocio(desde_base_utc(turno.fecha_hora)); fin = utc_a_zona_negocio(desde_base_utc(turno.fecha_fin))
     return PublicReservaCanceladaResponse(reserva_id=turno.identificador_publico, estado=turno.estado, fecha_hora=inicio.isoformat(), fecha_fin=fin.isoformat(), zona_horaria=str(ZONA_NEGOCIO), profesional_slug=turno.profesional.slug_publico, prestacion_identificador_publico=turno.prestacion.identificador_publico, profesional={"nombre": turno.profesional.nombre, "apellido": turno.profesional.apellido}, prestacion={"nombre": turno.prestacion.nombre, "modalidad": turno.prestacion.modalidad})
 
@@ -187,5 +196,9 @@ def reprogramar_reserva_por_token(db: Session, token: str, fecha_hora: datetime)
     if fecha_hora > a_utc(ahora + timedelta(days=60)):
         raise HTTPException(status_code=400, detail="La nueva fecha y hora supera el horizonte permitido.")
     turno = reprogramar_turno(db, turno.id, TurnoReprogramar(fecha_hora=fecha_hora), profesional_id_esperado=turno.profesional_id, ahora_referencia=a_utc(ahora))
+    try:
+        create_public_booking_notification(db, turno, "public_booking_rescheduled", "Turno reprogramado", "reprogramó")
+    except Exception:
+        logger.warning("No se pudo crear la notificación de reprogramación pública.")
     inicio = utc_a_zona_negocio(desde_base_utc(turno.fecha_hora)); fin = utc_a_zona_negocio(desde_base_utc(turno.fecha_fin))
     return PublicReservaConsultaResponse(reserva_id=turno.identificador_publico, estado=turno.estado, fecha_hora=inicio.isoformat(), fecha_fin=fin.isoformat(), zona_horaria=str(ZONA_NEGOCIO), profesional_slug=turno.profesional.slug_publico, prestacion_identificador_publico=turno.prestacion.identificador_publico, profesional={"nombre": turno.profesional.nombre, "apellido": turno.profesional.apellido}, prestacion={"nombre": turno.prestacion.nombre, "modalidad": turno.prestacion.modalidad})

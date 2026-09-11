@@ -16,6 +16,7 @@ import PerfilPropio from "./components/PerfilPropio";
 import AuthBrand from "./components/AuthBrand";
 import DashboardProfesional from "./components/DashboardProfesional";
 import MisPrestaciones from "./components/MisPrestaciones";
+import ReservaOnline from "./components/ReservaOnline";
 import "./responsiveAudit.css";
 import LandingPage from "./landing/LandingPage";
 import SoftwareConsultoriosPage from "./landing/SoftwareConsultoriosPage";
@@ -58,6 +59,7 @@ type Vista =
   | "pacientes"
   | "especialidades"
   | "prestaciones"
+  | "reserva-online"
   | "profesionales"
   | "turnos"
   | "disponibilidades"
@@ -103,6 +105,12 @@ function App() {
     useState<Vista>("dashboard");
   const [pacienteIdInicial, setPacienteIdInicial] = useState<number | undefined>();
   const [studyRequestIdInicial, setStudyRequestIdInicial] = useState<number | undefined>();
+
+  useEffect(() => {
+    const abrirReservaOnline = () => setVista("reserva-online");
+    window.addEventListener("turnelia:reserva-online", abrirReservaOnline);
+    return () => window.removeEventListener("turnelia:reserva-online", abrirReservaOnline);
+  }, []);
 
   useEffect(() => {
     if (!bootActivo) { setBootVisible(false); setBootProlongado(false); return; }
@@ -470,6 +478,10 @@ function App() {
         onAbrirPerfil={() => setVista("perfil")}
         onCerrarSesion={cerrarSesion}
       />;
+    }
+
+    if (vista === "reserva-online" && usuario.rol === "profesional") {
+      return <ReservaOnline nombre={usuario.nombre} onVolver={() => setVista("dashboard")} onAbrirAgenda={() => setVista("turnos")} onAbrirPacientes={() => setVista("pacientes")} onAbrirDisponibilidad={() => setVista("disponibilidades")} onAbrirPrestaciones={() => setVista("prestaciones")} onAbrirPerfil={() => setVista("perfil")} onCerrarSesion={cerrarSesion} />;
     }
 
     if (vista === "perfil" && usuario.rol === "paciente") {
