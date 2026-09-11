@@ -159,7 +159,7 @@ def obtener_reserva_por_token(db: Session, token: str) -> PublicReservaConsultaR
     if turno is None:
         raise HTTPException(status_code=404, detail="Reserva no encontrada.")
     inicio = utc_a_zona_negocio(desde_base_utc(turno.fecha_hora)); fin = utc_a_zona_negocio(desde_base_utc(turno.fecha_fin))
-    return PublicReservaConsultaResponse(reserva_id=turno.identificador_publico, estado=turno.estado, fecha_hora=inicio.isoformat(), fecha_fin=fin.isoformat(), zona_horaria=str(ZONA_NEGOCIO), profesional={"nombre": turno.profesional.nombre, "apellido": turno.profesional.apellido}, prestacion={"nombre": turno.prestacion.nombre, "modalidad": turno.prestacion.modalidad})
+    return PublicReservaConsultaResponse(reserva_id=turno.identificador_publico, estado=turno.estado, fecha_hora=inicio.isoformat(), fecha_fin=fin.isoformat(), zona_horaria=str(ZONA_NEGOCIO), profesional_slug=turno.profesional.slug_publico, prestacion_identificador_publico=turno.prestacion.identificador_publico, profesional={"nombre": turno.profesional.nombre, "apellido": turno.profesional.apellido}, prestacion={"nombre": turno.prestacion.nombre, "modalidad": turno.prestacion.modalidad})
 
 def cancelar_reserva_por_token(db: Session, token: str) -> PublicReservaCanceladaResponse:
     if not token or len(token) > 512:
@@ -173,7 +173,7 @@ def cancelar_reserva_por_token(db: Session, token: str) -> PublicReservaCancelad
         raise HTTPException(status_code=409, detail="El turno no puede cancelarse en su estado actual.")
     turno = cancelar_turno_profesional(db, turno.id, turno.profesional_id)
     inicio = utc_a_zona_negocio(desde_base_utc(turno.fecha_hora)); fin = utc_a_zona_negocio(desde_base_utc(turno.fecha_fin))
-    return PublicReservaCanceladaResponse(reserva_id=turno.identificador_publico, estado=turno.estado, fecha_hora=inicio.isoformat(), fecha_fin=fin.isoformat(), zona_horaria=str(ZONA_NEGOCIO), profesional={"nombre": turno.profesional.nombre, "apellido": turno.profesional.apellido}, prestacion={"nombre": turno.prestacion.nombre, "modalidad": turno.prestacion.modalidad})
+    return PublicReservaCanceladaResponse(reserva_id=turno.identificador_publico, estado=turno.estado, fecha_hora=inicio.isoformat(), fecha_fin=fin.isoformat(), zona_horaria=str(ZONA_NEGOCIO), profesional_slug=turno.profesional.slug_publico, prestacion_identificador_publico=turno.prestacion.identificador_publico, profesional={"nombre": turno.profesional.nombre, "apellido": turno.profesional.apellido}, prestacion={"nombre": turno.prestacion.nombre, "modalidad": turno.prestacion.modalidad})
 
 def reprogramar_reserva_por_token(db: Session, token: str, fecha_hora: datetime) -> PublicReservaConsultaResponse:
     if not token or len(token) > 512:
@@ -188,4 +188,4 @@ def reprogramar_reserva_por_token(db: Session, token: str, fecha_hora: datetime)
         raise HTTPException(status_code=400, detail="La nueva fecha y hora supera el horizonte permitido.")
     turno = reprogramar_turno(db, turno.id, TurnoReprogramar(fecha_hora=fecha_hora), profesional_id_esperado=turno.profesional_id, ahora_referencia=a_utc(ahora))
     inicio = utc_a_zona_negocio(desde_base_utc(turno.fecha_hora)); fin = utc_a_zona_negocio(desde_base_utc(turno.fecha_fin))
-    return PublicReservaConsultaResponse(reserva_id=turno.identificador_publico, estado=turno.estado, fecha_hora=inicio.isoformat(), fecha_fin=fin.isoformat(), zona_horaria=str(ZONA_NEGOCIO), profesional={"nombre": turno.profesional.nombre, "apellido": turno.profesional.apellido}, prestacion={"nombre": turno.prestacion.nombre, "modalidad": turno.prestacion.modalidad})
+    return PublicReservaConsultaResponse(reserva_id=turno.identificador_publico, estado=turno.estado, fecha_hora=inicio.isoformat(), fecha_fin=fin.isoformat(), zona_horaria=str(ZONA_NEGOCIO), profesional_slug=turno.profesional.slug_publico, prestacion_identificador_publico=turno.prestacion.identificador_publico, profesional={"nombre": turno.profesional.nombre, "apellido": turno.profesional.apellido}, prestacion={"nombre": turno.prestacion.nombre, "modalidad": turno.prestacion.modalidad})

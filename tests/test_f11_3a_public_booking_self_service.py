@@ -74,7 +74,7 @@ def test_respuesta_publica_no_expone_datos_sensibles(client):
     db.add(Disponibilidad(profesional_id=profesional.id, dia_semana=1, hora_inicio=time(10), hora_fin=time(12))); db.commit()
     token = client.post(f"/public/profesionales/{profesional.slug_publico}/reservas", json=payload(prestacion)).json()["autogestion_token"]
     data = client.get(f"/public/reservas/{token}").json()
-    assert set(data) == {"reserva_id", "estado", "fecha_hora", "fecha_fin", "zona_horaria", "profesional", "prestacion"}
+    assert set(data) == {"reserva_id", "estado", "fecha_hora", "fecha_fin", "zona_horaria", "profesional_slug", "prestacion_identificador_publico", "profesional", "prestacion"}
     assert data["profesional"] == {"nombre": profesional.nombre, "apellido": profesional.apellido}
     assert data["prestacion"] == {"nombre": prestacion.nombre, "modalidad": prestacion.modalidad}
     assert data["fecha_hora"].endswith("-03:00") and data["fecha_fin"].endswith("-03:00")

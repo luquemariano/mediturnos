@@ -78,6 +78,8 @@ class PublicReservaConsultaResponse(BaseModel):
     fecha_hora: str
     fecha_fin: str
     zona_horaria: str
+    profesional_slug: str
+    prestacion_identificador_publico: str
     profesional: dict[str, str]
     prestacion: dict[str, str]
 
