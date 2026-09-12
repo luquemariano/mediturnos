@@ -24,6 +24,8 @@ from app.schemas.turno import (
     TurnoReprogramar,
     TurnoRespuesta,
 )
+from app.schemas.public_booking import ReservaOnlineActualizar, ReservaOnlineRespuesta
+from app.services.public_booking_service import obtener_configuracion, actualizar_configuracion
 from app.schemas.disponibilidad import (
     DisponibilidadCrear,
     DisponibilidadPropiaCrear,
@@ -84,6 +86,24 @@ router = APIRouter(
     prefix="/profesionales",
     tags=["Profesionales"],
 )
+
+@router.get("/me/reserva-online", response_model=ReservaOnlineRespuesta)
+def obtener_reserva_online(db: Session = Depends(obtener_db), usuario_actual: Usuario = Depends(obtener_usuario_actual)):
+    if usuario_actual.rol != "profesional":
+        raise HTTPException(status_code=403, detail="El usuario autenticado no es un profesional.")
+    profesional = obtener_mi_profesional(db, usuario_actual.id)
+    if not profesional.activo:
+        raise HTTPException(status_code=400, detail="El profesional está inactivo.")
+    return obtener_configuracion(db, profesional)
+
+@router.patch("/me/reserva-online", response_model=ReservaOnlineRespuesta)
+def actualizar_reserva_online(datos: ReservaOnlineActualizar, db: Session = Depends(obtener_db), usuario_actual: Usuario = Depends(obtener_usuario_actual)):
+    if usuario_actual.rol != "profesional":
+        raise HTTPException(status_code=403, detail="El usuario autenticado no es un profesional.")
+    profesional = obtener_mi_profesional(db, usuario_actual.id)
+    if not profesional.activo:
+        raise HTTPException(status_code=400, detail="El profesional está inactivo.")
+    return actualizar_configuracion(db, profesional, datos)
 
 @router.get("/me/study-requests/pending-review", response_model=PendingReviewResponse)
 def listar_mis_estudios_pendientes(

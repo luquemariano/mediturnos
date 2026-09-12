@@ -132,6 +132,7 @@ def crear_turno(
     db: Session,
     datos: TurnoCrear,
     profesional_id_esperado: int | None = None,
+    ahora_referencia: datetime | None = None,
     actividad: tuple[int, int, int] | None = None,
 ) -> Turno:
     paciente = buscar_paciente_por_id(
@@ -182,7 +183,7 @@ def crear_turno(
             detail="El profesional está inactivo.",
         )
 
-    if datos.fecha_hora <= ahora_utc():
+    if datos.fecha_hora <= (ahora_referencia or ahora_utc()):
         raise HTTPException(
             status_code=400,
             detail="La fecha y hora deben ser futuras.",
@@ -322,6 +323,7 @@ def reprogramar_turno(
     turno_id: int,
     datos: TurnoReprogramar,
     profesional_id_esperado: int | None = None,
+    ahora_referencia: datetime | None = None,
 ) -> Turno:
     if profesional_id_esperado is None:
         turno = obtener_turno(db, turno_id)
@@ -346,7 +348,7 @@ def reprogramar_turno(
             ),
         )
 
-    if datos.fecha_hora <= ahora_utc():
+    if datos.fecha_hora <= (ahora_referencia or ahora_utc()):
         raise HTTPException(
             status_code=400,
             detail="La nueva fecha y hora deben ser futuras.",

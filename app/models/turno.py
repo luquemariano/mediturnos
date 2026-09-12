@@ -11,6 +11,7 @@ from sqlalchemy import (
     select,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from uuid import uuid4
 
 from app.database.base import Base
 
@@ -40,6 +41,9 @@ class Turno(Base):
         primary_key=True,
         index=True,
     )
+
+    identificador_publico: Mapped[str] = mapped_column(String(36), nullable=False, unique=True, default=lambda: str(uuid4()))
+    autogestion_token_hash: Mapped[str | None] = mapped_column(String(64), nullable=True, unique=True)
 
     paciente_id: Mapped[int] = mapped_column(
         ForeignKey("pacientes.id"),

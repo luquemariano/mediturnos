@@ -1,0 +1,12 @@
+import api from "../api/api";
+export type PublicProfesional={nombre:string;apellido:string;especialidades:Array<{nombre:string}>};
+export type PublicPrestacion={identificador_publico:string;nombre:string;descripcion:string|null;duracion_minutos:number;modalidad:string};
+export type PublicDisponibilidad={zona_horaria:string;dias:Array<{fecha:string;horarios:string[]}>};
+export type PublicReserva={reserva_id:string;estado:string;fecha_hora:string;fecha_fin:string;zona_horaria?:string;profesional_slug?:string;prestacion_identificador_publico?:string;profesional:{nombre:string;apellido:string};prestacion:{nombre:string;modalidad:string};autogestion_token?:string};
+export const obtenerPerfilPublico=async(slug:string)=>(await api.get<PublicProfesional>(`/public/profesionales/${slug}`)).data;
+export const obtenerPrestacionesPublicas=async(slug:string)=>(await api.get<PublicPrestacion[]>(`/public/profesionales/${slug}/prestaciones`)).data;
+export const obtenerDisponibilidadPublica=async(slug:string,prestacion:string,fecha:string)=>(await api.get<PublicDisponibilidad>(`/public/profesionales/${slug}/disponibilidad`,{params:{prestacion,fecha_desde:fecha,fecha_hasta:fecha}})).data;
+export const crearReservaPublica=async(slug:string,data:unknown)=>(await api.post<PublicReserva>(`/public/profesionales/${slug}/reservas`,data)).data;
+export const obtenerReservaPublica=async(token:string)=>(await api.get<PublicReserva>(`/public/reservas/${token}`)).data;
+export const cancelarReservaPublica=async(token:string)=>(await api.post<PublicReserva>(`/public/reservas/${token}/cancelar`)).data;
+export const reprogramarReservaPublica=async(token:string,fecha_hora:string)=>(await api.post<PublicReserva>(`/public/reservas/${token}/reprogramar`,{fecha_hora})).data;

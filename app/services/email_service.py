@@ -267,3 +267,23 @@ def construir_email_recordatorio_turno(
   </div>
 </body></html>"""
     return TransactionalEmail(destinatario, asunto, html, texto)
+
+
+def construir_email_confirmacion_reserva_publica(*, destinatario: str, paciente: str, profesional: str, prestacion: str, modalidad: str, fecha_hora: datetime, autogestion_token: str) -> TransactionalEmail:
+    from app.core.config import settings
+    local = utc_a_zona_negocio(fecha_hora)
+    fecha = local.strftime("%d/%m/%Y")
+    hora = local.strftime("%H:%M")
+    enlace = f"{settings.frontend_url.rstrip('/')}/reserva/{autogestion_token}"
+    paciente_html = escape(paciente); profesional_html = escape(profesional); prestacion_html = escape(prestacion); modalidad_html = escape(modalidad); enlace_html = escape(enlace, quote=True)
+    asunto = "Tu turno fue reservado - Turnelia"
+    texto = (f"Hola, {paciente}.\n\nTu turno fue reservado.\n\nProfesional: {profesional}\nPrestación: {prestacion}\nModalidad: {modalidad}\nFecha: {fecha}\nHora: {hora} hs\n\nGestionar mi turno: {enlace}\n\nTurnelia")
+    html = f'''<!doctype html><html lang="es"><body style="font-family:Arial,sans-serif;color:#1d2927"><div style="max-width:560px;margin:auto;padding:28px"><p style="color:#176f6a;font-weight:700;font-size:18px">Turnelia</p><h1>Tu turno fue reservado</h1><p>Hola, {paciente_html}.</p><p>Profesional: <strong>{profesional_html}</strong><br>Prestación: <strong>{prestacion_html}</strong><br>Modalidad: <strong>{modalidad_html}</strong><br>Fecha: <strong>{fecha}</strong><br>Hora: <strong>{hora} hs</strong></p><p><a href="{enlace_html}" style="display:inline-block;padding:12px 18px;background:#176f6a;color:#fff;text-decoration:none;font-weight:700">Gestionar mi turno</a></p><p style="font-size:12px;word-break:break-all">Si el botón no funciona, copiá y pegá este enlace:<br>{enlace_html}</p></div></body></html>'''
+    return TransactionalEmail(destinatario, asunto, html, texto)
+
+
+def enviar_confirmacion_reserva_publica(**kwargs) -> None:
+    try:
+        obtener_email_provider().enviar(construir_email_confirmacion_reserva_publica(**kwargs))
+    except Exception as error:
+        raise EmailDeliveryError("No se pudo entregar el email de confirmación.") from error

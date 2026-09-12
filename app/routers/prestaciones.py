@@ -1,9 +1,12 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from app.core.dependencies import requiere_roles
+from app.core.dependencies import requiere_roles, obtener_usuario_actual
 from app.database.connection import obtener_db
 from app.models.usuario import Usuario
+from app.services.profesional_service import obtener_mi_profesional
+from app.schemas.public_booking import HabilitacionPrestacionActualizar, PrestacionReservaOnlineRespuesta
+from app.services.public_booking_service import actualizar_habilitacion_prestacion
 from app.schemas.prestacion import (
     PrestacionActualizar,
     PrestacionCrear,
@@ -22,6 +25,15 @@ router = APIRouter(
     prefix="/prestaciones",
     tags=["Prestaciones"],
 )
+
+@router.patch("/{identificador_publico}/reserva-online", response_model=PrestacionReservaOnlineRespuesta)
+def actualizar_reserva_online_prestacion(identificador_publico: str, datos: HabilitacionPrestacionActualizar, db: Session = Depends(obtener_db), usuario_actual: Usuario = Depends(obtener_usuario_actual)):
+    if usuario_actual.rol != "profesional":
+        raise HTTPException(status_code=403, detail="El usuario autenticado no es un profesional.")
+    profesional = obtener_mi_profesional(db, usuario_actual.id)
+    if not profesional.activo:
+        raise HTTPException(status_code=400, detail="El profesional está inactivo.")
+    return actualizar_habilitacion_prestacion(db, profesional, identificador_publico, datos)
 
 
 @router.post(

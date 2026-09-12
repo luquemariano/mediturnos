@@ -18,6 +18,7 @@ from app.routers.pacientes import router as pacientes_router
 from app.routers.prestaciones import router as prestaciones_router
 from app.routers.profesionales import router as profesionales_router
 from app.routers.turnos import router as turnos_router
+from app.routers.public_booking import router as public_booking_router, consulta_router as public_booking_consulta_router
 from app.routers.appointment_actions import router as appointment_actions_router
 from app.routers.usuarios import router as usuarios_router
 from app.routers.cuentas import router as cuentas_router
@@ -74,6 +75,8 @@ def crear_app(configuracion: Settings = settings) -> FastAPI:
     app.include_router(public_study_requests_router)
     app.include_router(public_study_uploads_router)
     app.include_router(turnos_router)
+    app.include_router(public_booking_router)
+    app.include_router(public_booking_consulta_router)
     app.include_router(appointment_actions_router)
     app.include_router(disponibilidades_router)
     app.include_router(pagos.router)
