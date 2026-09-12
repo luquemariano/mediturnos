@@ -147,13 +147,18 @@ def desactivar_prestacion(
 def obtener_prestaciones_profesional(db: Session, profesional_id: int) -> list[Prestacion]:
     return listar_prestaciones_de_profesional(db, profesional_id)
 
-def crear_prestacion_profesional(db: Session, profesional_id: int, datos: PrestacionProfesionalCrear) -> Prestacion:
+def crear_prestacion_profesional(db: Session, profesional_id: int, datos: PrestacionProfesionalCrear, usuario_id: int | None = None, cuenta_id: int | None = None) -> Prestacion:
     if buscar_relacion_profesional_especialidad(db, profesional_id, datos.especialidad_id) is None:
         raise HTTPException(status_code=400, detail="La especialidad no pertenece al profesional.")
     if buscar_nombre_de_profesional(db, profesional_id, datos.nombre):
         raise HTTPException(status_code=409, detail="Ya existe una prestación con ese nombre.")
     prestacion = Prestacion(profesional_id=profesional_id, **datos.model_dump())
-    db.add(prestacion); db.commit(); db.refresh(prestacion)
+    db.add(prestacion)
+    db.flush()
+    if usuario_id is not None:
+        from app.services.user_activity_service import registrar_evento_actividad
+        registrar_evento_actividad(db, usuario_id, "service_created", profesional_id, cuenta_id, "prestacion", prestacion.id)
+    db.commit(); db.refresh(prestacion)
     return prestacion
 
 def modificar_prestacion_profesional(db: Session, profesional_id: int, prestacion_id: int, datos: PrestacionProfesionalActualizar) -> Prestacion:

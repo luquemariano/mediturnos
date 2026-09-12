@@ -134,6 +134,17 @@ def autenticar_usuario(
     if not usuario.email_verificado:
         raise HTTPException(status_code=403, detail="EMAIL_NOT_VERIFIED")
 
+    ahora = datetime.now(UTC)
+    if usuario.first_login_at is None:
+        usuario.first_login_at = ahora
+    usuario.last_login_at = ahora
+    usuario.login_count += 1
+    try:
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+
     return crear_access_token(
         usuario_id=usuario.id,
         email=usuario.email,

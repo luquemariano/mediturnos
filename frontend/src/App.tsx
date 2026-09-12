@@ -24,6 +24,7 @@ import ParaPsicopedagogosPage from "./landing/ParaPsicopedagogosPage";
 import RegistroProfesional from "./components/RegistroProfesional";
 import OnboardingProfesional from "./components/OnboardingProfesional";
 import CuentasAdmin from "./components/CuentasAdmin";
+import AdopcionAdmin from "./components/AdopcionAdmin";
 import ActivarSuscripcion from "./components/ActivarSuscripcion";
 import RetornoSuscripcion from "./components/RetornoSuscripcion";
 import StudyUploadAccess from "./pages/StudyUploadAccess";
@@ -60,7 +61,8 @@ type Vista =
   | "turnos"
   | "disponibilidades"
   | "perfil"
-  | "cuentas";
+  | "cuentas"
+  | "adopcion";
 
 type VistaAcceso = "login" | "forgot" | "reset";
 
@@ -497,6 +499,10 @@ function App() {
       return <CuentasAdmin onVolver={() => setVista("dashboard")} />;
     }
 
+    if (vista === "adopcion" && usuario.rol === "administrador") {
+      return <AdopcionAdmin onVolver={() => setVista("dashboard")} />;
+    }
+
     if (vista === "prestaciones" && usuario.rol === "profesional") {
       return <MisPrestaciones
         nombre={usuario.nombre}
@@ -546,6 +552,7 @@ function App() {
         }
         onAbrirPerfil={() => setVista("perfil")}
         onAbrirCuentas={() => setVista("cuentas")}
+        onAbrirAdopcion={() => setVista("adopcion")}
         onCerrarSesion={cerrarSesion}
       />
     );

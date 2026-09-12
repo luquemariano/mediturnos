@@ -219,12 +219,12 @@ def test_profesional_crea_turno_sin_elegir_profesional(
     monkeypatch.setattr(
         profesionales,
         "obtener_mi_profesional",
-        lambda db, usuario_id: SimpleNamespace(id=10),
+        lambda db, usuario_id: SimpleNamespace(id=10, cuenta_id=1),
     )
     recibido = {}
 
-    def crear(db, profesional_id, datos):
-        recibido.update(profesional_id=profesional_id, datos=datos)
+    def crear(db, profesional_id, datos, usuario_id, cuenta_id):
+        recibido.update(profesional_id=profesional_id, datos=datos, usuario_id=usuario_id, cuenta_id=cuenta_id)
         return {
             "id": 1, "paciente_id": 2, "paciente_nombre": "Ana López",
             "prestacion_id": 3, "prestacion_nombre": "Consulta",
@@ -243,6 +243,8 @@ def test_profesional_crea_turno_sin_elegir_profesional(
 
     assert respuesta.status_code == 201
     assert recibido["profesional_id"] == 10
+    assert recibido["usuario_id"] == usuarios["profesional"].id
+    assert recibido["cuenta_id"] == 1
     assert not hasattr(recibido["datos"], "profesional_id")
 
 
