@@ -25,3 +25,4 @@ from app.models.appointment_reminder import AppointmentReminder
 from app.models.study_review import StudyReview
 from app.models.notification import Notification
 from app.models.email_verification_token import EmailVerificationToken
+from app.models.user_activity_event import UserActivityEvent

@@ -61,6 +61,8 @@ def _validar_sin_solapamiento(
 def crear_disponibilidad(
     db: Session,
     datos: DisponibilidadCrear,
+    usuario_id: int | None = None,
+    cuenta_id: int | None = None,
 ) -> Disponibilidad:
     profesional = buscar_profesional(
         db,
@@ -92,6 +94,10 @@ def crear_disponibilidad(
         datos,
     )
 
+    if usuario_id is not None:
+        db.flush()
+        from app.services.user_activity_service import registrar_evento_actividad
+        registrar_evento_actividad(db, usuario_id, "availability_created", datos.profesional_id, cuenta_id, "disponibilidad", disponibilidad.id)
     db.commit()
     db.refresh(disponibilidad)
 

@@ -224,7 +224,7 @@ def crear_mi_disponibilidad(
     if usuario_actual.rol != "profesional":
         raise HTTPException(status_code=403, detail="El usuario autenticado no es un profesional.")
     profesional = obtener_mi_profesional(db, usuario_actual.id)
-    return crear_disponibilidad(db, DisponibilidadCrear(profesional_id=profesional.id, **datos.model_dump()))
+    return crear_disponibilidad(db, DisponibilidadCrear(profesional_id=profesional.id, **datos.model_dump()), usuario_actual.id, profesional.cuenta_id)
 
 
 @router.get(
@@ -288,7 +288,7 @@ def registrar_mi_prestacion(datos: PrestacionProfesionalCrear, db: Session = Dep
     if usuario_actual.rol != "profesional":
         raise HTTPException(status_code=403, detail="El usuario autenticado no es un profesional.")
     profesional = obtener_mi_profesional(db, usuario_actual.id)
-    return crear_prestacion_profesional(db, profesional.id, datos)
+    return crear_prestacion_profesional(db, profesional.id, datos, usuario_actual.id, profesional.cuenta_id)
 
 @router.patch("/me/prestaciones/{prestacion_id}", response_model=PrestacionRespuesta)
 def editar_mi_prestacion(prestacion_id: int, datos: PrestacionProfesionalActualizar, db: Session = Depends(obtener_db), usuario_actual: Usuario = Depends(obtener_usuario_actual)):
@@ -309,7 +309,7 @@ def registrar_mi_paciente(datos: PacienteProfesionalCrear, db: Session = Depends
     if usuario_actual.rol != "profesional":
         raise HTTPException(status_code=403, detail="El usuario autenticado no es un profesional.")
     profesional = obtener_mi_profesional(db, usuario_actual.id)
-    return crear_paciente_profesional(db, profesional.id, datos)
+    return crear_paciente_profesional(db, profesional.id, datos, usuario_actual.id, profesional.cuenta_id)
 
 @router.patch("/me/pacientes/{paciente_id}", response_model=PacienteSeleccionRespuesta)
 def editar_mi_paciente(paciente_id: int, datos: PacienteProfesionalActualizar, db: Session = Depends(obtener_db), usuario_actual: Usuario = Depends(obtener_usuario_actual)):
@@ -351,7 +351,7 @@ def crear_turno_en_mi_agenda(
         )
 
     profesional = obtener_mi_profesional(db, usuario_actual.id)
-    return crear_turno_profesional(db, profesional.id, datos)
+    return crear_turno_profesional(db, profesional.id, datos, usuario_actual.id, profesional.cuenta_id)
 
 
 @router.patch(

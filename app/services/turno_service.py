@@ -133,6 +133,7 @@ def crear_turno(
     datos: TurnoCrear,
     profesional_id_esperado: int | None = None,
     ahora_referencia: datetime | None = None,
+    actividad: tuple[int, int, int] | None = None,
 ) -> Turno:
     paciente = buscar_paciente_por_id(
         db,
@@ -223,6 +224,12 @@ def crear_turno(
         ),
     )
 
+    if actividad is not None:
+        usuario_id, profesional_id, cuenta_id = actividad
+        db.flush()
+        from app.services.user_activity_service import registrar_evento_actividad
+        registrar_evento_actividad(db, usuario_id, "appointment_created", profesional_id, cuenta_id, "turno", turno.id)
+
     return _confirmar_cambio_turno(db, turno)
 
 
@@ -230,6 +237,8 @@ def crear_turno_profesional(
     db: Session,
     profesional_id: int,
     datos: TurnoCrear,
+    usuario_id: int | None = None,
+    cuenta_id: int | None = None,
 ) -> Turno:
     if not paciente_pertenece_a_profesional(db, profesional_id, datos.paciente_id):
         raise HTTPException(status_code=404, detail="Paciente no encontrado.")
@@ -237,6 +246,7 @@ def crear_turno_profesional(
         db,
         datos,
         profesional_id_esperado=profesional_id,
+        actividad=(usuario_id, profesional_id, cuenta_id) if usuario_id is not None else None,
     )
 
 

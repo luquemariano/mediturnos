@@ -9,6 +9,7 @@ type DashboardProps = {
   onAbrirDisponibilidades: () => void;
   onAbrirPerfil: () => void;
   onAbrirCuentas: () => void;
+  onAbrirAdopcion?: () => void;
   onCerrarSesion: () => void;
 };
 
@@ -26,6 +27,7 @@ function Dashboard(props: DashboardProps) {
   const modulosPorRol: Record<string, Modulo[]> = {
     administrador: [
       { titulo: "Cuentas", descripcion: "Gestionar cuentas, planes y suscripciones.", icono: "▦", accion: props.onAbrirCuentas },
+      { titulo: "Adopción", descripcion: "Conocer el uso de la plataforma por profesional.", icono: "◒", accion: props.onAbrirAdopcion },
       { titulo: "Profesionales", descripcion: "Consultar profesionales registrados.", icono: "🩺", accion: props.onAbrirProfesionales },
       { titulo: "Especialidades", descripcion: "Administrar el catálogo global.", icono: "✦", accion: props.onAbrirEspecialidades },
     ],

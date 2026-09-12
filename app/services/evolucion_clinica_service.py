@@ -23,9 +23,13 @@ def obtener_evoluciones_administrador(db: Session, paciente_id: int) -> list[Evo
     return listar_por_paciente(db, paciente_id)
 
 
-def crear_evolucion(db: Session, profesional_id: int, paciente_id: int, datos: EvolucionClinicaCrear) -> EvolucionClinica:
+def crear_evolucion(db: Session, profesional_id: int, paciente_id: int, datos: EvolucionClinicaCrear, usuario_id: int | None = None, cuenta_id: int | None = None) -> EvolucionClinica:
     validar_paciente_profesional(db, profesional_id, paciente_id)
     evolucion = guardar(db, paciente_id, profesional_id, datos.contenido)
+    if usuario_id is not None:
+        db.flush()
+        from app.services.user_activity_service import registrar_evento_actividad
+        registrar_evento_actividad(db, usuario_id, "clinical_evolution_created", profesional_id, cuenta_id, "evolucion_clinica", evolucion.id)
     db.commit()
     db.refresh(evolucion)
     return evolucion
