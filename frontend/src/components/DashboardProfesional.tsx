@@ -12,6 +12,7 @@ import { obtenerDisponibilidadesProfesional } from "../services/disponibilidadSe
 import { obtenerMiPerfilProfesional } from "../services/profesionalService";
 import { obtenerCuentaActual } from "../services/cuentaService";
 import { etiquetaSuscripcion } from "../utils/suscripcion";
+import ProductUpdateCard from "./ProductUpdateCard";
 import { listarEstudiosPendientesRevision } from "../services/pacienteService";
 import type { CuentaActual } from "../types/cuenta";
 import {
@@ -41,6 +42,8 @@ type DashboardProfesionalProps = {
   onAbrirPrestaciones: () => void;
   onAbrirPerfil: () => void;
   onAbrirSuscripcion?: () => void;
+  onAbrirListaEspera?: () => void;
+  userKey?: string;
   onCerrarSesion: () => void;
 };
 
@@ -145,6 +148,8 @@ export default function DashboardProfesional({
   onAbrirPrestaciones,
   onAbrirPerfil,
   onAbrirSuscripcion,
+  onAbrirListaEspera = () => window.dispatchEvent(new CustomEvent("turnelia:lista-espera")),
+  userKey = nombre,
   onCerrarSesion,
 }: DashboardProfesionalProps) {
   const [ahora] = useState(() => new Date());
@@ -241,6 +246,10 @@ export default function DashboardProfesional({
   }
 
   async function abrirNotificacion(item: NotificationItem) {
+    if (item.entity_type === "product_update") {
+      onAbrirListaEspera();
+      return;
+    }
     if (item.entity_type !== "study_request") {
       onAbrirPacientes();
       return;
@@ -367,6 +376,7 @@ export default function DashboardProfesional({
             <strong>{turnosHoy.length}</strong> turnos <i /> <strong>{resumen.confirmados}</strong> confirmados <i /> <strong>{resumen.pendientes}</strong> pendiente{resumen.pendientes === 1 ? "" : "s"} <i /> <strong>{resumen.resueltos}</strong> resueltos
           </p>}
         </section>
+        <ProductUpdateCard userKey={userKey} onOpen={(path) => path === "/lista-espera" ? onAbrirListaEspera() : (window.history.pushState({}, "", path), window.dispatchEvent(new PopStateEvent("popstate")))} />
 
         {cargandoAgenda ? <DashboardSkeleton /> : <>
           <section className="prof-proximo" aria-labelledby="proximo-titulo">

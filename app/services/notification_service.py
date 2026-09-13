@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 
 from app.models.notification import Notification
+from app.models.usuario import Usuario
 from app.core.datetime_utils import desde_base_utc, utc_a_zona_negocio
 
 def create_public_booking_notification(db: Session, turno, tipo: str, titulo: str, accion: str) -> None:
@@ -41,7 +42,18 @@ def create_study_results_notification(db: Session, request) -> None:
     ))
 
 
+def ensure_product_release_notification(db: Session, user_id: int) -> None:
+    user = db.query(Usuario).filter(Usuario.id == user_id, Usuario.rol == "profesional").first()
+    if not user or db.query(Notification).filter(Notification.user_id == user_id, Notification.type == "product_release", Notification.entity_type == "product_update", Notification.entity_id == 127).first():
+        return
+    db.add(Notification(user_id=user_id, type="product_release", title="Nueva función: Lista de espera inteligente", message="Ahora podés recuperar turnos cancelados ofreciendo el horario automáticamente a pacientes en espera.", entity_type="product_update", entity_id=127))
+    # GET /notifications es el punto de entrada existente; este commit acotado
+    # hace durable el sembrado idempotente sin mezclar otras mutaciones.
+    db.commit()
+
+
 def list_notifications(db: Session, user_id: int) -> tuple[list[Notification], int]:
+    ensure_product_release_notification(db, user_id)
     items = db.query(Notification).filter(Notification.user_id == user_id).order_by(Notification.created_at.desc(), Notification.id.desc()).limit(30).all()
     unread = db.query(Notification).filter(Notification.user_id == user_id, Notification.read_at.is_(None)).count()
     return items, unread

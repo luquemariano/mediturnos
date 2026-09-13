@@ -4,6 +4,7 @@ import "./ProfesionalShell.css";
 import Icono from "./Icono";
 import NotificationCenter from "./NotificationCenter";
 import type { NotificationItem } from "../types/paciente";
+import { ACTIVE_PRODUCT_UPDATE, productUpdateStorageKey } from "../productUpdates";
 
 type SeccionProfesional = "inicio" | "agenda" | "pacientes" | "disponibilidad" | "prestaciones" | "reserva-online" | "lista-espera" | "perfil" | "ayuda";
 
@@ -47,6 +48,7 @@ export default function ProfesionalShell({
   const iniciales = nombre.split(" ").slice(0, 2)
     .map((parte) => parte.charAt(0)).join("").toUpperCase();
 
+  const updateSeen = ACTIVE_PRODUCT_UPDATE && localStorage.getItem(productUpdateStorageKey(ACTIVE_PRODUCT_UPDATE.id, nombre)) === "dismissed";
   const items = [
     { id: "inicio" as const, texto: "Inicio", icono: "inicio" as const, accion: onAbrirInicio },
     { id: "agenda" as const, texto: "Mi agenda", icono: "agenda" as const, accion: onAbrirAgenda },
@@ -54,7 +56,7 @@ export default function ProfesionalShell({
     { id: "disponibilidad" as const, texto: "Mi disponibilidad", icono: "reloj" as const, accion: onAbrirDisponibilidad },
     { id: "prestaciones" as const, texto: "Mis prestaciones", icono: "check" as const, accion: onAbrirPrestaciones },
     { id: "reserva-online" as const, texto: "Reserva online", icono: "enlace" as const, accion: onAbrirReservaOnline },
-    { id: "lista-espera" as const, texto: "Lista de espera", icono: "reloj" as const, accion: onAbrirListaEspera },
+    { id: "lista-espera" as const, texto: "Lista de espera", icono: "reloj" as const, accion: () => { if (ACTIVE_PRODUCT_UPDATE) localStorage.setItem(productUpdateStorageKey(ACTIVE_PRODUCT_UPDATE.id, nombre), "dismissed"); onAbrirListaEspera(); } },
     { id: "perfil" as const, texto: "Mi perfil", icono: "perfil" as const, accion: onAbrirPerfil },
     { id: "ayuda" as const, texto: "Ayuda", icono: "ayuda" as const, accion: onAbrirAyuda },
   ];
@@ -72,7 +74,7 @@ export default function ProfesionalShell({
           type="button"
           aria-current={activo === item.id ? "page" : undefined}
           onClick={item.accion}
-        ><Icono nombre={item.icono} />{item.texto}</button>)}
+        ><Icono nombre={item.icono} />{item.texto}{item.id === "lista-espera" && !updateSeen && <span className="prof-nuevo-badge">Nuevo</span>}</button>)}
       </nav>
       <div className="prof-sidebar-perfil">
         <span className="prof-avatar">{iniciales || "P"}</span>
