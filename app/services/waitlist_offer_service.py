@@ -3,7 +3,7 @@ import hashlib, secrets, logging
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from app.core.datetime_utils import ahora_negocio, desde_base_utc, utc_a_zona_negocio
-from app.core.public_booking import hash_token_autogestion
+from app.core.public_booking import generar_token_autogestion, hash_token_autogestion
 from app.models.waitlist_entry import WaitlistEntry
 from app.models.waitlist_offer import WaitlistOffer
 from app.repositories import waitlist_offer_repository as repo
@@ -11,6 +11,7 @@ from app.services.waitlist_service import ReleasedSlot
 from app.services.disponibilidad_service import obtener_horarios_libres
 from app.services.turno_service import crear_turno
 from app.schemas.turno import TurnoCrear
+from app.services.email_service import enviar_confirmacion_reserva_publica
 logger = logging.getLogger("mediturnos.waitlist_offer")
 
 def _normalizar_timestamps(offer):
@@ -55,7 +56,21 @@ def accept_waitlist_offer(db: Session, token: str):
     if offer.estado != "activa" or offer.entry.estado != "ofertada": raise HTTPException(409, "La oferta ya no está disponible.")
     if not _validar_slot(db, offer):
         offer.estado = "vencida"; offer.entry.estado = "activa"; db.commit(); logger.info("waitlist_offer_slot_unavailable offer_id=%s", offer.id); raise HTTPException(409, "El horario ya no está disponible.")
-    turno = crear_turno(db, TurnoCrear(paciente_id=offer.entry.paciente_id, prestacion_id=offer.prestacion_id, fecha_hora=offer.slot_inicio), ahora_referencia=datetime.now(timezone.utc))
+    turno = crear_turno(db, TurnoCrear(paciente_id=offer.entry.paciente_id, prestacion_id=offer.prestacion_id, fecha_hora=desde_base_utc(offer.slot_inicio)), ahora_referencia=datetime.now(timezone.utc))
+    autogestion_token = generar_token_autogestion()
+    turno.autogestion_token_hash = hash_token_autogestion(autogestion_token)
     offer.estado = "aceptada"; offer.accepted_at = datetime.now(timezone.utc); offer.entry.estado = "reservada"; db.commit(); db.refresh(offer); _normalizar_timestamps(offer)
     logger.info("waitlist_offer_accepted offer_id=%s waitlist_entry_id=%s", offer.id, offer.waitlist_entry_id)
+    try:
+        enviar_confirmacion_reserva_publica(
+            destinatario=offer.entry.paciente.email,
+            paciente=f"{offer.entry.paciente.nombre} {offer.entry.paciente.apellido}",
+            profesional=f"{offer.entry.profesional.nombre} {offer.entry.profesional.apellido}",
+            prestacion=offer.entry.prestacion.nombre,
+            modalidad=offer.entry.prestacion.modalidad,
+            fecha_hora=desde_base_utc(turno.fecha_hora),
+            autogestion_token=autogestion_token,
+        )
+    except Exception:
+        logger.warning("waitlist_offer_confirmation_email_failed offer_id=%s turn_id=%s", offer.id, turno.id)
     return offer, turno

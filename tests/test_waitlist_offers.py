@@ -22,6 +22,7 @@ from app.services.waitlist_offer_service import (
 )
 from app.services.waitlist_service import ReleasedSlot
 from app.core.rate_limit import rate_limiter
+from app.core.public_booking import hash_token_autogestion
 from tests.conftest import SessionTest
 
 
@@ -111,6 +112,54 @@ def test_aceptar_oferta_crea_un_turno_y_transiciona_estados(monkeypatch):
     accepted, turno = accept_waitlist_offer(db, token)
     assert turno is not None and db.query(Turno).count() == 1
     assert accepted.estado == "aceptada" and db.query(WaitlistEntry).get(entry.id).estado == "reservada"
+    db.close()
+
+
+def test_aceptar_oferta_genera_autogestion_y_envia_confirmacion(monkeypatch):
+    db, profesional, prestacion, paciente, entry, slot = escenario(); libre(monkeypatch, slot)
+    enviados = []
+    monkeypatch.setattr("app.services.waitlist_offer_service.enviar_confirmacion_reserva_publica", lambda **kwargs: enviados.append(kwargs))
+    offer, token_oferta = create_waitlist_offer(db, entry, slot)
+    accepted, turno = accept_waitlist_offer(db, token_oferta)
+    assert accepted.estado == "aceptada" and turno is not None
+    assert turno.autogestion_token_hash
+    assert len(enviados) == 1
+    email = enviados[0]
+    assert email["destinatario"] == paciente.email
+    assert email["paciente"] == "Ana Oferta"
+    assert email["profesional"] == f"{profesional.nombre} {profesional.apellido}"
+    assert email["prestacion"] == prestacion.nombre
+    assert email["modalidad"] == prestacion.modalidad
+    assert email["fecha_hora"] == a_utc(slot.fecha_hora)
+    assert hash_token_autogestion(email["autogestion_token"]) == turno.autogestion_token_hash
+    assert email["autogestion_token"] != turno.autogestion_token_hash
+    assert db.query(Turno).filter_by(autogestion_token_hash=turno.autogestion_token_hash).one().id == turno.id
+    db.close()
+
+
+def test_fallo_confirmacion_no_revierte_reserva(monkeypatch, caplog):
+    db, _, _, _, entry, slot = escenario(); libre(monkeypatch, slot)
+    monkeypatch.setattr("app.services.waitlist_offer_service.enviar_confirmacion_reserva_publica", lambda **kwargs: (_ for _ in ()).throw(RuntimeError("provider down")))
+    offer, token = create_waitlist_offer(db, entry, slot)
+    accepted, turno = accept_waitlist_offer(db, token)
+    assert accepted.estado == "aceptada" and turno is not None
+    assert db.query(Turno).count() == 1
+    db.refresh(offer); db.refresh(entry)
+    assert offer.estado == "aceptada" and entry.estado == "reservada"
+    assert "waitlist_offer_confirmation_email_failed" in caplog.text
+    assert "provider down" not in caplog.text
+    db.close()
+
+
+def test_reintento_de_oferta_aceptada_es_idempotente_y_no_reenvia(monkeypatch):
+    db, _, _, _, entry, slot = escenario(); libre(monkeypatch, slot)
+    enviados = []
+    monkeypatch.setattr("app.services.waitlist_offer_service.enviar_confirmacion_reserva_publica", lambda **kwargs: enviados.append(kwargs))
+    _, token = create_waitlist_offer(db, entry, slot)
+    first, first_turno = accept_waitlist_offer(db, token)
+    second, second_turno = accept_waitlist_offer(db, token)
+    assert first.id == second.id and first_turno.id == db.query(Turno).one().id
+    assert second_turno is None and len(enviados) == 1
     db.close()
 
 
