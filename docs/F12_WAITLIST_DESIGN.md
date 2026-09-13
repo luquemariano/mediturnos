@@ -189,6 +189,8 @@ Los tokens de oferta siguen viajando en la URL por el diseño actual de los endp
 
 Se agregó `process_released_slot_waitlist`: selecciona el candidato compatible más antiguo, excluye intentos previos para el mismo intervalo, crea una única oferta y envía el email mediante el proveedor transaccional existente. Si el email falla, cancela la oferta y reactiva la entrada. `waitlist_offer_worker.py` procesa ofertas vencidas en lotes y encadena el siguiente candidato; las operaciones de Turno lo invocan best-effort después del commit. El intervalo configurado es `WAITLIST_OFFER_WORKER_INTERVAL_SECONDS` (60 segundos por defecto). No se agrega un servicio Docker nuevo en esta subfase; su ejecución productiva requiere declarar el cron/proceso en infraestructura.
 
-La idempotencia se apoya en estados, historial de ofertas por entrada/slot y constraints/locking de oferta. La concurrencia real entre workers debe validarse en PostgreSQL; el worker actual ejecuta una iteración y no mantiene un busy loop.
+La idempotencia se apoya en estados, historial de ofertas por entrada/slot y constraints/locking de oferta. `waitlist_offer_worker.py` es persistente, abre y cierra una sesión por iteración, espera `WAITLIST_OFFER_WORKER_INTERVAL_SECONDS` (60 por defecto) y reintenta errores de iteración sin morir. En PostgreSQL, las ofertas expiradas se reclaman con `FOR UPDATE SKIP LOCKED`; la concurrencia real debe validarse allí. Compose define `waitlist-worker` sin puertos y dependiente de la salud de DB; VPS lo deja bajo el perfil `waitlist`.
+
+La consulta de expiradas bloquea sólo `WaitlistOffer` (`FOR UPDATE OF waitlist_offers SKIP LOCKED`), sin `joinedload`/outer join bajo lock. El lote completo se transiciona y se confirma con un único commit; así no se liberan locks de ofertas aún no procesadas dentro de la misma selección.
 
 **F12.5 WAITLIST AUTOMATION: LISTO PARA REVALIDACIÓN**

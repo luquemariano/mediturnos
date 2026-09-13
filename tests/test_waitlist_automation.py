@@ -77,8 +77,24 @@ def test_proveedor_caido_intenta_una_sola_oferta(monkeypatch):
 
 
 def test_expiracion_reactiva_entry(monkeypatch):
-    entry_obj = entry(1); offer = SimpleNamespace(id=1, waitlist_entry_id=1, estado="activa", expires_at=datetime.now(timezone.utc) - timedelta(seconds=1), entry=entry_obj)
-    db = SimpleNamespace(commit=lambda: None, refresh=lambda obj: None)
+    entry_obj = entry(1); entry_obj.estado = "ofertada"
+    offer = SimpleNamespace(id=1, waitlist_entry_id=1, estado="activa", expires_at=datetime.now(timezone.utc) - timedelta(seconds=1), entry=entry_obj)
+    db = MagicMock()
     monkeypatch.setattr("app.services.waitlist_automation_service.offer_repo.list_expired_active", lambda db, now, limit: [offer])
     assert expire_waitlist_offers(db) == [offer]
     assert offer.estado == "vencida" and entry_obj.estado == "activa"
+    db.flush.assert_called_once_with()
+    db.commit.assert_called_once_with()
+    assert db.refresh.call_count == 1
+
+
+def test_expiracion_hace_un_solo_commit_por_lote(monkeypatch):
+    offers = []
+    for index in (1, 2, 3):
+        item = entry(index)
+        offers.append(SimpleNamespace(id=index, waitlist_entry_id=index, estado="activa", expires_at=datetime.now(timezone.utc), entry=item))
+    db = MagicMock()
+    monkeypatch.setattr("app.services.waitlist_automation_service.offer_repo.list_expired_active", lambda db, now, limit: offers)
+    assert len(expire_waitlist_offers(db)) == 3
+    db.commit.assert_called_once_with()
+    assert all(item.estado == "vencida" and item.entry.estado == "activa" for item in offers)

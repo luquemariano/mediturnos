@@ -64,6 +64,23 @@ services:
       - turnelia_internal
     command: ["python", "-m", "app.scripts.process_appointment_reminders"]
 
+  waitlist-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: turnelia-ovh-waitlist-worker
+    restart: unless-stopped
+    profiles:
+      - waitlist
+    env_file:
+      - .env.vps
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - turnelia_internal
+    command: ["python", "-m", "app.scripts.waitlist_offer_worker"]
+
 volumes:
   turnelia_vps_postgres18_data:
 

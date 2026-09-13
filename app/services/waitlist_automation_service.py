@@ -40,7 +40,11 @@ def expire_waitlist_offers(db: Session, now: datetime | None = None, limit: int 
     for offer in expired:
         offer.estado = "vencida"
         if offer.entry.estado == "ofertada": offer.entry.estado = "activa"
-        db.commit(); db.refresh(offer)
-        logger.info("waitlist_offer_expired offer_id=%s waitlist_entry_id=%s", offer.id, offer.waitlist_entry_id)
-        results.append(offer)
+    if expired:
+        db.flush()
+        db.commit()
+        for offer in expired:
+            db.refresh(offer)
+            logger.info("waitlist_offer_expired offer_id=%s waitlist_entry_id=%s", offer.id, offer.waitlist_entry_id)
+            results.append(offer)
     return results
