@@ -184,3 +184,11 @@ La cobertura específica queda en `tests/test_waitlist_offers.py`, incluyendo ci
 Los tokens de oferta siguen viajando en la URL por el diseño actual de los endpoints públicos. En producción, `app/scripts/start.py` inicia Uvicorn con `--no-access-log`, por lo que Uvicorn no registra esos paths; los logs de aplicación de waitlist tampoco incluyen tokens ni PII. Caddy no tiene access log habilitado actualmente (**NO DETERMINADO** fuera de la configuración declarada en el repositorio).
 
 **F12.4 WAITLIST OFFERS: LISTO PARA REVALIDACIÓN**
+
+## Implementación F12.5
+
+Se agregó `process_released_slot_waitlist`: selecciona el candidato compatible más antiguo, excluye intentos previos para el mismo intervalo, crea una única oferta y envía el email mediante el proveedor transaccional existente. Si el email falla, cancela la oferta y reactiva la entrada. `waitlist_offer_worker.py` procesa ofertas vencidas en lotes y encadena el siguiente candidato; las operaciones de Turno lo invocan best-effort después del commit. El intervalo configurado es `WAITLIST_OFFER_WORKER_INTERVAL_SECONDS` (60 segundos por defecto). No se agrega un servicio Docker nuevo en esta subfase; su ejecución productiva requiere declarar el cron/proceso en infraestructura.
+
+La idempotencia se apoya en estados, historial de ofertas por entrada/slot y constraints/locking de oferta. La concurrencia real entre workers debe validarse en PostgreSQL; el worker actual ejecuta una iteración y no mantiene un busy loop.
+
+**F12.5 WAITLIST AUTOMATION: LISTO PARA REVALIDACIÓN**

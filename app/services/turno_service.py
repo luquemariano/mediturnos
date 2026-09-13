@@ -40,9 +40,10 @@ logger = logging.getLogger("mediturnos.turnos")
 def _evaluar_waitlist_slot_liberado(profesional_id: int, prestacion_id: int, fecha_hora, fecha_fin, db: Session) -> None:
     """Side-effect best-effort: waitlist nunca bloquea una mutación de Turno."""
     try:
-        from app.services.waitlist_service import ReleasedSlot, find_matching_waitlist_entries
-        matches = find_matching_waitlist_entries(db, ReleasedSlot(profesional_id, prestacion_id, fecha_hora, fecha_fin))
-        logger.info("waitlist_slot_evaluated profesional_id=%s prestacion_id=%s matches=%s", profesional_id, prestacion_id, len(matches))
+        from app.services.waitlist_automation_service import process_released_slot_waitlist
+        from app.services.waitlist_service import ReleasedSlot
+        resultado = process_released_slot_waitlist(db, ReleasedSlot(profesional_id, prestacion_id, fecha_hora, fecha_fin))
+        logger.info("waitlist_slot_evaluated profesional_id=%s prestacion_id=%s result=%s", profesional_id, prestacion_id, resultado)
     except Exception:
         logger.exception("No se pudo evaluar el hueco liberado para waitlist; la operación de turno continúa.")
 

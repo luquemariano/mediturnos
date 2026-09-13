@@ -4,7 +4,7 @@ Estados: **PENDIENTE**, **EN CURSO**, **COMPLETADO** y **NO DETERMINADO**. No se
 
 ## Producto
 
-- **EN CURSO:** F12 Lista de espera inteligente; F12.1 discovery, F12.2 base, F12.3 detección/matching y F12.4 ofertas implementados. Emails automáticos, scheduler y UI siguen pendientes.
+- **EN CURSO:** F12 Lista de espera inteligente; F12.1 discovery, F12.2 base, F12.3 detección/matching, F12.4 ofertas y F12.5 automatización implementados. UI refinada, WhatsApp, push y SMS siguen pendientes.
 
 - **COMPLETADO:** agenda profesional con vistas Día, Semana y Mes, navegación temporal, botón Hoy, legibilidad de solapamientos y excepciones (F10).
 - **PENDIENTE:** auditoría de cambios, mencionada como evolución posible.

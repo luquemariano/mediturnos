@@ -16,9 +16,12 @@ class AppointmentReminderWorkerSettings(BaseSettings):
     email_from: str | None = None
     public_api_url: str = ""
     appointment_action_secret: SecretStr | None = None
+    waitlist_offer_worker_interval_seconds: int = 60
 
     @model_validator(mode="after")
     def validar_configuracion(self) -> "AppointmentReminderWorkerSettings":
+        if self.waitlist_offer_worker_interval_seconds <= 0:
+            raise ValueError("WAITLIST_OFFER_WORKER_INTERVAL_SECONDS debe ser positivo.")
         try:
             database = make_url(self.database_url)
         except ArgumentError as error:
