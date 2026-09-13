@@ -287,3 +287,19 @@ def enviar_confirmacion_reserva_publica(**kwargs) -> None:
         obtener_email_provider().enviar(construir_email_confirmacion_reserva_publica(**kwargs))
     except Exception as error:
         raise EmailDeliveryError("No se pudo entregar el email de confirmación.") from error
+
+def enviar_email_oferta_waitlist(offer, token: str) -> None:
+    from app.core.config import settings
+    from app.core.datetime_utils import utc_a_zona_negocio
+    local = utc_a_zona_negocio(offer.slot_inicio)
+    enlace = f"{settings.frontend_url.rstrip('/')}/waitlist/oferta/{token}"
+    paciente = f"{offer.entry.paciente.nombre} {offer.entry.paciente.apellido}"
+    profesional = f"{offer.entry.profesional.nombre} {offer.entry.profesional.apellido}"
+    prestacion = offer.entry.prestacion.nombre
+    texto = (f"Hola, {paciente}.\n\nSe liberó un turno para vos.\nProfesional: {profesional}\n"
+             f"Prestación: {prestacion}\nFecha: {local:%d/%m/%Y}\nHora: {local:%H:%M}\n\n"
+             f"El turno todavía no está reservado. Tenés 30 minutos para aceptarlo.\nVer turno disponible: {enlace}\n")
+    try:
+        obtener_email_provider().enviar(TransactionalEmail(offer.entry.paciente.email, "Se liberó un turno para vos", texto, texto))
+    except Exception as error:
+        raise EmailDeliveryError("No se pudo entregar la oferta de turno.") from error

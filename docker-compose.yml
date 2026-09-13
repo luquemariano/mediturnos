@@ -70,5 +70,23 @@ services:
 
     ports:
       - "${PORT:-8000}:${PORT:-8000}"
+
+  waitlist-worker:
+    build: .
+    container_name: mediturnos-waitlist-worker
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      APP_ENV: ${APP_ENV:-development}
+      DATABASE_URL: ${DATABASE_URL}
+      APP_TIMEZONE: ${APP_TIMEZONE:-America/Argentina/Buenos_Aires}
+      EMAIL_PROVIDER: ${EMAIL_PROVIDER:-in_memory}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      EMAIL_FROM: ${EMAIL_FROM:-}
+      PUBLIC_API_URL: ${PUBLIC_API_URL:-}
+      APPOINTMENT_ACTION_SECRET: ${APPOINTMENT_ACTION_SECRET:-}
+      WAITLIST_OFFER_WORKER_INTERVAL_SECONDS: ${WAITLIST_OFFER_WORKER_INTERVAL_SECONDS:-60}
+    command: ["python", "-m", "app.scripts.waitlist_offer_worker"]
 volumes:
   postgres_data:

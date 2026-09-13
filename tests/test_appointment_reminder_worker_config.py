@@ -43,7 +43,8 @@ def test_worker_imports_without_web_settings(monkeypatch):
     assert "worker starts successfully" in result.stdout
 
 
-def test_worker_requires_database_url():
+def test_worker_requires_database_url(monkeypatch):
+    monkeypatch.delenv("DATABASE_URL", raising=False)
     environment = _worker_environment()
     environment.pop("DATABASE_URL")
     with pytest.raises(ValidationError):

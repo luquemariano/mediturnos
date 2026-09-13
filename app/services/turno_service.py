@@ -1,4 +1,5 @@
 from datetime import date, timedelta
+import logging
 
 from fastapi import HTTPException
 from sqlalchemy.exc import IntegrityError
@@ -32,6 +33,19 @@ from app.services.disponibilidad_service import (
     validar_turno_dentro_disponibilidad,
 )
 from app.services.paciente_service import paciente_pertenece_a_profesional
+
+logger = logging.getLogger("mediturnos.turnos")
+
+
+def _evaluar_waitlist_slot_liberado(profesional_id: int, prestacion_id: int, fecha_hora, fecha_fin, db: Session) -> None:
+    """Side-effect best-effort: waitlist nunca bloquea una mutación de Turno."""
+    try:
+        from app.services.waitlist_automation_service import process_released_slot_waitlist
+        from app.services.waitlist_service import ReleasedSlot
+        resultado = process_released_slot_waitlist(db, ReleasedSlot(profesional_id, prestacion_id, fecha_hora, fecha_fin))
+        logger.info("waitlist_slot_evaluated profesional_id=%s prestacion_id=%s result=%s", profesional_id, prestacion_id, resultado)
+    except Exception:
+        logger.exception("No se pudo evaluar el hueco liberado para waitlist; la operación de turno continúa.")
 
 
 SQLSTATE_CONFLICTO_EXCLUSION = "23P01"
@@ -380,6 +394,7 @@ def reprogramar_turno(
             detail=MENSAJE_HORARIO_NO_DISPONIBLE,
         )
 
+    slot_liberado = (turno.fecha_hora, turno.fecha_fin)
     turno.fecha_hora = datos.fecha_hora
     turno.fecha_fin = (
         datos.fecha_hora
@@ -388,7 +403,9 @@ def reprogramar_turno(
         )
     )
 
-    return _confirmar_cambio_turno(db, turno)
+    resultado = _confirmar_cambio_turno(db, turno)
+    _evaluar_waitlist_slot_liberado(turno.profesional_id, turno.prestacion_id, *slot_liberado, db)
+    return resultado
 
 
 def reprogramar_turno_profesional(
@@ -532,8 +549,14 @@ def cancelar_turno_profesional(
             detail="Turno no encontrado.",
         )
 
+    if turno.estado == "cancelado":
+        return turno
+
+    slot_liberado = (turno.fecha_hora, turno.fecha_fin)
     aplicar_transicion_estado(turno, "cancelado")
-    return _confirmar_cambio_turno(db, turno)
+    resultado = _confirmar_cambio_turno(db, turno)
+    _evaluar_waitlist_slot_liberado(turno.profesional_id, turno.prestacion_id, *slot_liberado, db)
+    return resultado
 
 def cancelar_turno_paciente(
     db: Session,
@@ -558,9 +581,11 @@ def cancelar_turno_paciente(
             detail="El turno ya se encuentra cancelado.",
         )
 
+    slot_liberado = (turno.fecha_hora, turno.fecha_fin)
     aplicar_transicion_estado(turno, "cancelado")
 
     db.commit()
     db.refresh(turno)
+    _evaluar_waitlist_slot_liberado(turno.profesional_id, turno.prestacion_id, *slot_liberado, db)
 
     return turno

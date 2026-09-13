@@ -53,6 +53,8 @@ import VerificarEmail from "./pages/VerificarEmail";
 import { reenviarVerificacion } from "./services/authService";
 import PublicBooking from "./pages/PublicBooking";
 import SelfService from "./pages/SelfService";
+import ListaEsperaProfesional from "./components/ListaEsperaProfesional";
+import WaitlistOfferPage from "./pages/WaitlistOfferPage";
 
 
 type Vista =
@@ -61,6 +63,7 @@ type Vista =
   | "especialidades"
   | "prestaciones"
   | "reserva-online"
+  | "lista-espera"
   | "profesionales"
   | "turnos"
   | "disponibilidades"
@@ -110,9 +113,15 @@ function App() {
 
   useEffect(() => {
     const abrirReservaOnline = () => setVista("reserva-online");
+    const abrirListaEspera = () => { if (window.location.pathname !== "/lista-espera") window.history.pushState({}, "", "/lista-espera"); setRuta("/lista-espera"); setVista("lista-espera"); };
     window.addEventListener("turnelia:reserva-online", abrirReservaOnline);
-    return () => window.removeEventListener("turnelia:reserva-online", abrirReservaOnline);
+    window.addEventListener("turnelia:lista-espera", abrirListaEspera);
+    return () => { window.removeEventListener("turnelia:reserva-online", abrirReservaOnline); window.removeEventListener("turnelia:lista-espera", abrirListaEspera); };
   }, []);
+
+  useEffect(() => {
+    if (usuario?.rol === "profesional" && ruta === "/lista-espera") setVista("lista-espera");
+  }, [ruta, usuario]);
 
   useEffect(() => {
     if (!bootActivo) { setBootVisible(false); setBootProlongado(false); return; }
@@ -328,6 +337,7 @@ function App() {
   }
 
   if (ruta === "/estudios/enviar") return <StudyUploadAccess />;
+  if (ruta.startsWith("/waitlist/oferta/")) return <WaitlistOfferPage token={ruta.slice("/waitlist/oferta/".length)} />;
   if (ruta.startsWith("/reservar/")) return <PublicBooking slug={ruta.slice("/reservar/".length)} />;
   if (ruta.startsWith("/reserva/")) return <SelfService token={ruta.slice("/reserva/".length)} />;
 
@@ -484,6 +494,10 @@ function App() {
 
     if (vista === "reserva-online" && usuario.rol === "profesional") {
       return <ReservaOnline nombre={usuario.nombre} onVolver={() => setVista("dashboard")} onAbrirAgenda={() => setVista("turnos")} onAbrirPacientes={() => setVista("pacientes")} onAbrirDisponibilidad={() => setVista("disponibilidades")} onAbrirPrestaciones={() => setVista("prestaciones")} onAbrirPerfil={() => setVista("perfil")} onCerrarSesion={cerrarSesion} />;
+    }
+
+    if (vista === "lista-espera" && usuario.rol === "profesional") {
+      return <ListaEsperaProfesional nombre={usuario.nombre} onVolver={abrirDashboard} onAbrirAgenda={() => setVista("turnos")} onAbrirPacientes={() => setVista("pacientes")} onAbrirDisponibilidad={() => setVista("disponibilidades")} onAbrirPrestaciones={() => setVista("prestaciones")} onAbrirPerfil={() => setVista("perfil")} onCerrarSesion={cerrarSesion} />;
     }
 
     if (vista === "perfil" && usuario.rol === "paciente") {

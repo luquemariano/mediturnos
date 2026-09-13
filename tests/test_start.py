@@ -20,6 +20,7 @@ def test_puerto_rechaza_valores_invalidos(monkeypatch, valor):
 def test_arranque_migra_antes_de_iniciar_uvicorn(monkeypatch):
     eventos = []
     monkeypatch.setenv("PORT", "9000")
+    monkeypatch.setenv("APP_ENV", "development")
 
     def ejecutar_migracion(comando, check):
         eventos.append(("migracion", comando, check))
@@ -81,3 +82,17 @@ def test_arranque_no_inicia_uvicorn_si_alembic_falla(
         start.main()
 
     assert uvicorn_ejecutado is False
+
+
+@pytest.mark.parametrize(("app_env", "incluye_access_log"), [("production", True), ("development", False), ("test", False)])
+def test_arranque_configura_access_log_segun_entorno(monkeypatch, app_env, incluye_access_log):
+    argumentos = []
+    monkeypatch.setenv("APP_ENV", app_env)
+    monkeypatch.setattr(start.subprocess, "run", lambda comando, check: None)
+    monkeypatch.setattr(start.os, "execvp", lambda programa, args: argumentos.extend(args))
+
+    start.main()
+
+    assert ("--no-access-log" in argumentos) is incluye_access_log
+    assert argumentos[0:2] == ["uvicorn", "app.main:app"]
+    assert argumentos[argumentos.index("--port") + 1] == "8000"

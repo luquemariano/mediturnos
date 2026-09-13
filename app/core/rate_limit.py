@@ -99,3 +99,6 @@ limitar_public_reprogramar_reserva = limitar(
 limitar_public_disponibilidad = limitar(
     "public_disponibilidad", 60, settings.rate_limit_window_seconds,
 )
+limitar_public_waitlist = limitar(
+    "public_waitlist", 10, settings.rate_limit_window_seconds,
+)

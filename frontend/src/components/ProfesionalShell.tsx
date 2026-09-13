@@ -5,7 +5,7 @@ import Icono from "./Icono";
 import NotificationCenter from "./NotificationCenter";
 import type { NotificationItem } from "../types/paciente";
 
-type SeccionProfesional = "inicio" | "agenda" | "pacientes" | "disponibilidad" | "prestaciones" | "reserva-online" | "perfil" | "ayuda";
+type SeccionProfesional = "inicio" | "agenda" | "pacientes" | "disponibilidad" | "prestaciones" | "reserva-online" | "lista-espera" | "perfil" | "ayuda";
 
 type ProfesionalShellProps = {
   activo: SeccionProfesional;
@@ -18,6 +18,7 @@ type ProfesionalShellProps = {
   onAbrirDisponibilidad: () => void;
   onAbrirPrestaciones: () => void;
   onAbrirReservaOnline?: () => void;
+  onAbrirListaEspera?: () => void;
   onAbrirPerfil: () => void;
   onAbrirAyuda?: () => void;
   onCerrarSesion: () => void;
@@ -36,6 +37,7 @@ export default function ProfesionalShell({
   onAbrirDisponibilidad,
   onAbrirPrestaciones,
   onAbrirReservaOnline = () => window.dispatchEvent(new CustomEvent("turnelia:reserva-online")),
+  onAbrirListaEspera = () => window.dispatchEvent(new CustomEvent("turnelia:lista-espera")),
   onAbrirPerfil,
   onAbrirAyuda = () => { window.history.pushState({}, "", "/ayuda"); window.dispatchEvent(new PopStateEvent("popstate")); },
   onCerrarSesion,
@@ -52,6 +54,7 @@ export default function ProfesionalShell({
     { id: "disponibilidad" as const, texto: "Mi disponibilidad", icono: "reloj" as const, accion: onAbrirDisponibilidad },
     { id: "prestaciones" as const, texto: "Mis prestaciones", icono: "check" as const, accion: onAbrirPrestaciones },
     { id: "reserva-online" as const, texto: "Reserva online", icono: "enlace" as const, accion: onAbrirReservaOnline },
+    { id: "lista-espera" as const, texto: "Lista de espera", icono: "reloj" as const, accion: onAbrirListaEspera },
     { id: "perfil" as const, texto: "Mi perfil", icono: "perfil" as const, accion: onAbrirPerfil },
     { id: "ayuda" as const, texto: "Ayuda", icono: "ayuda" as const, accion: onAbrirAyuda },
   ];
