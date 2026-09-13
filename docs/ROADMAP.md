@@ -4,6 +4,8 @@ Estados: **PENDIENTE**, **EN CURSO**, **COMPLETADO** y **NO DETERMINADO**. No se
 
 ## Producto
 
+- **EN CURSO:** F12 Lista de espera inteligente; F12.1 discovery completado y F12.2 base implementada. Matching, ofertas, notificaciones y UI pública siguen pendientes.
+
 - **COMPLETADO:** agenda profesional con vistas Día, Semana y Mes, navegación temporal, botón Hoy, legibilidad de solapamientos y excepciones (F10).
 - **PENDIENTE:** auditoría de cambios, mencionada como evolución posible.
 - **PENDIENTE:** verificación operativa de pagos y notificaciones en producción.
