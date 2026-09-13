@@ -10,6 +10,8 @@ order: 12
 
 Reserva online te permite compartir un enlace público para que tus pacientes puedan ver tus horarios disponibles y reservar un turno sin necesidad de ingresar a Turnelia.
 
+Para compartirlo paso a paso, consultá [Cómo compartir tu página de reservas](/ayuda/como-compartir-pagina-reservas).
+
 ## Cómo activarla
 
 Desde el menú lateral, ingresá a **Reserva online** y activá la función. Luego podés elegir qué prestaciones estarán disponibles para reservar por internet.
@@ -21,6 +23,8 @@ En **Prestaciones disponibles para reserva online**, activá el control ON de ca
 ## Copiar y compartir el enlace
 
 La pantalla muestra tu URL pública. Seleccioná **Copiar enlace** y compartilo por WhatsApp, email, redes sociales o donde prefieras. Cada profesional tiene su propio enlace.
+
+Para una guía completa, consultá [Cómo compartir tu página de reservas](/ayuda/como-compartir-pagina-reservas).
 
 ## Qué ve el paciente
 

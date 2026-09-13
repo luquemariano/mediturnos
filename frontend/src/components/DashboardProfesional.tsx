@@ -252,6 +252,7 @@ export default function DashboardProfesional({
       onAbrirPacientes();
       return;
     }
+    if (item.entity_id === 128) { window.dispatchEvent(new CustomEvent("turnelia:reserva-online")); return; }
     let solicitud = pendingReview.find((value) => value.id === item.entity_id);
     if (!solicitud) {
       try {

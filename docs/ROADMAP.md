@@ -6,6 +6,7 @@ Estados: **PENDIENTE**, **EN CURSO**, **COMPLETADO** y **NO DETERMINADO**. No se
 
 - **EN CURSO:** F12 Lista de espera inteligente; F12.1 discovery, F12.2 base, F12.3 detección/matching, F12.4 ofertas, F12.5 automatización, F12.5.1 worker persistente y F12.6 UX profesional/pública implementados, pendientes de revalidación en el entorno objetivo. WhatsApp, push, SMS, IA y reporting siguen fuera de alcance.
 - **COMPLETADO:** F12.7 Waitlist discovery, release announcement and help content; novedades reutilizables, ayuda contextual, landing y notificación de producto idempotente.
+- **COMPLETADO:** F12.8 Public booking page sharing & professional acquisition link; enlace reutilizable, WhatsApp, QR, ayuda y notificación idempotente. No incluye directorio público ni perfiles SEO indexables más allá de la página existente; el directorio se evaluará en una fase posterior.
 
 - **COMPLETADO:** agenda profesional con vistas Día, Semana y Mes, navegación temporal, botón Hoy, legibilidad de solapamientos y excepciones (F10).
 - **PENDIENTE:** auditoría de cambios, mencionada como evolución posible.

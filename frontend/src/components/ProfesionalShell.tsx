@@ -73,7 +73,7 @@ export default function ProfesionalShell({
           type="button"
           aria-current={activo === item.id ? "page" : undefined}
           onClick={item.accion}
-        ><Icono nombre={item.icono} />{item.texto}{item.id === "lista-espera" && ACTIVE_PRODUCT_UPDATE?.id === "f12-7-waitlist-discovery" && <span className="prof-nuevo-badge">{ACTIVE_PRODUCT_UPDATE.badge}</span>}</button>)}
+        ><Icono nombre={item.icono} />{item.texto}{item.id === ACTIVE_PRODUCT_UPDATE?.ctaPath.slice(1) && <span className="prof-nuevo-badge">{ACTIVE_PRODUCT_UPDATE.badge}</span>}</button>)}
       </nav>
       <div className="prof-sidebar-perfil">
         <span className="prof-avatar">{iniciales || "P"}</span>
