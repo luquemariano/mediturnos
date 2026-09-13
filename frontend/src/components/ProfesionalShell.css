@@ -45,6 +45,7 @@
 .prof-sidebar nav button:hover { background: rgba(255,255,255,.05); color: #fff; }
 .prof-sidebar nav button.activo { background: rgba(255,255,255,.07); color: #fff; }
 .prof-sidebar nav button.activo::before { background: var(--prof-accent); }
+.prof-nuevo-badge { margin-left: auto; padding: 3px 7px; border-radius: 999px; background: var(--prof-accent); color: #fff; font-size: 10px; line-height: 1; font-weight: 800; }
 .prof-sidebar-perfil { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; padding-top: 18px; border-top: 1px solid rgba(255,255,255,.12); }
 .prof-sidebar-perfil > div { min-width: 0; display: grid; }
 .prof-sidebar-perfil strong { overflow: hidden; font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }

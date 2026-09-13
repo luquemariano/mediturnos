@@ -10,10 +10,11 @@ const funciones = [
   ["Reserva online para tus pacientes", "Compartí tu enlace público para que tus pacientes puedan ver horarios disponibles y reservar un turno sin llamarte ni escribirte."],
   ["Prestaciones", "Configurá los servicios que ofrecés y organizá tu actividad profesional."],
   ["Recordatorios automáticos", "Recordá cada turno por email y permití que tus pacientes confirmen o cancelen con un clic."],
+  ["Lista de espera inteligente", "Recuperá turnos cancelados ofreciendo el horario a pacientes que están esperando."],
   ["Multidispositivo", "Usá Turnelia desde computadora, tablet o celular."],
 ];
 
-const iconos = ["calendar", "users", "clock", "calendar", "briefcase", "bell", "devices"];
+const iconos = ["calendar", "users", "clock", "calendar", "briefcase", "bell", "clock", "devices"];
 
 const preguntasFrecuentes = [
   ["¿Qué es Turnelia y para qué sirve?", "Turnelia es una plataforma pensada para simplificar la gestión diaria de tu consultorio. Te permite organizar turnos, pacientes, agenda y seguimiento de la atención desde un solo lugar."],

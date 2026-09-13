@@ -410,6 +410,7 @@ function App() {
           onAbrirDisponibilidad={() => setVista("disponibilidades")}
           onAbrirPrestaciones={() => setVista("prestaciones")}
           onAbrirPerfil={() => setVista("perfil")}
+          onAbrirListaEspera={() => { window.history.pushState({}, "", "/lista-espera"); setRuta("/lista-espera"); setVista("lista-espera"); }}
           onAbrirSuscripcion={() => navegar("/app/suscripcion")}
           onCerrarSesion={cerrarSesion}
         />
