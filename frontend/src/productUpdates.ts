@@ -22,8 +22,8 @@ export const PRODUCT_UPDATES: ProductUpdate[] = [{
   active: true,
 }];
 
-export const ACTIVE_PRODUCT_UPDATE = PRODUCT_UPDATES.find((update) => update.active);
-
-export function productUpdateStorageKey(updateId: string, userKey: string): string {
-  return `turnelia:product-update:${updateId}:${userKey}`;
+export function getLatestActiveProductUpdate(updates: ProductUpdate[] = PRODUCT_UPDATES): ProductUpdate | undefined {
+  return updates.filter((update) => update.active).sort((a, b) => b.publishedAt.localeCompare(a.publishedAt))[0];
 }
+
+export const ACTIVE_PRODUCT_UPDATE = getLatestActiveProductUpdate();
