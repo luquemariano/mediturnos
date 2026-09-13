@@ -1,4 +1,6 @@
-from datetime import date, datetime, timezone
+from dataclasses import dataclass
+from datetime import date, datetime, timezone, timedelta
+import logging
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from app.models.paciente import Paciente
@@ -8,6 +10,44 @@ from app.repositories import waitlist_repository as repo
 from app.schemas.waitlist import WaitlistEntryCreate
 from app.services.paciente_service import paciente_pertenece_a_profesional
 from app.core.datetime_utils import fecha_actual_negocio
+from app.core.datetime_utils import ahora_negocio, utc_a_zona_negocio, desde_base_utc
+from app.services.disponibilidad_service import obtener_horarios_libres
+
+logger = logging.getLogger("turnelia.waitlist")
+
+
+@dataclass(frozen=True)
+class ReleasedSlot:
+    profesional_id: int
+    prestacion_id: int
+    fecha_hora: datetime
+    fecha_fin: datetime
+
+
+def find_matching_waitlist_entries(db: Session, slot: ReleasedSlot):
+    """Return active, currently compatible entries without changing their state."""
+    inicio = utc_a_zona_negocio(desde_base_utc(slot.fecha_hora))
+    fin = utc_a_zona_negocio(desde_base_utc(slot.fecha_fin))
+    ahora = ahora_negocio()
+    logger.info("waitlist_match_check profesional_id=%s prestacion_id=%s slot=%s", slot.profesional_id, slot.prestacion_id, desde_base_utc(slot.fecha_hora).isoformat())
+    if inicio <= ahora + timedelta(hours=2) or inicio > ahora + timedelta(days=60):
+        logger.info("waitlist_match_none profesional_id=%s prestacion_id=%s count=0", slot.profesional_id, slot.prestacion_id)
+        return []
+    candidatos = repo.list_active_candidates(db, slot.profesional_id, slot.prestacion_id, inicio.date())
+    libres = obtener_horarios_libres(db, slot.prestacion_id, inicio.date(), fecha_actual=ahora.date())
+    inicio_utc = desde_base_utc(slot.fecha_hora)
+    duracion = (fin - inicio).total_seconds()
+    resultado = []
+    for item in candidatos:
+        if item.hora_desde is not None and not (item.hora_desde <= inicio.time() and inicio.time() < item.hora_hasta):
+            continue
+        prestacion = item.prestacion
+        if duracion < prestacion.duracion_minutos * 60:
+            continue
+        if any(desde_base_utc(x["fecha_hora"]) == inicio_utc for x in libres):
+            resultado.append(item)
+    logger.info("waitlist_match_%s profesional_id=%s prestacion_id=%s count=%s", "found" if resultado else "none", slot.profesional_id, slot.prestacion_id, len(resultado))
+    return resultado
 
 
 def create_waitlist_entry(db: Session, profesional_id: int, datos: WaitlistEntryCreate):

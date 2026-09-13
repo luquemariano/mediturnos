@@ -16,6 +16,7 @@ from app.services.waitlist_service import cancel_waitlist_entry, create_waitlist
 from app.repositories.waitlist_repository import get_by_id
 from tests.conftest import SessionTest
 from app.core.datetime_utils import ahora_negocio
+from app.services.turno_service import _evaluar_waitlist_slot_liberado
 
 
 def escenario():
@@ -109,3 +110,11 @@ def test_cliente_no_controla_estado_y_endpoint_requiere_auth(client):
     assert client.get("/waitlist").status_code in {401, 403}
     from app.schemas.waitlist import WaitlistEntryCreate
     assert "estado" not in WaitlistEntryCreate.model_fields
+
+
+def test_fallo_matching_no_bloquea_evaluacion_del_hueco(monkeypatch, caplog):
+    def falla(*args):
+        raise RuntimeError("fallo simulado")
+    monkeypatch.setattr("app.services.waitlist_service.find_matching_waitlist_entries", falla)
+    _evaluar_waitlist_slot_liberado(1, 2, object(), object(), object())
+    assert "No se pudo evaluar el hueco liberado" in caplog.text

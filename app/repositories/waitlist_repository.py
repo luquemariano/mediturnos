@@ -24,6 +24,17 @@ def list_by_profesional(db: Session, profesional_id: int, estado: str | None = N
     return query.order_by(WaitlistEntry.created_at, WaitlistEntry.id).all()
 
 
+def list_active_candidates(db: Session, profesional_id: int, prestacion_id: int, fecha: date) -> list[WaitlistEntry]:
+    return (db.query(WaitlistEntry)
+            .options(joinedload(WaitlistEntry.paciente), joinedload(WaitlistEntry.prestacion))
+            .filter(WaitlistEntry.profesional_id == profesional_id,
+                    WaitlistEntry.prestacion_id == prestacion_id,
+                    WaitlistEntry.estado == "activa",
+                    WaitlistEntry.fecha_desde <= fecha,
+                    WaitlistEntry.fecha_hasta >= fecha)
+            .order_by(WaitlistEntry.created_at, WaitlistEntry.id).all())
+
+
 def get_active_duplicate(db: Session, profesional_id: int, prestacion_id: int, paciente_id: int, fecha_desde: date, fecha_hasta: date, hora_desde: time | None, hora_hasta: time | None) -> WaitlistEntry | None:
     return db.query(WaitlistEntry).filter(WaitlistEntry.profesional_id == profesional_id, WaitlistEntry.prestacion_id == prestacion_id, WaitlistEntry.paciente_id == paciente_id, WaitlistEntry.fecha_desde == fecha_desde, WaitlistEntry.fecha_hasta == fecha_hasta, WaitlistEntry.hora_desde == hora_desde, WaitlistEntry.hora_hasta == hora_hasta, WaitlistEntry.estado == "activa").first()
 

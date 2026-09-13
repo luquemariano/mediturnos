@@ -169,4 +169,8 @@ Estimación total: 5,5–8 días de desarrollo, sujeta a las decisiones pendient
 
 La base quedó implementada: modelo `WaitlistEntry`, estados y constraints, migración Alembic, repository, service y API privada autenticada. La API expone creación/listado/cancelación profesional en `/waitlist`; deriva el profesional desde el usuario autenticado y no acepta `profesional_id` del cliente. La creación pública, matching, ofertas, ventana exclusiva, emails, scheduler y UI quedan pendientes de F12.3 o posteriores.
 
-**F12.2 BASE WAITLIST: LISTO PARA REVALIDACIÓN**
+## Implementación F12.3
+
+F12.3 incorpora `ReleasedSlot` y `find_matching_waitlist_entries`. El matching filtra candidatos activos por profesional, prestación y fecha; luego valida preferencias en horario local y confirma el inicio mediante `obtener_horarios_libres`, reutilizando disponibilidad, excepciones y turnos ocupados. Se dispara después de commits exitosos de cancelación y reprogramación, evaluando únicamente el intervalo anterior en este último caso. No cambia estados, persiste matches ni crea ofertas, tokens, emails o scheduler.
+
+**F12.3 MATCHING: LISTO PARA REVALIDACIÓN**
