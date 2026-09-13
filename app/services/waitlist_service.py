@@ -50,7 +50,7 @@ def find_matching_waitlist_entries(db: Session, slot: ReleasedSlot):
     return resultado
 
 
-def create_waitlist_entry(db: Session, profesional_id: int, datos: WaitlistEntryCreate):
+def create_waitlist_entry(db: Session, profesional_id: int, datos: WaitlistEntryCreate, *, origen: str = "profesional"):
     profesional = db.get(Profesional, profesional_id)
     prestacion = db.get(Prestacion, datos.prestacion_id)
     paciente = db.get(Paciente, datos.paciente_id)
@@ -66,7 +66,7 @@ def create_waitlist_entry(db: Session, profesional_id: int, datos: WaitlistEntry
         raise HTTPException(400, "La fecha desde no puede ser anterior a hoy.")
     if repo.get_active_duplicate(db, profesional_id, datos.prestacion_id, datos.paciente_id, datos.fecha_desde, datos.fecha_hasta, datos.hora_desde, datos.hora_hasta):
         raise HTTPException(409, "Ya existe una entrada activa equivalente.")
-    item = repo.create(db, profesional_id=profesional_id, prestacion_id=datos.prestacion_id, paciente_id=datos.paciente_id, fecha_desde=datos.fecha_desde, fecha_hasta=datos.fecha_hasta, hora_desde=datos.hora_desde, hora_hasta=datos.hora_hasta, origen="profesional")
+    item = repo.create(db, profesional_id=profesional_id, prestacion_id=datos.prestacion_id, paciente_id=datos.paciente_id, fecha_desde=datos.fecha_desde, fecha_hasta=datos.fecha_hasta, hora_desde=datos.hora_desde, hora_hasta=datos.hora_hasta, origen=origen)
     db.commit(); db.refresh(item)
     return item
 

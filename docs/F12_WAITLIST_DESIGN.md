@@ -167,7 +167,7 @@ Estimación total: 5,5–8 días de desarrollo, sujeta a las decisiones pendient
 
 ## Implementación F12.2
 
-La base quedó implementada: modelo `WaitlistEntry`, estados y constraints, migración Alembic, repository, service y API privada autenticada. La API expone creación/listado/cancelación profesional en `/waitlist`; deriva el profesional desde el usuario autenticado y no acepta `profesional_id` del cliente. La creación pública, matching, ofertas, ventana exclusiva, emails, scheduler y UI quedan pendientes de F12.3 o posteriores.
+La base quedó implementada: modelo `WaitlistEntry`, estados y constraints, migración Alembic, repository, service y API privada autenticada. La API expone creación/listado/cancelación profesional en `/waitlist`; deriva el profesional desde el usuario autenticado y no acepta `profesional_id` del cliente.
 
 ## Implementación F12.3
 
@@ -194,3 +194,13 @@ La idempotencia se apoya en estados, historial de ofertas por entrada/slot y con
 La consulta de expiradas bloquea sólo `WaitlistOffer` (`FOR UPDATE OF waitlist_offers SKIP LOCKED`), sin `joinedload`/outer join bajo lock. El lote completo se transiciona y se confirma con un único commit; así no se liberan locks de ofertas aún no procesadas dentro de la misma selección.
 
 **F12.5 WAITLIST AUTOMATION: LISTO PARA REVALIDACIÓN**
+
+## Implementación F12.6
+
+La experiencia profesional incorpora la sección `Lista de espera` con navegación persistente, listado ordenado por antigüedad, filtros de estado/prestación, alta con validación, estado de ofertas y cancelación confirmada. La pantalla reutiliza pacientes y prestaciones del profesional y no expone tokens de oferta.
+
+La página pública `/reservar/:slug` ofrece sumarse cuando el horario no resulta conveniente o no existe disponibilidad. El alta usa el slug del profesional y el identificador público de prestación, permite rango de fechas y preferencia horaria opcional, vincula o crea al paciente con el flujo de booking existente y responde con un mensaje genérico. El endpoint `POST /public/profesionales/{slug}/waitlist` está limitado a 10 solicitudes por minuto/IP y no devuelve IDs internos ni informa datos de otras entradas.
+
+El enlace de oferta `/waitlist/oferta/{token}` muestra sólo información pública mínima, distingue oferta activa, aceptada, vencida, inválida y horario ocupado, deshabilita la acción durante la aceptación y deja al backend como fuente de verdad. WhatsApp, SMS, push, IA y reporting permanecen fuera de alcance.
+
+**F12.6 WAITLIST UX: IMPLEMENTADA; PENDIENTE DE REVALIDACIÓN**

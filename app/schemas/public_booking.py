@@ -1,6 +1,6 @@
 from pydantic import BaseModel, ConfigDict
 from datetime import date, datetime
-from pydantic import field_validator
+from pydantic import field_validator, model_validator
 
 class ReservaOnlineActualizar(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -62,6 +62,45 @@ class PublicReservaCreate(BaseModel):
     prestacion: str
     fecha_hora: str
     paciente: PublicPacienteReservaCreate
+
+class PublicWaitlistCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    prestacion: str
+    fecha_desde: date
+    fecha_hasta: date
+    hora_desde: str | None = None
+    hora_hasta: str | None = None
+    paciente: PublicPacienteReservaCreate
+
+    @field_validator("hora_desde", "hora_hasta")
+    @classmethod
+    def validar_hora(cls, valor: str | None) -> str | None:
+        if valor is None or not valor.strip():
+            return None
+        try:
+            datetime.strptime(valor, "%H:%M")
+        except ValueError as error:
+            raise ValueError("La hora debe tener formato HH:MM.") from error
+        return valor
+
+    @field_validator("fecha_hasta")
+    @classmethod
+    def validar_fechas(cls, valor: date, info):
+        desde = info.data.get("fecha_desde")
+        if desde is not None and valor < desde:
+            raise ValueError("La fecha hasta no puede ser anterior a la fecha desde.")
+        return valor
+
+    @model_validator(mode="after")
+    def validar_rango_horario(self):
+        if (self.hora_desde is None) != (self.hora_hasta is None):
+            raise ValueError("Debe indicar ambas horas o ninguna.")
+        if self.hora_desde is not None and self.hora_hasta <= self.hora_desde:
+            raise ValueError("La hora hasta debe ser posterior a la hora desde.")
+        return self
+
+class PublicWaitlistResponse(BaseModel):
+    message: str
 
 class PublicReservaResponse(BaseModel):
     reserva_id: str
