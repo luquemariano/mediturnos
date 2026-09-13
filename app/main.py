@@ -27,6 +27,7 @@ from app.routers.suscripciones import router as suscripciones_router, webhook_ro
 from app.routers.notifications import router as notifications_router
 from app.routers.admin_adoption import router as admin_adoption_router
 from app.routers.waitlist import router as waitlist_router
+from app.routers.public_waitlist import router as public_waitlist_router
 
 
 def crear_app(configuracion: Settings = settings) -> FastAPI:
@@ -92,6 +93,7 @@ def crear_app(configuracion: Settings = settings) -> FastAPI:
     app.include_router(notifications_router)
     app.include_router(admin_adoption_router)
     app.include_router(waitlist_router)
+    app.include_router(public_waitlist_router)
 
     @app.get("/")
     def inicio():

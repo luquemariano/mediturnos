@@ -26,16 +26,20 @@ def main() -> None:
         ["alembic", "upgrade", "head"],
         check=True,
     )
+    argumentos = [
+        "uvicorn",
+        "app.main:app",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        puerto,
+    ]
+    if os.getenv("APP_ENV", "development").lower() == "production":
+        argumentos.append("--no-access-log")
+
     os.execvp(
         "uvicorn",
-        [
-            "uvicorn",
-            "app.main:app",
-            "--host",
-            "0.0.0.0",
-            "--port",
-            puerto,
-        ],
+        argumentos,
     )
 
 

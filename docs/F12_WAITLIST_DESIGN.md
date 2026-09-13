@@ -174,3 +174,13 @@ La base quedó implementada: modelo `WaitlistEntry`, estados y constraints, migr
 F12.3 incorpora `ReleasedSlot` y `find_matching_waitlist_entries`. El matching filtra candidatos activos por profesional, prestación y fecha; luego valida preferencias en horario local y confirma el inicio mediante `obtener_horarios_libres`, reutilizando disponibilidad, excepciones y turnos ocupados. Se dispara después de commits exitosos de cancelación y reprogramación, evaluando únicamente el intervalo anterior en este último caso. No cambia estados, persiste matches ni crea ofertas, tokens, emails o scheduler.
 
 **F12.3 MATCHING: LISTO PARA REVALIDACIÓN**
+
+## Implementación F12.4
+
+Se agregaron ofertas persistidas con token SHA-256, expiración lazy de 30 minutos, consulta y aceptación pública, locking de oferta y revalidación final del slot. La aceptación reutiliza `crear_turno`; una oferta aceptada deja la entrada en `reservada` y una expirada u ocupada la devuelve a `activa`. No se envían emails ni se activa scheduler/creación automática desde F12.3. Los access logs pueden contener tokens en URL: la mitigación pendiente es rediseñar el enlace para fragment/header o sanitizar logs del proxy antes de producción.
+
+La cobertura específica queda en `tests/test_waitlist_offers.py`, incluyendo ciclo de vida, idempotencia, slot ocupado, exclusividad, expiración, revalidación, rate limit y no exposición del token. Los casos de concurrencia transaccional real deben validarse sobre PostgreSQL; SQLite sólo cubre la idempotencia secuencial.
+
+Los tokens de oferta siguen viajando en la URL por el diseño actual de los endpoints públicos. En producción, `app/scripts/start.py` inicia Uvicorn con `--no-access-log`, por lo que Uvicorn no registra esos paths; los logs de aplicación de waitlist tampoco incluyen tokens ni PII. Caddy no tiene access log habilitado actualmente (**NO DETERMINADO** fuera de la configuración declarada en el repositorio).
+
+**F12.4 WAITLIST OFFERS: LISTO PARA REVALIDACIÓN**
