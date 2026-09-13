@@ -20,6 +20,16 @@ export const PRODUCT_UPDATES: ProductUpdate[] = [{
   helpPath: "/ayuda/lista-de-espera",
   badge: "Nuevo",
   active: true,
+}, {
+  id: "f12-8-public-booking-share",
+  title: "Nuevo: compartí tu página de reservas",
+  description: "Copiá tu enlace personal, compartilo por WhatsApp o mostrale un QR a tus pacientes para que reserven solos.",
+  publishedAt: "2026-09-14",
+  ctaLabel: "Ir a Reserva online",
+  ctaPath: "/reserva-online",
+  helpPath: "/ayuda/como-compartir-pagina-reservas",
+  badge: "Nuevo",
+  active: true,
 }];
 
 export function getLatestActiveProductUpdate(updates: ProductUpdate[] = PRODUCT_UPDATES): ProductUpdate | undefined {

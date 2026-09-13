@@ -44,11 +44,13 @@ def create_study_results_notification(db: Session, request) -> None:
 
 def ensure_product_release_notification(db: Session, user_id: int) -> None:
     user = db.query(Usuario).filter(Usuario.id == user_id, Usuario.rol == "profesional").first()
-    if not user or db.query(Notification).filter(Notification.user_id == user_id, Notification.type == "product_release", Notification.entity_type == "product_update", Notification.entity_id == 127).first():
+    if not user:
         return
-    db.add(Notification(user_id=user_id, type="product_release", title="Nueva función: Lista de espera inteligente", message="Ahora podés recuperar turnos cancelados ofreciendo el horario automáticamente a pacientes en espera.", entity_type="product_update", entity_id=127))
-    # GET /notifications es el punto de entrada existente; este commit acotado
-    # hace durable el sembrado idempotente sin mezclar otras mutaciones.
+    notifications = [(127, "Nueva función: Lista de espera inteligente", "Ahora podés recuperar turnos cancelados ofreciendo el horario automáticamente a pacientes en espera."), (128, "Nuevo: compartí tu página de reservas", "Copiá tu enlace personal, compartilo por WhatsApp o mostrale un QR a tus pacientes para que reserven solos.")]
+    for entity_id, title, message in notifications:
+        if not db.query(Notification).filter(Notification.user_id == user_id, Notification.type == "product_release", Notification.entity_type == "product_update", Notification.entity_id == entity_id).first():
+            db.add(Notification(user_id=user_id, type="product_release", title=title, message=message, entity_type="product_update", entity_id=entity_id))
+    # Ambas novedades se conservan y cada una se siembra una sola vez por profesional.
     db.commit()
 
 

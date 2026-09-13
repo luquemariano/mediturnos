@@ -29,14 +29,23 @@ def test_product_release_is_idempotent_per_professional():
     user.rol = "profesional"; other_user.rol = "profesional"; db.commit()
     list_notifications(db, user.id); list_notifications(db, user.id); list_notifications(db, other_user.id)
     items, unread = list_notifications(db, user.id)
-    product = [item for item in items if item.type == "product_release"]
-    assert len(product) == 1 and unread == 1
-    assert product[0].entity_type == "product_update" and product[0].entity_id == 127
-    assert product[0].title == "Nueva función: Lista de espera inteligente"
-    assert "Paciente" not in product[0].message
-    assert len([item for item in list_notifications(db, other_user.id)[0] if item.type == "product_release"]) == 1
+    def release(items, entity_id):
+        return [item for item in items if item.type == "product_release" and item.entity_type == "product_update" and item.entity_id == entity_id]
+    first = release(items, 127); second = release(items, 128)
+    assert len(first) == 1 and len(second) == 1 and unread == 2
+    assert first[0].title == "Nueva función: Lista de espera inteligente"
+    assert second[0].title == "Nuevo: compartí tu página de reservas"
+    assert "Paciente" not in first[0].message and "Paciente" not in second[0].message
+    other_items, other_unread = list_notifications(db, other_user.id)
+    assert len(release(other_items, 127)) == 1 and len(release(other_items, 128)) == 1 and other_unread == 2
+    assert {item.user_id for item in first + second} == {user.id}
+    assert {item.user_id for item in release(other_items, 127) + release(other_items, 128)} == {other_user.id}
     from app.services.notification_service import mark_notification_read
-    mark_notification_read(db, user.id, product[0].id)
+    mark_notification_read(db, user.id, first[0].id)
     items_after, unread_after = list_notifications(db, user.id)
-    product_after = next(item for item in items_after if item.type == "product_release")
-    assert product_after.read_at is not None and unread_after == 0
+    assert release(items_after, 127)[0].read_at is not None
+    assert release(items_after, 128)[0].read_at is None and unread_after == 1
+    mark_notification_read(db, user.id, second[0].id)
+    items_final, unread_final = list_notifications(db, user.id)
+    assert release(items_final, 127)[0].read_at is not None and release(items_final, 128)[0].read_at is not None and unread_final == 0
+    assert len(release(items_final, 127)) == 1 and len(release(items_final, 128)) == 1
