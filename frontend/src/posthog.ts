@@ -11,6 +11,7 @@ export const POSTHOG_ALLOWED_EVENTS = new Set([
 ]);
 const ALLOWED_PROPERTIES = new Set(["source", "role", "plan", "resultado", "error_type", "modalidad", "duracion"]);
 const ERROR_TYPES = new Set(["validation", "conflict", "rate_limit", "network", "server", "unknown"]);
+const DIAGNOSTIC_EVENTS = new Set(["patient_created", "appointment_created", "email_verified"]);
 export function normalizePostHogError(error: unknown): string {
   const status = typeof error === "object" && error !== null && "response" in error ? (error as { response?: { status?: number } }).response?.status : undefined;
   if (status === 409) return "conflict";
@@ -54,6 +55,16 @@ export function capturePostHogEvent(name: string, properties?: Properties): void
     if (!ALLOWED_PROPERTIES.has(key) || typeof value !== "string") return false;
     return key !== "error_type" || ERROR_TYPES.has(value);
   }));
+  if (import.meta.env.PROD && DIAGNOSTIC_EVENTS.has(name)) {
+    console.debug("[posthog-diagnostic]", {
+      event: name,
+      properties: Object.fromEntries(
+        Object.entries(safeProperties).filter(([key]) =>
+          key === "source" || key === "role"
+        )
+      ),
+    });
+  }
   posthog.capture(name, safeProperties);
 }
 
