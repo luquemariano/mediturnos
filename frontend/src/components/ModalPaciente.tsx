@@ -10,7 +10,6 @@ import type {
   Paciente,
   PacienteCrear,
 } from "../types/paciente";
-import { capturePostHogEvent } from "../posthog";
 
 type ModalPacienteProps = {
   onCerrar: () => void;
@@ -96,7 +95,6 @@ function ModalPaciente({
         await crearPaciente(datos);
 
       onPacienteCreado(pacienteCreado);
-      capturePostHogEvent("patient_created", { source: "patients" });
     } catch (error) {
       if (axios.isAxiosError(error)) {
         const detalle =

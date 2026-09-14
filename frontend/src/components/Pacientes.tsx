@@ -19,6 +19,7 @@ import {
   getClinicalProfile,
   updateClinicalProfile,
 } from "../services/pacienteService";
+import { capturePostHogEvent } from "../posthog";
 
 type Props = {
   nombre: string;
@@ -111,6 +112,7 @@ export default function Pacientes(props: Props) {
         setSeleccion(paciente); setMensaje("Paciente actualizado correctamente.");
       } else {
         await crearPacienteProfesional(datos as Omit<PacienteSeleccion, "id">);
+        capturePostHogEvent("patient_created", { source: "patients" });
         setMensaje("Paciente creado correctamente.");
       }
       setModal(false); setEditando(false); setForm(FORM_VACIO);
