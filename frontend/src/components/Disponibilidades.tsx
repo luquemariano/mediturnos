@@ -11,6 +11,7 @@ import {
 import { obtenerProfesionales } from "../services/profesionalService";
 import type { Disponibilidad } from "../types/disponibilidad";
 import type { Profesional } from "../types/profesional";
+import { capturePostHogEvent } from "../posthog";
 
 type DisponibilidadesProps = { onVolver: () => void };
 
@@ -105,6 +106,7 @@ function Disponibilidades({ onVolver }: DisponibilidadesProps) {
       setHoraInicio("");
       setHoraFin("");
       setExito("La disponibilidad fue registrada correctamente.");
+      capturePostHogEvent("availability_created", { source: "availability" });
     } catch (error) {
       setErrorFormulario(detalleError(error, "No se pudo registrar la disponibilidad."));
     } finally {

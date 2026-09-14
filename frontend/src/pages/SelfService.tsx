@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { trackEvent } from "../analytics";
+import { capturePostHogEvent, normalizePostHogError } from "../posthog";
 import { formatoFechaHoraPublica, formatoHoraPublica } from "../utils/publicDateTime";
 import { obtenerDisponibilidadPublica } from "../services/publicBookingService";
 import { obtenerReservaPublica, cancelarReservaPublica, reprogramarReservaPublica, type PublicReserva } from "../services/publicBookingService";
@@ -47,8 +48,10 @@ export default function SelfService({ token }: { token: string }) {
       setR(await cancelarReservaPublica(token));
       setMensajeExito("Tu turno fue cancelado correctamente.");
       trackEvent("public_booking_cancel", { source: "self_service" });
-    } catch {
+      capturePostHogEvent("public_booking_cancel", { source: "self_service" });
+    } catch (error) {
       setMensajeError("No pudimos cancelar este turno.");
+      capturePostHogEvent("public_booking_error", { source: "self_service", error_type: normalizePostHogError(error) });
     }
   }
 
@@ -64,7 +67,9 @@ export default function SelfService({ token }: { token: string }) {
       setHoraSeleccionada("");
       setMostrarReprogramacion(false);
       trackEvent("public_booking_reschedule", { source: "self_service" });
+      capturePostHogEvent("public_booking_reschedule", { source: "self_service" });
     } catch (e) {
+      capturePostHogEvent("public_booking_error", { source: "self_service", error_type: normalizePostHogError(e) });
       const status = axios.isAxiosError(e) ? e.response?.status : undefined;
       setMensajeError(status === 409 ? "El horario seleccionado ya no está disponible." : status === 429 ? "Realizaste demasiados intentos. Probá nuevamente en unos minutos." : status === 400 ? "Elegí otro horario disponible." : "No pudimos reprogramar este turno.");
     }

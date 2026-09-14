@@ -13,6 +13,7 @@ import type { Paciente } from "../types/paciente";
 import type { Prestacion } from "../types/prestacion";
 import type { Profesional } from "../types/profesional";
 import type { HorarioLibre, Turno } from "../types/turno";
+import { capturePostHogEvent } from "../posthog";
 import {
   fechaActualNegocio,
   formatearHoraTurno,
@@ -134,6 +135,7 @@ function ModalNuevoTurno({ onCerrar, onTurnoCreado }: ModalNuevoTurnoProps) {
         observaciones: observaciones.trim() || null,
       });
       onTurnoCreado(turno);
+      capturePostHogEvent("appointment_created", { source: "appointments" });
     } catch (err) {
       setError(mensajeError(err, "No se pudo crear el turno."));
       if (axios.isAxiosError(err) && err.response?.status === 409 && fecha) {
