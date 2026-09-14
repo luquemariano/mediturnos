@@ -43,6 +43,8 @@ services:
       args:
         VITE_API_URL: ${VITE_API_URL}
         VITE_MERCADOPAGO_PUBLIC_KEY: ${VITE_MERCADOPAGO_PUBLIC_KEY}
+        VITE_POSTHOG_PROJECT_TOKEN: ${VITE_POSTHOG_PROJECT_TOKEN}
+        VITE_POSTHOG_HOST: ${VITE_POSTHOG_HOST}
     container_name: turnelia-ovh-frontend
     restart: unless-stopped
     networks:
