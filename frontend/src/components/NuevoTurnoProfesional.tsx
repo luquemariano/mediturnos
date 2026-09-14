@@ -14,6 +14,7 @@ import {
   formatearHoraTurno,
   horarioNoSeleccionable,
 } from "../utils/fechaTurno";
+import { capturePostHogEvent } from "../posthog";
 
 type Props = {
   onCerrar: () => void;
@@ -88,12 +89,14 @@ export default function NuevoTurnoProfesional({ onCerrar, onCreado }: Props) {
     setGuardando(true);
     setError("");
     try {
-      onCreado(await crearMiTurnoProfesional({
+      const turno = await crearMiTurnoProfesional({
         paciente_id: Number(pacienteId),
         prestacion_id: Number(prestacionId),
         fecha_hora: fechaHora,
         observaciones: observaciones.trim() || null,
-      }));
+      });
+      onCreado(turno);
+      capturePostHogEvent("appointment_created", { source: "appointments" });
     } catch (motivo) {
       setError(detalleError(motivo, "No pudimos crear el turno."));
       if (axios.isAxiosError(motivo) && motivo.response?.status === 409 && fecha) {

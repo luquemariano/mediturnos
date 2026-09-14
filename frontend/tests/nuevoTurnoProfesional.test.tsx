@@ -7,10 +7,12 @@ import * as pacienteService from "../src/services/pacienteService";
 import * as prestacionService from "../src/services/prestacionService";
 import * as turnoService from "../src/services/turnoService";
 import type { Turno } from "../src/types/turno";
+import * as analytics from "../src/posthog";
 
 vi.mock("../src/services/pacienteService", () => ({ obtenerPacientesParaProfesional: vi.fn() }));
 vi.mock("../src/services/prestacionService", () => ({ obtenerMisPrestaciones: vi.fn(), obtenerPrestaciones: vi.fn() }));
 vi.mock("../src/services/turnoService", () => ({ crearMiTurnoProfesional: vi.fn(), obtenerHorariosLibres: vi.fn() }));
+vi.mock("../src/posthog", () => ({ capturePostHogEvent: vi.fn() }));
 
 const propia = { id: 3, nombre: "Consulta", descripcion: null, duracion_minutos: 50, precio: 100, modalidad: "presencial" as const, activa: true, profesional_id: 7, especialidad_id: 1 };
 const creado: Turno = { id: 9, paciente_id: 2, paciente_nombre: "Ana López", prestacion_id: 3, prestacion_nombre: "Consulta", profesional_nombre: "Sofía Ramírez", especialidad_nombre: "Clínica", fecha_hora: "2030-01-07T12:00:00Z", fecha_fin: "2030-01-07T12:50:00Z", estado: "reservado", observaciones: null };
@@ -146,6 +148,8 @@ describe("nuevo turno profesional", () => {
     expect(turnoService.crearMiTurnoProfesional).toHaveBeenCalledWith(expect.not.objectContaining({ profesional_id: expect.anything() }));
     resolver(creado);
     await waitFor(() => expect(onCreado).toHaveBeenCalledWith(creado));
+    expect(analytics.capturePostHogEvent).toHaveBeenCalledTimes(1);
+    expect(analytics.capturePostHogEvent).toHaveBeenCalledWith("appointment_created", { source: "appointments" });
   });
 
   it("muestra el 409 y conserva los campos", async () => {
