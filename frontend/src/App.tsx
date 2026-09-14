@@ -53,6 +53,7 @@ import VerificarEmail from "./pages/VerificarEmail";
 import { reenviarVerificacion } from "./services/authService";
 import PublicBooking from "./pages/PublicBooking";
 import SelfService from "./pages/SelfService";
+import { capturePostHogEvent } from "./posthog";
 import ListaEsperaProfesional from "./components/ListaEsperaProfesional";
 import WaitlistOfferPage from "./pages/WaitlistOfferPage";
 
@@ -238,6 +239,7 @@ function App() {
 
       setUsuario(usuarioActual);
       trackEvent("login_success");
+      capturePostHogEvent("login_success", { role: usuarioActual.rol });
       setVista("dashboard");
       if (usuarioActual.rol === "profesional") {
         setBootSteps((actuales) => [...actuales, { id: "2", label: "Preparando tu espacio", status: "loading" }]);
@@ -382,6 +384,7 @@ function App() {
 
   async function manejarRegistroExitoso(_respuesta: RegistroProfesionalResponse) {
     trackEvent("sign_up_complete");
+    capturePostHogEvent("sign_up_complete", { source: "registro" });
     setEmail(""); setMensaje("Cuenta creada. Revisá tu correo para verificarla antes de iniciar sesión."); setVistaAcceso("login"); navegar("/login");
   }
 

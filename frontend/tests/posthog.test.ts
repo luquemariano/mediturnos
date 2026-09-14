@@ -19,8 +19,21 @@ describe("posthog", () => {
     });
   });
 
-  it("no realiza llamadas externas desde el wrapper desactivado", () => {
+  it("envía sólo un evento permitido y propiedades primitivas permitidas", () => {
+    vi.stubEnv("PROD", "true");
+    vi.stubEnv("VITE_POSTHOG_PROJECT_TOKEN", "test-token");
+    vi.stubEnv("VITE_POSTHOG_HOST", "https://eu.i.posthog.com");
     const capture = vi.spyOn(posthog, "capture");
+    capturePostHogEvent("patient_created", { source: "patients", email: "x@y.test", patient_id: "1", nombre: "Ana", observaciones: "texto", extra: ["x"] as never });
+    capturePostHogEvent("not_allowed", { source: "test" });
+    expect(capture).toHaveBeenCalledWith("patient_created", { source: "patients" });
+    expect(capture).not.toHaveBeenCalledWith("not_allowed", expect.anything());
+  });
+
+  it("no realiza llamadas externas desde el wrapper desactivado", () => {
+    vi.stubEnv("PROD", "false");
+    const capture = vi.spyOn(posthog, "capture");
+    capture.mockClear();
     capturePostHogEvent("business_event", { value: "no-send" });
     expect(capture).not.toHaveBeenCalled();
   });

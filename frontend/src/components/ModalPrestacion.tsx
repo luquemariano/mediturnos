@@ -17,6 +17,7 @@ import type {
   PrestacionCrear,
 } from "../types/prestacion";
 import type { Profesional } from "../types/profesional";
+import { capturePostHogEvent } from "../posthog";
 
 
 type ModalPrestacionProps = {
@@ -325,6 +326,7 @@ function ModalPrestacion({
       }
 
       onPrestacionGuardada(prestacionGuardada);
+      if (!esEdicion) capturePostHogEvent("prestation_created", { source: "prestations", modalidad: formulario.modalidad, duracion: String(duracionMinutos) });
     } catch (error) {
       setMensajeError(
         obtenerMensajeError(
