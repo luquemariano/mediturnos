@@ -5,6 +5,10 @@ import App from './App.tsx'
 import LegalPage from './legal/LegalPage.tsx'
 import { aplicarMetadatosSeo } from './seo/routeMetadata.ts'
 import { trackPageView } from './analytics.ts'
+import { initializePostHog } from './posthog.ts'
+import { PostHogProvider } from '@posthog/react'
+
+const posthogClient = initializePostHog()
 
 const pathname = window.location.pathname
 const legalKind = pathname === '/terminos'
@@ -20,6 +24,8 @@ if (legalKind) {
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    {legalKind ? <LegalPage kind={legalKind} /> : <App />}
+    <PostHogProvider client={posthogClient}>
+      {legalKind ? <LegalPage kind={legalKind} /> : <App />}
+    </PostHogProvider>
   </StrictMode>,
 )
