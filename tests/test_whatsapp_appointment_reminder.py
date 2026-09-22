@@ -64,12 +64,14 @@ def test_eligible_turno_sends_once_and_persists_minimal_payload():
     message = provider.sent_messages[0]
     assert item.status == "sent" and item.provider == "fake" and item.provider_message_id
     assert item.recipient_snapshot == "5493511234567" and "payload" not in item.__dict__
-    assert set(message.payload) == {"appointment_datetime", "professional_name", "confirm_action", "cancel_action"}
+    assert set(message.payload) == {"appointment_datetime", "professional_name", "confirm_token", "cancel_token"}
     assert "diagnostico" not in str(message.payload).lower() and "observaciones" not in str(message.payload).lower()
-    confirm = message.payload["confirm_action"].split("token=", 1)[1]
-    cancel = message.payload["cancel_action"].split("token=", 1)[1]
+    confirm = message.payload["confirm_token"]
+    cancel = message.payload["cancel_token"]
     assert verify_appointment_action_token(token=confirm, secret=SECRET, expected_scope="confirm")["turno_id"] == turn.id
     assert verify_appointment_action_token(token=cancel, secret=SECRET, expected_scope="cancel")["turno_id"] == turn.id
+    assert confirm not in repr(item) and cancel not in repr(item)
+    assert item.recipient_snapshot not in (confirm, cancel)
     db.close()
 
 

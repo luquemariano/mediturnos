@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from types import SimpleNamespace
-from urllib.parse import urlencode
 
 from sqlalchemy.orm import Session
 
@@ -48,11 +47,7 @@ def _idempotency_key(turno: Turno, snapshot: datetime) -> str:
     return f"appointment-reminder:{turno.id}:{snapshot.isoformat()}:whatsapp:v1"
 
 
-def _action_url(base_url: str, action: str, token: str) -> str:
-    return f"{base_url.rstrip('/')}/turnos/public/{action}?{urlencode({'token': token})}"
-
-
-def _outbound_message(turno: Turno, recipient: str, confirm_url: str, cancel_url: str) -> OutboundMessage:
+def _outbound_message(turno: Turno, recipient: str, confirm_token: str, cancel_token: str) -> OutboundMessage:
     return OutboundMessage(
         channel="whatsapp",
         recipient=recipient,
@@ -60,8 +55,8 @@ def _outbound_message(turno: Turno, recipient: str, confirm_url: str, cancel_url
         payload={
             "appointment_datetime": desde_base_utc(turno.fecha_hora).isoformat(),
             "professional_name": f"{turno.profesional.nombre} {turno.profesional.apellido}",
-            "confirm_action": confirm_url,
-            "cancel_action": cancel_url,
+            "confirm_token": confirm_token,
+            "cancel_token": cancel_token,
         },
     )
 
@@ -120,8 +115,8 @@ def send_whatsapp_appointment_reminder(
     message = _outbound_message(
         turno,
         recipient,
-        _action_url(_config_value(config, "public_api_url"), "confirmar", confirm_token),
-        _action_url(_config_value(config, "public_api_url"), "cancelar", cancel_token),
+        confirm_token,
+        cancel_token,
     )
     selected_provider = provider
     if selected_provider is None:

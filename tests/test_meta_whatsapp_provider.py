@@ -20,7 +20,7 @@ TOKEN = "test-meta-secret-token-DO-NOT-LEAK"
 def message(message_type="appointment_reminder_v1"):
     return OutboundMessage(
         channel="whatsapp", recipient="5493511234567", message_type=message_type,
-        payload={"appointment_datetime": "2026-09-23T10:00:00+00:00", "professional_name": "Profesional de prueba", "confirm_action": "https://api.example.test/confirmar?token=fake-action-token", "cancel_action": "https://api.example.test/cancelar?token=fake-action-token"},
+        payload={"appointment_datetime": "2026-09-23T10:00:00+00:00", "professional_name": "Profesional de prueba", "confirm_token": "fake-confirm-token", "cancel_token": "fake-cancel-token"},
     )
 
 
@@ -29,7 +29,7 @@ TEMPLATE_MAPPING = {
         name="test_appointment_reminder_template",
         language_code="es_AR",
         body_parameter_keys=("appointment_datetime", "professional_name"),
-        button_parameter_keys=("confirm_action", "cancel_action"),
+        button_parameter_keys=("confirm_token", "cancel_token"),
     ),
 }
 
@@ -51,6 +51,19 @@ def test_request_endpoint_headers_and_template_mapping():
     assert request.headers["Authorization"] == f"Bearer {TOKEN}"
     assert request.headers["Content-Type"] == "application/json"
     assert b"messaging_product" in body and b"recipient_type" in body and b"template" in body
+    import json
+    template = json.loads(body)["template"]
+    assert template["components"][0] == {"type": "body", "parameters": [
+        {"type": "text", "text": "2026-09-23T10:00:00+00:00"},
+        {"type": "text", "text": "Profesional de prueba"},
+    ]}
+    buttons = template["components"][1:]
+    # Meta template URLs: confirmar?token={{1}} (button 0), cancelar?token={{1}} (button 1).
+    # Cloud API receives only the value substituted for {{1}}: the signed token.
+    assert [(button["sub_type"], button["index"], button["parameters"][0]["text"]) for button in buttons] == [
+        ("url", "0", "fake-confirm-token"), ("url", "1", "fake-cancel-token"),
+    ]
+    assert all("https://" not in button["parameters"][0]["text"] for button in buttons)
     assert result.accepted and result.provider_message_id == "wamid.test-1"
 
 
@@ -94,7 +107,7 @@ def test_default_template_mapping_includes_appointment_reminder():
     assert mapping.name == "appointment_reminder_v1"
     assert mapping.language_code == "es_AR"
     assert mapping.body_parameter_keys == ("appointment_datetime", "professional_name")
-    assert mapping.button_parameter_keys == ("confirm_action", "cancel_action")
+    assert mapping.button_parameter_keys == ("confirm_token", "cancel_token")
     provider = get_messaging_provider(
         "meta", api_version="v99.0", phone_number_id="test-id", access_token=SecretStr(TOKEN),
     )
