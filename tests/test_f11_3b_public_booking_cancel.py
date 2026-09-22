@@ -1,10 +1,18 @@
-from datetime import date, time
+from datetime import date, datetime, time, timedelta
+from zoneinfo import ZoneInfo
 import pytest
 from tests.conftest import SessionTest
 from app.models.disponibilidad import Disponibilidad
 from app.models.turno import Turno
 from app.core.public_booking import hash_token_autogestion
 from tests.test_f11_2_public_booking_create import escenario, payload
+
+ZONA = ZoneInfo("America/Argentina/Buenos_Aires")
+BASE_DATE = date.today() + timedelta(days=(1 - date.today().weekday()) % 7 + 7)
+BASE_NOW = datetime.combine(BASE_DATE, time(8), tzinfo=ZONA)
+
+def slot(hour=10, minute=0):
+    return f"{BASE_DATE.isoformat()}T{hour:02d}:{minute:02d}:00-03:00"
 
 def reservar(client, db):
     profesional, prestacion = escenario(db)
@@ -83,17 +91,17 @@ def test_rate_limit_cancelacion_es_independiente_de_consulta(client):
 
 def test_cancelacion_libera_slot_y_permite_segunda_reserva(client, monkeypatch):
     db=SessionTest(); profesional, prestacion=escenario(db)
-    monkeypatch.setattr("app.services.public_booking_service.ahora_negocio", lambda: __import__('datetime').datetime(2026, 9, 15, 8, tzinfo=__import__('zoneinfo').ZoneInfo("America/Argentina/Buenos_Aires")))
+    monkeypatch.setattr("app.services.public_booking_service.ahora_negocio", lambda: BASE_NOW)
     db.add(Disponibilidad(profesional_id=profesional.id, dia_semana=1, hora_inicio=time(10), hora_fin=time(10,30))); db.commit()
-    body=payload(prestacion); body["fecha_hora"]="2026-09-15T10:00:00-03:00"
+    body=payload(prestacion); body["fecha_hora"]=slot()
     first=client.post(f"/public/profesionales/{profesional.slug_publico}/reservas", json=body); assert first.status_code==201
     token=first.json()["autogestion_token"]
-    params={"prestacion":prestacion.identificador_publico,"fecha_desde":"2026-09-15","fecha_hasta":"2026-09-15"}
+    params={"prestacion":prestacion.identificador_publico,"fecha_desde":BASE_DATE.isoformat(),"fecha_hasta":BASE_DATE.isoformat()}
     assert client.get(f"/public/profesionales/{profesional.slug_publico}/disponibilidad", params=params).json()["dias"][0]["horarios"]==[]
     assert client.post(f"/public/reservas/{token}/cancelar").status_code==200
     horarios=client.get(f"/public/profesionales/{profesional.slug_publico}/disponibilidad", params=params).json()["dias"][0]["horarios"]
-    assert horarios==["2026-09-15T10:00:00-03:00"]
-    second_body=payload(prestacion,email="segunda@example.com"); second_body["fecha_hora"]="2026-09-15T10:00:00-03:00"
+    assert horarios==[slot()]
+    second_body=payload(prestacion,email="segunda@example.com"); second_body["fecha_hora"]=slot()
     second=client.post(f"/public/profesionales/{profesional.slug_publico}/reservas", json=second_body); assert second.status_code==201
     assert second.json()["reserva_id"] != first.json()["reserva_id"]
     first_turno=db.query(Turno).filter_by(identificador_publico=first.json()["reserva_id"]).one(); second_turno=db.query(Turno).filter_by(identificador_publico=second.json()["reserva_id"]).one()
@@ -105,7 +113,7 @@ def test_bucket_cancelacion_no_bloquea_creacion(client):
     token=first["autogestion_token"]
     for _ in range(10): assert client.post(f"/public/reservas/{token}/cancelar").status_code==200
     assert client.post(f"/public/reservas/{token}/cancelar").status_code==429
-    body=payload(prestacion,email="otro-bucket@example.com"); body["fecha_hora"]="2026-09-15T11:00:00-03:00"
+    body=payload(prestacion,email="otro-bucket@example.com"); body["fecha_hora"]=slot(hour=11)
     assert client.post(f"/public/profesionales/{profesional.slug_publico}/reservas", json=body).status_code==201
     db.close()
 

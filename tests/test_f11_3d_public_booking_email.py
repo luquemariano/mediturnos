@@ -1,6 +1,12 @@
-from datetime import datetime, time, timezone
+from datetime import date, datetime, time, timedelta, timezone
 from zoneinfo import ZoneInfo
 import pytest
+
+BASE_DATE = date.today() + timedelta(days=(1 - date.today().weekday()) % 7 + 7)
+BASE_NOW = datetime.combine(BASE_DATE, time(8), tzinfo=ZoneInfo("America/Argentina/Buenos_Aires"))
+
+def slot(hour=10, minute=30):
+    return f"{BASE_DATE.isoformat()}T{hour:02d}:{minute:02d}:00-03:00"
 from tests.conftest import SessionTest
 from app.models.disponibilidad import Disponibilidad
 from app.models.turno import Turno
@@ -26,7 +32,7 @@ def test_reserva_publica_envia_confirmacion_con_mismo_token(client):
     db.close()
 
 def test_email_subject_html_text_y_frontend_url_sin_doble_slash():
-    mensaje=construir_email_confirmacion_reserva_publica(destinatario="ana@example.com",paciente="Ana Pérez",profesional="Laura Gómez",prestacion="Consulta",modalidad="presencial",fecha_hora=__import__('datetime').datetime(2026,9,15,13,30,tzinfo=__import__('datetime').timezone.utc),autogestion_token="tok")
+    mensaje=construir_email_confirmacion_reserva_publica(destinatario="ana@example.com",paciente="Ana Pérez",profesional="Laura Gómez",prestacion="Consulta",modalidad="presencial",fecha_hora=datetime.combine(BASE_DATE,time(13,30),tzinfo=timezone.utc),autogestion_token="tok")
     assert mensaje.asunto=="Tu turno fue reservado - Turnelia"; assert "10:30 hs" in mensaje.texto and "/reserva/tok" in mensaje.texto; assert "10:30" in mensaje.html and "tok" in mensaje.html
 
 def test_fallo_email_conserva_turno_hash_y_uuid(client, monkeypatch):
@@ -58,11 +64,11 @@ def test_paciente_reutilizado_por_dni_usa_email_actual_sin_sobrescribir_maestro(
 
 def test_validacion_temporal_invalida_no_intenta_email(client, monkeypatch):
     db=SessionTest(); profesional, prestacion=escenario(db); db.add(Disponibilidad(profesional_id=profesional.id,dia_semana=1,hora_inicio=time(10),hora_fin=time(12))); db.commit(); calls=[]
-    monkeypatch.setattr("app.services.public_booking_service.ahora_negocio",lambda: datetime(2026,9,15,8,tzinfo=ZoneInfo("America/Argentina/Buenos_Aires"))); monkeypatch.setattr("app.services.public_booking_service.enviar_confirmacion_reserva_publica",lambda **kwargs:calls.append(kwargs)); body=payload(prestacion); body["fecha_hora"]="2026-09-15T09:59:00-03:00"
+    monkeypatch.setattr("app.services.public_booking_service.ahora_negocio",lambda: BASE_NOW); monkeypatch.setattr("app.services.public_booking_service.enviar_confirmacion_reserva_publica",lambda **kwargs:calls.append(kwargs)); body=payload(prestacion); body["fecha_hora"]=slot(hour=9,minute=59)
     assert client.post(f"/public/profesionales/{profesional.slug_publico}/reservas",json=body).status_code==400 and calls==[]; db.close()
 
 def test_timezone_end_to_end_en_html_y_texto(client):
-    development_email_outbox.clear(); db=SessionTest(); profesional, prestacion=escenario(db); db.add(Disponibilidad(profesional_id=profesional.id,dia_semana=1,hora_inicio=time(10),hora_fin=time(12))); db.commit(); body=payload(prestacion); body["fecha_hora"]="2026-09-15T10:30:00-03:00"
+    development_email_outbox.clear(); db=SessionTest(); profesional, prestacion=escenario(db); db.add(Disponibilidad(profesional_id=profesional.id,dia_semana=1,hora_inicio=time(10),hora_fin=time(12))); db.commit(); body=payload(prestacion); body["fecha_hora"]=slot()
     response=client.post(f"/public/profesionales/{profesional.slug_publico}/reservas",json=body); assert response.status_code==201; contenido=development_email_outbox["ana@example.com"]; assert "10:30 hs" in contenido and "13:30" not in contenido; db.close()
 
 def test_envio_exacto_una_vez(client, monkeypatch):
