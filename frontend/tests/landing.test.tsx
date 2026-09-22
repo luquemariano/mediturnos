@@ -24,6 +24,13 @@ describe("LandingPage FAQ", () => {
     expect(capturePostHogEvent).toHaveBeenCalledWith("help_article_click", { source: "landing_recordatorios" });
   });
 
+  it("representa la tarjeta de recordatorios y destaca WhatsApp en reservas online", () => {
+    render(<LandingPage />);
+    expect(screen.getByRole("heading", { name: "Recordatorios por email y WhatsApp", level: 3 })).toBeInTheDocument();
+    const whatsapp = document.querySelector(".online-booking-benefit .whatsapp-highlight");
+    expect(whatsapp).toHaveTextContent("WhatsApp");
+  });
+
   it("renderiza las 11 preguntas cerradas inicialmente", () => {
     render(<LandingPage />);
     const preguntas = screen.getAllByRole("button", { name: /\?/ });
