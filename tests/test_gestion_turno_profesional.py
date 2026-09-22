@@ -56,6 +56,23 @@ def test_cancelacion_profesional_es_idempotente(monkeypatch):
     assert turno_service.cancelar_turno_profesional(DbFalsa(), 1, 10).estado == "cancelado"
 
 
+def test_accion_cancelacion_canonica_evalua_waitlist_solo_si_libera_slot(monkeypatch):
+    actual = turno()
+    evaluaciones = []
+    monkeypatch.setattr(turno_service, "_evaluar_waitlist_slot_liberado", lambda *args: evaluaciones.append(args))
+
+    resultado, codigo = turno_service.aplicar_accion_turno_validado(DbFalsa(), actual, "cancel")
+
+    assert resultado.estado == "cancelado"
+    assert codigo == "cancel"
+    assert len(evaluaciones) == 1
+
+    resultado, codigo = turno_service.aplicar_accion_turno_validado(DbFalsa(), actual, "cancel")
+    assert resultado.estado == "cancelado"
+    assert codigo == "already_cancelled"
+    assert len(evaluaciones) == 1
+
+
 @pytest.mark.parametrize("estado", ["finalizado", "ausente"])
 def test_profesional_no_cancela_estado_terminal(monkeypatch, estado):
     monkeypatch.setattr(turno_service, "buscar_turno_de_profesional", lambda *args: turno(estado))

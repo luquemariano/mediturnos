@@ -1,10 +1,12 @@
 import logging
 from datetime import UTC, datetime
 
+from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.datetime_utils import desde_base_utc
 from app.models.turno import Turno
+from app.services.turno_service import aplicar_accion_turno_validado
 from app.services.appointment_action_token_service import (
     AppointmentActionTokenError,
     verify_appointment_action_token,
@@ -34,18 +36,12 @@ def apply_appointment_action(db: Session, *, token: str, secret: str, action: st
     if desde_base_utc(turno.fecha_hora) <= current:
         raise AppointmentActionError("passed")
 
-    if action == "confirm":
-        if turno.estado == "confirmado":
-            return turno, "already_confirmed"
-        if turno.estado != "reservado":
-            raise AppointmentActionError("not_allowed")
-        turno.estado = "confirmado"
-    else:
-        if turno.estado == "cancelado":
-            return turno, "already_cancelled"
-        if turno.estado not in {"reservado", "confirmado"}:
-            raise AppointmentActionError("not_allowed")
-        turno.estado = "cancelado"
-    db.commit()
-    logger.info("appointment_action.%s", f"{action}ed" if action == "confirm" else "cancelled")
-    return turno, action
+    try:
+        turno, result = aplicar_accion_turno_validado(db, turno, action)
+    except HTTPException as error:
+        if error.status_code == 409:
+            raise AppointmentActionError("not_allowed") from error
+        raise
+    if result in {"confirm", "cancel"}:
+        logger.info("appointment_action.%s", f"{action}ed" if action == "confirm" else "cancelled")
+    return turno, result
