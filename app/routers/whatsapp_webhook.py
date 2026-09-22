@@ -8,7 +8,7 @@ from app.services.whatsapp_webhook_service import parse_webhook_events, verify_w
 
 
 router = APIRouter(prefix="/webhooks/whatsapp", tags=["WhatsApp webhook"])
-logger = logging.getLogger("mediturnos.whatsapp_webhook")
+logger = logging.getLogger("uvicorn.error")
 
 
 def _enabled() -> None:

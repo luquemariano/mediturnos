@@ -84,7 +84,7 @@ def test_post_logs_only_safe_message_metadata(monkeypatch, caplog):
             return body
 
     import asyncio
-    with caplog.at_level("INFO", logger="mediturnos.whatsapp_webhook"):
+    with caplog.at_level("INFO", logger=whatsapp_webhook.logger.name):
         result = asyncio.run(whatsapp_webhook.receive(Request()))
 
     logs = caplog.text
@@ -107,7 +107,7 @@ def test_post_logs_safe_status_metadata_and_unknown_event_stays_accepted(monkeyp
             return body
 
     import asyncio
-    with caplog.at_level("INFO", logger="mediturnos.whatsapp_webhook"):
+    with caplog.at_level("INFO", logger=whatsapp_webhook.logger.name):
         result = asyncio.run(whatsapp_webhook.receive(Request()))
 
     logs = caplog.text
