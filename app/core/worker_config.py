@@ -18,6 +18,9 @@ class AppointmentReminderWorkerSettings(BaseSettings):
     appointment_action_secret: SecretStr | None = None
     whatsapp_enabled: bool = False
     whatsapp_provider: Literal["fake", "meta"] = "fake"
+    whatsapp_api_version: str | None = None
+    whatsapp_phone_number_id: str | None = None
+    whatsapp_access_token: SecretStr | None = None
     waitlist_offer_worker_interval_seconds: int = 60
 
     @model_validator(mode="after")
@@ -35,6 +38,26 @@ class AppointmentReminderWorkerSettings(BaseSettings):
                 raise ValueError("RESEND_API_KEY es obligatorio con EMAIL_PROVIDER=resend.")
             if not self.email_from or not self.email_from.strip():
                 raise ValueError("EMAIL_FROM es obligatorio con EMAIL_PROVIDER=resend.")
+        if self.whatsapp_enabled and self.whatsapp_provider == "meta":
+            missing = [
+                name
+                for name, value in (
+                    ("WHATSAPP_API_VERSION", self.whatsapp_api_version),
+                    ("WHATSAPP_PHONE_NUMBER_ID", self.whatsapp_phone_number_id),
+                    ("WHATSAPP_ACCESS_TOKEN", self.whatsapp_access_token),
+                )
+                if value is None
+                or not (
+                    value.get_secret_value()
+                    if isinstance(value, SecretStr)
+                    else str(value)
+                ).strip()
+            ]
+            if missing:
+                raise ValueError(
+                    "Con WHATSAPP_ENABLED=true y WHATSAPP_PROVIDER=meta, "
+                    "faltan configuración: " + ", ".join(missing) + "."
+                )
         if self.app_env == "production" and (not self.appointment_action_secret or len(self.appointment_action_secret.get_secret_value().strip()) < 32):
             raise ValueError("En production, APPOINTMENT_ACTION_SECRET debe tener al menos 32 caracteres.")
         if self.app_env == "production" and not self.public_api_url.strip():

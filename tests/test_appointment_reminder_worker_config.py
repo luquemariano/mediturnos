@@ -3,7 +3,7 @@ import subprocess
 import sys
 
 import pytest
-from pydantic import ValidationError
+from pydantic import SecretStr, ValidationError
 
 from app.core.worker_config import AppointmentReminderWorkerSettings
 
@@ -59,6 +59,53 @@ def test_worker_requires_resend_credentials():
             email_provider="resend",
             email_from="verified@example.com",
         )
+
+
+def test_worker_meta_config_completa_es_valida_y_token_es_secreto():
+    settings = AppointmentReminderWorkerSettings(
+        _env_file=None,
+        database_url="sqlite:///./worker-test.db",
+        app_env="test",
+        whatsapp_enabled=True,
+        whatsapp_provider="meta",
+        whatsapp_api_version="v99.0",
+        whatsapp_phone_number_id="test-phone-id",
+        whatsapp_access_token="test-access-token",
+    )
+
+    assert settings.whatsapp_api_version == "v99.0"
+    assert settings.whatsapp_phone_number_id == "test-phone-id"
+    assert isinstance(settings.whatsapp_access_token, SecretStr)
+    assert "test-access-token" not in repr(settings)
+
+
+def test_worker_meta_habilitado_requiere_las_tres_credenciales():
+    with pytest.raises(ValidationError, match="WHATSAPP_API_VERSION.*WHATSAPP_PHONE_NUMBER_ID.*WHATSAPP_ACCESS_TOKEN"):
+        AppointmentReminderWorkerSettings(
+            _env_file=None,
+            database_url="sqlite:///./worker-test.db",
+            app_env="test",
+            whatsapp_enabled=True,
+            whatsapp_provider="meta",
+        )
+
+
+@pytest.mark.parametrize(
+    "values",
+    (
+        {"whatsapp_enabled": False, "whatsapp_provider": "meta"},
+        {"whatsapp_enabled": True, "whatsapp_provider": "fake"},
+    ),
+)
+def test_worker_sin_meta_no_requiere_credenciales(values):
+    settings = AppointmentReminderWorkerSettings(
+        _env_file=None,
+        database_url="sqlite:///./worker-test.db",
+        app_env="test",
+        **values,
+    )
+
+    assert settings.whatsapp_access_token is None
 
 
 @pytest.mark.parametrize("url", ["", "not-a-url", "http://localhost:8000", "http://127.0.0.1:8000", "https://api.example.com/path?x=1", "https://api.example.com/#fragment", "https://user:pass@api.example.com"])

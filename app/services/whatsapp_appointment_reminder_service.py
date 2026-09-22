@@ -6,7 +6,12 @@ from urllib.parse import urlencode
 from sqlalchemy.orm import Session
 
 from app.core.datetime_utils import desde_base_utc
-from app.integrations.messaging import OutboundMessage, MessagingProvider, get_messaging_provider
+from app.integrations.messaging import (
+    DEFAULT_TEMPLATE_MAPPING,
+    OutboundMessage,
+    MessagingProvider,
+    get_messaging_provider,
+)
 from app.models.message_delivery import MessageDelivery
 from app.models.turno import Turno
 from app.services.appointment_action_token_service import generate_appointment_action_token
@@ -118,7 +123,19 @@ def send_whatsapp_appointment_reminder(
         _action_url(_config_value(config, "public_api_url"), "confirmar", confirm_token),
         _action_url(_config_value(config, "public_api_url"), "cancelar", cancel_token),
     )
-    selected_provider = provider or get_messaging_provider(_config_value(config, "whatsapp_provider"))
+    selected_provider = provider
+    if selected_provider is None:
+        provider_name = _config_value(config, "whatsapp_provider")
+        if provider_name == "meta":
+            selected_provider = get_messaging_provider(
+                provider_name,
+                api_version=_config_value(config, "whatsapp_api_version"),
+                phone_number_id=_config_value(config, "whatsapp_phone_number_id"),
+                access_token=_config_value(config, "whatsapp_access_token"),
+                template_mapping=DEFAULT_TEMPLATE_MAPPING,
+            )
+        else:
+            selected_provider = get_messaging_provider(provider_name)
     try:
         result = selected_provider.send(message)
     except Exception as error:
