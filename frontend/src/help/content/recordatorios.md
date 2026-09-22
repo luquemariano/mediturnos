@@ -1,41 +1,67 @@
 ---
 slug: recordatorios
-title: Recordatorios
-description: Conocé cómo funcionan los recordatorios automáticos de turnos por correo electrónico.
+title: Recordatorios automáticos por email y WhatsApp
+description: Conocé cómo funcionan los recordatorios automáticos de turnos por email y WhatsApp, y cómo tus pacientes pueden confirmar o cancelar su asistencia.
 category: agenda
 order: 100
 ---
 
-## Qué son los recordatorios
+## Qué hacen los recordatorios
 
-Turnelia puede procesar recordatorios automáticos por correo electrónico antes de determinados turnos. El procesamiento no garantiza que el mensaje llegue a la bandeja del destinatario.
+Turnelia recuerda automáticamente los próximos turnos para ayudar a que tus pacientes tengan presente su cita. Según los datos del paciente y las condiciones disponibles, el aviso puede enviarse por email, por WhatsApp o por ambos canales. La entrega de un mensaje no está garantizada en todos los casos.
 
-## A qué turnos se aplican
+## Cómo funcionan
 
-Se consideran turnos futuros en estado **Pendiente** o **Confirmado**. Los turnos cancelados, ausentes y finalizados no forman parte de esta selección.
+Turnelia detecta los turnos próximos y procesa los recordatorios de manera automática. Aproximadamente 24 horas antes del turno puede enviar el aviso, dentro del proceso habitual de la agenda; no significa que todos los mensajes se envíen exactamente a las 24 horas. El profesional no necesita enviar manualmente cada recordatorio.
 
-## Cuándo se envían
+## Qué necesita el paciente para recibir WhatsApp
 
-Turnelia busca turnos próximos dentro de una ventana configurada alrededor de las 24 horas previas. El proceso corre periódicamente, por lo que no significa que el correo se envíe exactamente a una hora fija.
+Para recibir un recordatorio por WhatsApp, el paciente necesita tener un teléfono válido y haber dado su consentimiento explícito para recibir comunicaciones por ese canal. Si alguno de estos requisitos no está disponible, no debe prometerse el envío por WhatsApp.
 
-## A qué email llega
+## Qué pasa cuando el paciente confirma
 
-El recordatorio se prepara para la dirección de email del paciente registrada en Turnelia.
+El paciente puede confirmar el turno desde el mensaje de WhatsApp. Turnelia registra su respuesta y actualiza el estado del turno en la agenda.
 
-## Qué pasa si no hay email
+## Qué pasa cuando el paciente cancela
 
-Si el paciente no tiene una dirección de correo disponible o la dirección no es válida, el recordatorio puede omitirse.
+El paciente también puede cancelar el turno desde WhatsApp. El turno queda cancelado en Turnelia y el horario vuelve a quedar disponible. Si corresponde, puede continuar el flujo existente de [Lista de espera](/ayuda/lista-de-espera). Esto no significa que siempre haya otro paciente disponible ni que el horario se ocupe automáticamente.
 
-## Reintentos
+## Qué ocurre si WhatsApp no puede enviarse
 
-Si ocurre un error temporal de envío, Turnelia puede volver a intentar el procesamiento. El estado final depende del resultado del proveedor de correo.
+La entrega de un mensaje puede depender de la disponibilidad y de otras condiciones externas del canal. Email y WhatsApp son canales independientes: que un mensaje no pueda enviarse por WhatsApp no implica necesariamente que se envíe por email como reemplazo automático.
 
-## ¿Está garantizada la entrega?
+## Recordatorios por email
 
-> Importante: Turnelia procesa y envía los recordatorios a través de un proveedor de correo, pero la entrega final también depende del servidor de destino, filtros antispam y disponibilidad del servicio.
+Los recordatorios por email continúan disponibles. WhatsApp es un canal adicional y no necesariamente reemplaza al email; ambos pueden coexistir según los datos y condiciones disponibles.
 
-## ¿Puedo enviar uno manualmente?
+## Preguntas frecuentes
 
-Actualmente no existe una acción manual desde la agenda para reenviar un recordatorio.
+### ¿Tengo que enviar los WhatsApp manualmente?
 
-Consultá también [Turnos](/ayuda/turnos).
+No. Los recordatorios se procesan automáticamente para los turnos que cumplen las condiciones.
+
+### ¿El paciente necesita instalar Turnelia?
+
+No. La interacción ocurre desde el mensaje recibido.
+
+### ¿Puede confirmar un turno desde WhatsApp?
+
+Sí. Puede confirmar desde el mensaje y Turnelia actualizará el estado del turno en la agenda.
+
+### ¿Puede cancelar un turno desde WhatsApp?
+
+Sí. La cancelación se registra en Turnelia y el horario vuelve a quedar disponible.
+
+### ¿Puede reprogramar un turno desde WhatsApp?
+
+Actualmente la reprogramación desde WhatsApp no está disponible.
+
+### ¿WhatsApp reemplaza los recordatorios por email?
+
+No necesariamente. Son canales independientes y pueden coexistir.
+
+### ¿La entrega del mensaje está garantizada?
+
+No. La entrega también depende de la disponibilidad y las condiciones del canal.
+
+Consultá también [Turnos](/ayuda/turnos) y [Lista de espera](/ayuda/lista-de-espera).

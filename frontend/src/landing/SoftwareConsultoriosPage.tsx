@@ -8,7 +8,7 @@ const funciones = [
   ["Pacientes", "Buscá pacientes y accedé a su ficha para organizar la atención."],
   ["Disponibilidad", "Definí días, franjas horarias, excepciones y vacaciones."],
   ["Prestaciones", "Configurá los servicios que ofrecés y su duración."],
-  ["Recordatorios por email", "Ayudá a tus pacientes a confirmar o cancelar sus turnos."],
+  ["Recordatorios por email y WhatsApp", "Ayudá a tus pacientes a confirmar o cancelar sus turnos."],
   ["Seguimiento de la atención", "Registrá evoluciones y consultá el seguimiento cuando lo necesites."],
 ] as const;
 
@@ -21,7 +21,7 @@ const preguntas = [
   ["¿Puedo reprogramar turnos?", "Sí. La agenda permite organizar y actualizar los turnos según la disponibilidad configurada."],
   ["¿Necesito instalar un programa?", "No. Turnelia funciona desde el navegador, sin instalar un programa."],
   ["¿Puedo usar Turnelia desde el celular?", "Sí. Podés acceder desde computadora, tablet o celular con conexión a Internet."],
-  ["¿Turnelia envía recordatorios de turnos?", "Sí. Turnelia envía recordatorios automáticos por email antes de los turnos."],
+  ["¿Turnelia envía recordatorios de turnos?", "Sí. Turnelia envía recordatorios automáticos por email y WhatsApp antes de los turnos. WhatsApp requiere un teléfono válido y consentimiento del paciente."],
 ] as const;
 
 function SoftwareHeader() {

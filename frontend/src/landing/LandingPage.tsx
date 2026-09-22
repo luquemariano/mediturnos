@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { LANDING_ASSETS, PLANES, WHATSAPP_URL } from "./landingConfig";
 import { trackEvent } from "../analytics";
+import { capturePostHogEvent } from "../posthog";
 import "./LandingPage.css";
 
 const funciones = [
@@ -9,7 +10,7 @@ const funciones = [
   ["Disponibilidad", "Definí días, horarios de atención, excepciones y vacaciones."],
   ["Reserva online para tus pacientes", "Compartí tu enlace público para que tus pacientes puedan ver horarios disponibles y reservar un turno sin llamarte ni escribirte."],
   ["Prestaciones", "Configurá los servicios que ofrecés y organizá tu actividad profesional."],
-  ["Recordatorios automáticos", "Recordá cada turno por email y permití que tus pacientes confirmen o cancelen con un clic."],
+  ["Recordatorios por email y WhatsApp", "Recordá cada turno automáticamente y permití que tus pacientes confirmen o cancelen sin trabajo manual."],
   ["Lista de espera inteligente", "Recuperá turnos cancelados ofreciendo el horario a pacientes que están esperando."],
   ["Multidispositivo", "Usá Turnelia desde computadora, tablet o celular."],
 ];
@@ -23,7 +24,7 @@ const preguntasFrecuentes = [
   ["¿Puedo gestionar mis turnos y pacientes desde el celular?", "Sí. Turnelia puede utilizarse desde el navegador de tu celular, tablet o computadora, permitiéndote consultar y gestionar la información de tu consultorio desde distintos dispositivos."],
   ["¿Puedo registrar la información y evolución de mis pacientes?", "Sí. Turnelia permite mantener organizada la información de tus pacientes y registrar el seguimiento de cada atención, para que puedas consultar su evolución cuando la necesites."],
   ["¿Mis pacientes necesitan tener una cuenta en Turnelia?", "No. Como profesional podés administrar tus pacientes y sus turnos directamente desde tu cuenta de Turnelia, sin necesidad de que cada paciente tenga una cuenta propia. También pueden reservar online desde tu enlace público sin ingresar a Turnelia."],
-  ["¿Turnelia envía recordatorios de los turnos?", "Sí. Turnelia envía recordatorios por correo electrónico a tus pacientes antes de sus turnos. Desde el mismo mensaje, el paciente puede confirmar o cancelar su asistencia, ayudándote a mantener la agenda actualizada y reducir ausencias."],
+  ["¿Turnelia envía recordatorios de los turnos?", "Sí. Turnelia envía recordatorios automáticos por email y WhatsApp antes de los turnos. WhatsApp requiere un teléfono válido y consentimiento del paciente; desde ese mensaje puede confirmar o cancelar, y Turnelia actualiza la agenda."],
   ["¿Qué tan segura y confidencial es la información de mis pacientes?", "La información de tus pacientes es confidencial y está protegida mediante controles de acceso. Los datos clínicos y de atención quedan disponibles únicamente para el profesional correspondiente, evitando accesos no autorizados."],
   ["¿Qué incluye el Plan Profesional?", "El Plan Profesional incluye las herramientas necesarias para organizar tu actividad diaria: gestión de pacientes, agenda y turnos, prestaciones, disponibilidad y seguimiento de la atención desde una única plataforma."],
   ["¿Puedo cancelar la suscripción cuando quiera?", "Sí. Podés cancelar tu suscripción cuando lo necesites, sin permanencia mínima. Además, la información que generes en Turnelia sigue siendo tuya: podés descargar los datos de tu actividad y de tus pacientes para conservarlos o utilizarlos fuera de la plataforma."],
@@ -44,10 +45,10 @@ function LineIcon({ name }: { name: string }) {
   return <svg className="landing-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">{paths[name]}</svg>;
 }
 
-function ReminderEmailVisual() {
-  return <div className="reminder-email" aria-label="Vista ilustrativa de un email de recordatorio de turno">
-    <div className="reminder-email__top"><span className="reminder-email__dot" aria-hidden="true" /><strong>Turnelia</strong><span>•••</span></div>
-    <div className="reminder-email__body"><p className="eyebrow">Recordatorio de turno</p><h3>Tu próximo turno</h3><p className="reminder-email__date">19/08/2026 · 20:50</p><div className="reminder-email__details"><span>Profesional</span><strong>Dra. Sofía Ramírez</strong><span>Especialidad</span><strong>Consulta demo</strong></div><p>¿Vas a asistir? Confirmá o cancelá tu turno desde este email.</p><div className="reminder-email__actions"><button className="button" type="button" aria-label="Botón ilustrativo confirmar turno">Confirmar turno</button><button className="button button--outline" type="button" aria-label="Botón ilustrativo cancelar turno">Cancelar turno</button></div></div>
+function ReminderChannelsVisual() {
+  return <div className="reminder-channels" role="img" aria-label="Ejemplo de recordatorios automáticos por email y WhatsApp con opciones para confirmar o cancelar un turno">
+    <div className="reminder-channels__top"><span className="reminder-channels__dot" aria-hidden="true" /><strong>Turnelia</strong><span aria-hidden="true">•••</span></div>
+    <div className="reminder-channels__body"><p className="eyebrow">Recordatorio de turno</p><h3>Tu próximo turno</h3><p className="reminder-channels__date">19/08/2026 · 20:50</p><div className="reminder-channels__details"><span>Profesional</span><strong>Dra. Sofía Ramírez</strong><span>Especialidad</span><strong>Consulta demo</strong></div><div className="reminder-channels__panels"><div className="reminder-channel"><span className="reminder-channel__label">Email</span><p>¿Vas a asistir? Confirmá o cancelá tu turno.</p></div><div className="reminder-channel reminder-channel--whatsapp"><span className="reminder-channel__label">WhatsApp</span><p>Hola. Te recordamos tu próximo turno en Turnelia.</p><div className="reminder-channel__actions" aria-hidden="true"><span>Confirmar</span><span>Cancelar</span></div></div></div><p className="reminder-channels__status">La agenda se actualiza cuando el paciente responde.</p></div>
   </div>;
 }
 
@@ -120,6 +121,12 @@ export default function LandingPage() {
   function medirRegistro(evento: React.MouseEvent<HTMLDivElement>) {
     const enlace = (evento.target as Element).closest<HTMLAnchorElement>('a[href="/registro"]');
     if (enlace) trackEvent("sign_up_click", { source: "landing" });
+    const ayudaRecordatorios = (evento.target as Element).closest<HTMLAnchorElement>('a[href="/ayuda/recordatorios"]');
+    if (ayudaRecordatorios) {
+      const properties = { source: "landing_recordatorios" };
+      trackEvent("help_article_click", properties);
+      capturePostHogEvent("help_article_click", properties);
+    }
   }
   return <div className="landing-page" onClick={medirRegistro}>
     <LandingHeader />
@@ -135,7 +142,7 @@ export default function LandingPage() {
       <section className="benefits" aria-label="Ventajas de Turnelia"><div className="landing-container benefits__grid">{[["En la nube", "Accedé desde cualquier lugar."], ["En cualquier dispositivo", "Computadora, tablet o celular."], ["Acceso protegido", "Cada profesional trabaja con su propia cuenta."]].map(([title, text], index) => <article key={title}><LineIcon name={index === 1 ? "devices" : index === 2 ? "shield" : "clock"}/><div><h2>{title}</h2><p>{text}</p></div></article>)}</div></section><section className="landing-section online-booking-benefit"><div className="landing-container section-heading"><p className="eyebrow">Reserva online</p><h2>Recibí reservas online las 24 horas</h2><p>Compartí tu página personal de Turnelia por WhatsApp, redes sociales o con un código QR. Tus pacientes pueden ver horarios disponibles y reservar sin mensajes de ida y vuelta.</p></div></section>
       <section id="funciones" className="landing-section features"><div className="landing-container"><div className="section-heading"><p className="eyebrow">Funciones</p><h2>Todo lo que necesitás para organizar tu consulta</h2><p>Conocé también nuestro <a href="/software-para-consultorios">software para consultorios</a> y <a href="/sistema-de-turnos">sistema de turnos</a> para centralizar la gestión diaria.</p></div><div className="features__grid">{funciones.map(([title, text], index) => <article key={title}><LineIcon name={iconos[index]}/><h3>{title}</h3><p>{text}</p></article>)}</div></div></section>
       <Showcase eyebrow="Agenda" title="Tu día, claro desde el primer vistazo" text="Al ingresar a Turnelia sabés qué pacientes tenés, a qué hora llegan y cómo está organizada tu jornada." bullets={["Próximos turnos", "Estado de cada atención", "Acceso rápido a la agenda", "Disponibilidad del día"]} asset={LANDING_ASSETS.dashboard}/>
-      <section id="recordatorios" className="landing-section reminder-showcase"><div className="landing-container reminder-showcase__grid"><div className="showcase__copy"><p className="eyebrow">Recordatorios automáticos</p><h2>Menos ausencias. Más control sobre tu agenda.</h2><p>Turnelia recuerda automáticamente los próximos turnos y permite que cada paciente confirme o cancele su asistencia desde el mismo email.</p><ul><li>Recordatorios automáticos antes del turno</li><li>Confirmación directa desde el email</li><li>Cancelación sin llamadas ni mensajes</li><li>El estado se actualiza automáticamente en tu agenda</li></ul><p className="reminder-showcase__microcopy">El paciente responde en segundos y la agenda se actualiza automáticamente.</p></div><ReminderEmailVisual /></div></section>
+      <section id="recordatorios" className="landing-section reminder-showcase"><div className="landing-container reminder-showcase__grid"><div className="showcase__copy"><p className="eyebrow">Recordatorios automáticos</p><h2>Menos ausencias. Más control sobre tu agenda.</h2><p>Turnelia recuerda automáticamente los próximos turnos por email y WhatsApp. Si el paciente tiene un teléfono válido y dio su consentimiento, puede confirmar o cancelar desde WhatsApp; Turnelia actualiza el estado y una cancelación libera el horario para que, si corresponde, continúe el flujo de lista de espera.</p><ul><li>Recordatorios automáticos antes del turno</li><li>Email y WhatsApp como canales independientes</li><li>Confirmación o cancelación desde WhatsApp</li><li>Agenda actualizada y cancelaciones conectadas con la lista de espera</li></ul><p className="reminder-showcase__microcopy">Cuando el paciente confirma o cancela, Turnelia actualiza el estado del turno.</p><p><a href="/ayuda/recordatorios">Conocé cómo funcionan los recordatorios</a></p></div><ReminderChannelsVisual /></div></section>
       <Showcase eyebrow="Pacientes" title="Tus pacientes, siempre a mano" text="Buscá rápidamente a cada paciente y accedé a la información necesaria para gestionar su atención." bullets={["Búsqueda por nombre, DNI o teléfono", "Información accesible para gestionar la atención", "Historia clínica y evoluciones"]} asset={LANDING_ASSETS.pacientes} reverse/>
       <Showcase eyebrow="Disponibilidad" title="Tus horarios se adaptan a tu forma de trabajar" text="Definí cuándo atendés y Turnelia organiza la disponibilidad alrededor de tu práctica profesional." bullets={["Días de atención", "Franjas horarias", "Excepciones", "Vacaciones y días no laborables"]} asset={LANDING_ASSETS.disponibilidad}/>
       <Showcase eyebrow="Prestaciones" title="Organizá los servicios que ofrecés" text="Configurá las prestaciones de tu consulta para que la agenda represente realmente la manera en que trabajás." bullets={["Servicios de tu consulta", "Actividad profesional organizada"]} asset={LANDING_ASSETS.prestaciones} reverse imageVariant="prestaciones"/>

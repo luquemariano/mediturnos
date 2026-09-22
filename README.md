@@ -38,7 +38,7 @@ La producción actual usa Docker Compose, PostgreSQL 18, Caddy, Cloudflare, Rese
 
 ### Lista de espera
 
-La base de lista de espera, matching de candidatos, ofertas con vencimiento, worker y aceptación pública están implementados en código y cubiertos por tests. La experiencia completa continúa **EN CURSO / PENDIENTE DE REVALIDACIÓN EN EL ENTORNO OBJETIVO**. WhatsApp, SMS, push, IA y reporting no forman parte del alcance actual.
+La base de lista de espera, matching de candidatos, ofertas con vencimiento, worker y aceptación pública están implementados en código y cubiertos por tests. La experiencia completa continúa **EN CURSO / PENDIENTE DE REVALIDACIÓN EN EL ENTORNO OBJETIVO**. Los recordatorios por WhatsApp requieren consentimiento explícito y teléfono válido; permiten confirmar o cancelar, conviven con email y una cancelación puede continuar el flujo de lista de espera. SMS, push, IA y reporting no forman parte del alcance actual.
 
 ### Cuenta y seguridad
 
@@ -54,7 +54,7 @@ La base de lista de espera, matching de candidatos, ofertas con vencimiento, wor
 - Suscripciones SaaS con planes, trial, estados, sincronización, cancelación y webhooks de Mercado Pago.
 - Pagos clínicos de turnos mediante un flujo separado de las suscripciones SaaS.
 - Emails transaccionales mediante Resend; recuperación de contraseña verificada en producción.
-- Recordatorios automáticos por email, procesados por un worker cada 15 minutos mediante cron del VPS.
+- Recordatorios automáticos por email y WhatsApp, procesados por un worker cada 15 minutos mediante cron del VPS. WhatsApp requiere consentimiento explícito y teléfono válido; email y WhatsApp pueden coexistir, y las cancelaciones pueden continuar el flujo de lista de espera.
 
 ### Analítica y SEO
 
@@ -164,7 +164,7 @@ Render y Aiven son la infraestructura anterior. Render API y cron están suspend
 
 - **En curso / pendiente de revalidación:** experiencia completa de lista de espera inteligente en el entorno objetivo.
 - **Pendiente:** auditoría de cambios, ampliación de validación PostgreSQL y estabilidad adicional de Playwright E2E.
-- **Fuera de alcance:** WhatsApp transaccional, SMS, push, IA, reporting avanzado y directorio público.
+- **Fuera de alcance:** SMS, push, IA, reporting avanzado y directorio público.
 - **Ya implementados:** reserva online pública, enlace de adquisición, Centro de Ayuda, analítica PostHog/GA4 e infraestructura OVH.
 
 La fuente de detalle es [`docs/ROADMAP.md`](docs/ROADMAP.md); las prioridades comerciales no están determinadas en el repositorio.

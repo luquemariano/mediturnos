@@ -3,7 +3,7 @@ import { getHelpArticleBySlug } from "../help/helpContent";
 const HOME_TITLE =
   "Turnelia | Sistema de turnos y gestión para consultorios";
 const HOME_DESCRIPTION =
-  "Gestioná turnos, pacientes, historias clínicas, horarios y prestaciones desde una sola plataforma. Software de gestión para profesionales y consultorios.";
+  "Gestioná turnos, pacientes, agenda y recordatorios automáticos por email y WhatsApp desde una sola plataforma. Software para profesionales y consultorios.";
 const HOME_CANONICAL = "https://turnelia.com.ar/";
 const HELP_TITLE = "Centro de Ayuda | Turnelia";
 const HELP_DESCRIPTION = "Guías y tutoriales para configurar Turnelia, gestionar turnos, pacientes y tu agenda profesional.";
