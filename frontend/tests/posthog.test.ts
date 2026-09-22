@@ -35,6 +35,15 @@ describe("posthog", () => {
     expect(capture).not.toHaveBeenCalledWith("not_allowed", expect.anything());
   });
 
+  it("permite el clic a ayuda con sólo un source seguro", () => {
+    vi.stubEnv("PROD", "true");
+    vi.stubEnv("VITE_POSTHOG_PROJECT_TOKEN", "test-token");
+    vi.stubEnv("VITE_POSTHOG_HOST", "https://eu.i.posthog.com");
+    const capture = vi.spyOn(posthog, "capture");
+    capturePostHogEvent("help_article_click", { source: "landing_recordatorios", email: "no-enviar@example.com" });
+    expect(capture).toHaveBeenCalledWith("help_article_click", { source: "landing_recordatorios" });
+  });
+
   it.each(["public_booking_attempt", "public_booking_success"])("envía %s exactamente al posthog real", (eventName) => {
     vi.stubEnv("PROD", "true");
     vi.stubEnv("VITE_POSTHOG_PROJECT_TOKEN", "test-token");

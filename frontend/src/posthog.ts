@@ -7,7 +7,7 @@ export const POSTHOG_ALLOWED_EVENTS = new Set([
   "prestation_created", "availability_created", "patient_created", "appointment_created",
   "appointment_updated", "appointment_cancelled", "public_booking_view",
   "public_booking_availability_view", "public_booking_attempt", "public_booking_success",
-  "public_booking_error", "public_booking_cancel", "public_booking_reschedule",
+  "public_booking_error", "public_booking_cancel", "public_booking_reschedule", "help_article_click",
 ]);
 const ALLOWED_PROPERTIES = new Set(["source", "role", "plan", "resultado", "error_type", "modalidad", "duracion"]);
 const ERROR_TYPES = new Set(["validation", "conflict", "rate_limit", "network", "server", "unknown"]);

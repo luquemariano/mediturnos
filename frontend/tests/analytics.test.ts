@@ -32,6 +32,20 @@ describe("analytics", () => {
     expect(window.gtag).toHaveBeenCalledWith("event", "sign_up_click", { source: "software_consultorios" });
   });
 
+  it("permite medir el clic a una guía sin aceptar PII", async () => {
+    window.gtag = vi.fn();
+    trackEvent("help_article_click", { source: "landing_recordatorios", email: "no-enviar@example.com" });
+    await Promise.resolve();
+    expect(window.gtag).toHaveBeenCalledWith("event", "help_article_click", { source: "landing_recordatorios" });
+  });
+
+  it("ignora eventos fuera del allowlist", async () => {
+    window.gtag = vi.fn();
+    trackEvent("not_allowed", { source: "landing_recordatorios" });
+    await Promise.resolve();
+    expect(window.gtag).not.toHaveBeenCalled();
+  });
+
   it("filtra parámetros a campos comerciales permitidos", () => {
     expect(() => trackEvent("subscription_start", { plan: "profesional", email: "persona@example.com", paciente_id: "42" })).not.toThrow();
   });
