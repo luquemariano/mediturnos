@@ -4,9 +4,11 @@ from types import SimpleNamespace
 from pydantic import SecretStr
 
 from app.integrations.messaging import FakeMessagingProvider
+from app.integrations.messaging import DEFAULT_TEMPLATE_MAPPING
 from app.models.message_delivery import MessageDelivery
 from app.models.turno import Turno
 from app.services.appointment_action_token_service import verify_appointment_action_token
+from app.services import whatsapp_appointment_reminder_service as reminder_service
 from app.services.whatsapp_appointment_reminder_service import send_whatsapp_appointment_reminder
 from tests.conftest import SessionTest
 
@@ -86,4 +88,36 @@ def test_provider_failure_marks_failed_and_not_processing():
     item = db.get(MessageDelivery, result.delivery_id)
     assert result.status == "failed" and item.status == "failed" and item.processing_started_at is None
     assert item.last_error and "secret" not in item.last_error.lower()
+    db.close()
+
+
+def test_meta_config_se_pasa_al_factory_con_mapping(monkeypatch):
+    turn = turno()
+    meta_config = config()
+    meta_config.whatsapp_provider = "meta"
+    meta_config.whatsapp_api_version = "v99.0"
+    meta_config.whatsapp_phone_number_id = "test-phone-id"
+    meta_config.whatsapp_access_token = SecretStr("test-access-token")
+    captured = {}
+    provider = FakeMessagingProvider()
+
+    def factory(provider_name, **values):
+        captured["provider_name"] = provider_name
+        captured.update(values)
+        return provider
+
+    monkeypatch.setattr(reminder_service, "get_messaging_provider", factory)
+    db = SessionTest()
+    real_get = db.get
+    db.get = lambda model, item_id: turn if model is Turno else real_get(model, item_id)
+
+    result = send_whatsapp_appointment_reminder(db, turn.id, config=meta_config)
+
+    assert result.status == "sent"
+    assert captured["provider_name"] == "meta"
+    assert captured["api_version"] == "v99.0"
+    assert captured["phone_number_id"] == "test-phone-id"
+    assert captured["access_token"] == meta_config.whatsapp_access_token
+    assert captured["template_mapping"] is DEFAULT_TEMPLATE_MAPPING
+    assert len(provider.sent_messages) == 1
     db.close()

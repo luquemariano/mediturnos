@@ -14,5 +14,6 @@ def get_messaging_provider(provider: str, **config) -> MessagingProvider:
             api_version=config["api_version"],
             phone_number_id=config["phone_number_id"],
             access_token=config["access_token"],
+            template_mapping=config.get("template_mapping"),
         )
     raise MessagingConfigurationError("El proveedor de mensajería solicitado no está disponible.")

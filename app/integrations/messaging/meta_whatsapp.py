@@ -20,7 +20,7 @@ class MetaTemplateDefinition:
     button_parameter_keys: tuple[str, ...] = ()
 
 
-TEST_TEMPLATE_MAPPING = {
+DEFAULT_TEMPLATE_MAPPING = {
     "appointment_reminder_v1": MetaTemplateDefinition(
         name="appointment_reminder_v1",
         language_code="es_AR",
@@ -50,7 +50,9 @@ class MetaWhatsAppProvider:
         self._owns_client = client is None
         self._client = client or httpx.Client()
         self._timeout = httpx.Timeout(timeout_seconds)
-        self._template_mapping = dict(template_mapping or {})
+        self._template_mapping = dict(
+            DEFAULT_TEMPLATE_MAPPING if template_mapping is None else template_mapping
+        )
 
     def close(self) -> None:
         if self._owns_client:

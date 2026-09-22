@@ -7,10 +7,11 @@ from .base import (
 )
 from .factory import get_messaging_provider
 from .fake import FakeMessagingProvider
-from .meta_whatsapp import MetaTemplateDefinition, MetaWhatsAppProvider
+from .meta_whatsapp import DEFAULT_TEMPLATE_MAPPING, MetaTemplateDefinition, MetaWhatsAppProvider
 
 __all__ = [
     "FakeMessagingProvider",
+    "DEFAULT_TEMPLATE_MAPPING",
     "MetaTemplateDefinition",
     "MetaWhatsAppProvider",
     "MessageDeliveryResult",

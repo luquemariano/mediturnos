@@ -3,6 +3,7 @@ import pytest
 from pydantic import SecretStr
 
 from app.integrations.messaging import (
+    DEFAULT_TEMPLATE_MAPPING,
     FakeMessagingProvider,
     MetaWhatsAppProvider,
     MessagingConfigurationError,
@@ -85,3 +86,26 @@ def test_factory_keeps_fake_and_builds_meta_or_rejects_incomplete_config():
     assert isinstance(get_messaging_provider("fake"), FakeMessagingProvider)
     assert isinstance(get_messaging_provider("meta", api_version="v99.0", phone_number_id="test-id", access_token=SecretStr(TOKEN)), MetaWhatsAppProvider)
     with pytest.raises(MessagingConfigurationError): get_messaging_provider("meta", api_version="v99.0", phone_number_id="", access_token=None)
+
+
+def test_default_template_mapping_includes_appointment_reminder():
+    mapping = DEFAULT_TEMPLATE_MAPPING["appointment_reminder_v1"]
+
+    assert mapping.name == "appointment_reminder_v1"
+    assert mapping.language_code == "es_AR"
+    assert mapping.body_parameter_keys == ("appointment_datetime", "professional_name")
+    assert mapping.button_parameter_keys == ("confirm_action", "cancel_action")
+    provider = get_messaging_provider(
+        "meta", api_version="v99.0", phone_number_id="test-id", access_token=SecretStr(TOKEN),
+    )
+    assert "appointment_reminder_v1" in provider._template_mapping
+    provider.close()
+    customized = get_messaging_provider(
+        "meta",
+        api_version="v99.0",
+        phone_number_id="test-id",
+        access_token=SecretStr(TOKEN),
+        template_mapping=TEMPLATE_MAPPING,
+    )
+    assert customized._template_mapping == TEMPLATE_MAPPING
+    customized.close()
