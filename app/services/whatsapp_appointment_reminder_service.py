@@ -5,7 +5,6 @@ from urllib.parse import urlencode
 
 from sqlalchemy.orm import Session
 
-from app.core.config import settings
 from app.core.datetime_utils import desde_base_utc
 from app.integrations.messaging import OutboundMessage, MessagingProvider, get_messaging_provider
 from app.models.message_delivery import MessageDelivery
@@ -33,7 +32,11 @@ class WhatsAppReminderResult:
 
 
 def _config_value(config, name: str):
-    return getattr(config or settings, name)
+    if config is not None:
+        return getattr(config, name)
+    from app.core.config import settings
+
+    return getattr(settings, name)
 
 
 def _idempotency_key(turno: Turno, snapshot: datetime) -> str:
