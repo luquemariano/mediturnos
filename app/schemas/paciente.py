@@ -58,3 +58,4 @@ class PacienteProfesionalActualizar(BaseModel):
     telefono: str | None = Field(default=None, min_length=6, max_length=30)
     email: str | None = Field(default=None, max_length=150)
     fecha_nacimiento: date | None = None
+    whatsapp_opt_in: bool | None = None

@@ -1,3 +1,5 @@
+from datetime import datetime, UTC
+
 from fastapi import HTTPException
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -13,6 +15,7 @@ from app.repositories.paciente_repository import (
     buscar_propios, buscar_propio, buscar_vinculo, buscar_por_dni, turnos_propios,
 )
 from app.schemas.paciente import PacienteCrear, PacienteProfesionalCrear, PacienteProfesionalActualizar
+from app.services.phone_service import normalize_phone_number
 
 
 def crear_paciente(
@@ -100,12 +103,28 @@ def actualizar_paciente_profesional(db: Session, profesional_id: int, paciente_i
     if paciente is None:
         raise HTTPException(status_code=404, detail="Paciente no encontrado.")
     cambios = datos.model_dump(exclude_unset=True)
+    telefono_cambio = (
+        "telefono" in cambios
+        and normalize_phone_number(cambios["telefono"]) != normalize_phone_number(paciente.telefono)
+    )
+    cambio_opt_in = cambios.pop("whatsapp_opt_in", None)
     if "dni" in cambios and cambios["dni"]:
         existente = buscar_por_dni(db, cambios["dni"])
         if existente and existente.id != paciente.id:
             raise HTTPException(status_code=409, detail="Ya existe un paciente con ese DNI.")
     for campo, valor in cambios.items():
         setattr(paciente, campo, valor)
+    if telefono_cambio and paciente.whatsapp_opt_in:
+        paciente.whatsapp_opt_in = False
+        paciente.whatsapp_opt_out_at = datetime.now(UTC)
+    if cambio_opt_in is not None:
+        if cambio_opt_in and not paciente.whatsapp_opt_in:
+            paciente.whatsapp_opt_in = True
+            paciente.whatsapp_opt_in_at = datetime.now(UTC)
+            paciente.whatsapp_opt_out_at = None
+        elif not cambio_opt_in and paciente.whatsapp_opt_in:
+            paciente.whatsapp_opt_in = False
+            paciente.whatsapp_opt_out_at = datetime.now(UTC)
     db.commit(); db.refresh(paciente)
     return paciente
 
