@@ -25,7 +25,7 @@ DEFAULT_TEMPLATE_MAPPING = {
         name="appointment_reminder_v1",
         language_code="es_AR",
         body_parameter_keys=("appointment_datetime", "professional_name"),
-        button_parameter_keys=("confirm_action", "cancel_action"),
+        button_parameter_keys=("confirm_token", "cancel_token"),
     ),
 }
 
