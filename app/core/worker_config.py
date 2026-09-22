@@ -16,6 +16,8 @@ class AppointmentReminderWorkerSettings(BaseSettings):
     email_from: str | None = None
     public_api_url: str = ""
     appointment_action_secret: SecretStr | None = None
+    whatsapp_enabled: bool = False
+    whatsapp_provider: Literal["fake", "meta"] = "fake"
     waitlist_offer_worker_interval_seconds: int = 60
 
     @model_validator(mode="after")
