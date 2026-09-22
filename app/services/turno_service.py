@@ -1,4 +1,4 @@
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 import logging
 
 from fastapi import HTTPException
@@ -103,6 +103,31 @@ def aplicar_transicion_estado(
 ) -> None:
     validar_transicion_estado(turno.estado, estado_nuevo)
     turno.estado = estado_nuevo
+
+
+def aplicar_accion_turno_validado(
+    db: Session,
+    turno: Turno,
+    accion: str,
+) -> tuple[Turno, str]:
+    """Aplica una acción sobre un turno ya autenticado y bloqueado."""
+    if accion == "confirm":
+        if turno.estado == "confirmado":
+            return turno, "already_confirmed"
+        if turno.estado != "reservado":
+            raise HTTPException(status_code=409, detail="La confirmación no está disponible para este turno.")
+        aplicar_transicion_estado(turno, "confirmado")
+        return _confirmar_cambio_turno(db, turno), "confirm"
+
+    if accion != "cancel":
+        raise ValueError(f"Acción de turno desconocida: {accion}")
+    if turno.estado == "cancelado":
+        return turno, "already_cancelled"
+    slot_liberado = (turno.fecha_hora, turno.fecha_fin)
+    aplicar_transicion_estado(turno, "cancelado")
+    resultado = _confirmar_cambio_turno(db, turno)
+    _evaluar_waitlist_slot_liberado(turno.profesional_id, turno.prestacion_id, *slot_liberado, db)
+    return resultado, "cancel"
 
 
 def _confirmar_cambio_turno(
@@ -549,14 +574,7 @@ def cancelar_turno_profesional(
             detail="Turno no encontrado.",
         )
 
-    if turno.estado == "cancelado":
-        return turno
-
-    slot_liberado = (turno.fecha_hora, turno.fecha_fin)
-    aplicar_transicion_estado(turno, "cancelado")
-    resultado = _confirmar_cambio_turno(db, turno)
-    _evaluar_waitlist_slot_liberado(turno.profesional_id, turno.prestacion_id, *slot_liberado, db)
-    return resultado
+    return aplicar_accion_turno_validado(db, turno, "cancel")[0]
 
 def cancelar_turno_paciente(
     db: Session,
@@ -581,11 +599,4 @@ def cancelar_turno_paciente(
             detail="El turno ya se encuentra cancelado.",
         )
 
-    slot_liberado = (turno.fecha_hora, turno.fecha_fin)
-    aplicar_transicion_estado(turno, "cancelado")
-
-    db.commit()
-    db.refresh(turno)
-    _evaluar_waitlist_slot_liberado(turno.profesional_id, turno.prestacion_id, *slot_liberado, db)
-
-    return turno
+    return aplicar_accion_turno_validado(db, turno, "cancel")[0]

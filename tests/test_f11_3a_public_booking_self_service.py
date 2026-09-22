@@ -1,4 +1,4 @@
-from datetime import datetime, time
+from datetime import datetime, time, timedelta
 import hashlib
 import pytest
 from tests.conftest import SessionTest
@@ -30,7 +30,8 @@ def test_turno_historico_sin_token_no_es_consultable(client):
     from app.models.paciente import Paciente
     paciente = Paciente(nombre="Histórico", apellido="Paciente", email="historico@example.com", activo=True)
     db.add(paciente); db.flush()
-    turno = Turno(paciente_id=paciente.id, prestacion_id=prestacion.id, profesional_id=profesional.id, fecha_hora=__import__('datetime').datetime(2026, 9, 15, 13), fecha_fin=__import__('datetime').datetime(2026, 9, 15, 13, 30))
+    fecha_historica = datetime.now().replace(hour=13, minute=0, second=0, microsecond=0) - timedelta(days=1)
+    turno = Turno(paciente_id=paciente.id, prestacion_id=prestacion.id, profesional_id=profesional.id, fecha_hora=fecha_historica, fecha_fin=fecha_historica + timedelta(minutes=30))
     db.add(turno); db.commit()
     assert client.get(f"/public/reservas/{turno.identificador_publico}").status_code == 404
     db.close()

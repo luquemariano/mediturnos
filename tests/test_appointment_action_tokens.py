@@ -1,6 +1,8 @@
 from datetime import UTC, datetime, timedelta
 
 import pytest
+import base64
+import json
 
 from app.services.appointment_action_token_service import (
     AppointmentActionTokenError,
@@ -26,3 +28,32 @@ def test_token_rejects_tampering_and_expiration():
         verify_appointment_action_token(token=token[:-1] + "x", secret="s" * 40, expected_scope="confirm", now=issued)
     with pytest.raises(AppointmentActionTokenError):
         verify_appointment_action_token(token=token, secret="s" * 40, expected_scope="confirm", now=issued + timedelta(hours=49))
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [("turno_id", 8), ("snapshot", "2026-08-20T10:00:00+00:00"), ("issued_at", 1)],
+)
+def test_token_rejects_payload_field_tampering(field, value):
+    issued = datetime(2026, 8, 19, tzinfo=UTC)
+    token = generate_appointment_action_token(
+        secret="s" * 40,
+        turno_id=7,
+        appointment_datetime_snapshot=issued,
+        action_scope="confirm",
+        issued_at=issued,
+    )
+    payload_text, signature_text = token.split(".", 1)
+    payload = json.loads(base64.urlsafe_b64decode(payload_text + "=" * (-len(payload_text) % 4)))
+    payload[field] = value
+    tampered_payload = base64.urlsafe_b64encode(
+        json.dumps(payload, separators=(",", ":"), sort_keys=True).encode()
+    ).decode().rstrip("=")
+
+    with pytest.raises(AppointmentActionTokenError, match="invalid_token"):
+        verify_appointment_action_token(
+            token=f"{tampered_payload}.{signature_text}",
+            secret="s" * 40,
+            expected_scope="confirm",
+            now=issued,
+        )

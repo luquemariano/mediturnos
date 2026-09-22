@@ -1,7 +1,7 @@
-from datetime import date
+from datetime import date, datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, Date, ForeignKey, String
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database.base import Base
@@ -56,6 +56,10 @@ class Paciente(Base):
         String(30),
         nullable=True,
     )
+
+    whatsapp_opt_in: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    whatsapp_opt_in_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    whatsapp_opt_out_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     email: Mapped[str | None] = mapped_column(
         String(150),

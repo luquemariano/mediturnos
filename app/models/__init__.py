@@ -25,6 +25,7 @@ from app.models.appointment_reminder import AppointmentReminder
 from app.models.study_review import StudyReview
 from app.models.notification import Notification
 from app.models.email_verification_token import EmailVerificationToken
+from app.models.message_delivery import MessageDelivery
 from app.models.user_activity_event import UserActivityEvent
 from app.models.waitlist_entry import WaitlistEntry
 from app.models.waitlist_offer import WaitlistOffer

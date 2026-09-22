@@ -82,6 +82,14 @@ class Settings(BaseSettings):
     email_provider: Literal["in_memory", "resend"] = "in_memory"
     resend_api_key: SecretStr | None = None
     email_from: str | None = None
+    whatsapp_enabled: bool = False
+    whatsapp_provider: Literal["fake", "meta"] = "fake"
+    whatsapp_phone_number_id: str | None = None
+    whatsapp_business_account_id: str | None = None
+    whatsapp_access_token: SecretStr | None = None
+    whatsapp_verify_token: SecretStr | None = None
+    whatsapp_app_secret: SecretStr | None = None
+    whatsapp_api_version: str | None = None
     demo_seed_enabled: bool = False
     demo_admin_email: str | None = None
     demo_admin_password: SecretStr | None = None
@@ -195,6 +203,28 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def validar_configuracion_produccion(self) -> "Settings":
+        if self.whatsapp_enabled and self.whatsapp_provider == "meta":
+            faltantes = [
+                nombre
+                for nombre, valor in (
+                    ("WHATSAPP_PHONE_NUMBER_ID", self.whatsapp_phone_number_id),
+                    ("WHATSAPP_ACCESS_TOKEN", self.whatsapp_access_token),
+                    ("WHATSAPP_VERIFY_TOKEN", self.whatsapp_verify_token),
+                    ("WHATSAPP_API_VERSION", self.whatsapp_api_version),
+                )
+                if valor is None
+                or not (
+                    valor.get_secret_value()
+                    if isinstance(valor, SecretStr)
+                    else str(valor)
+                ).strip()
+            ]
+            if faltantes:
+                raise ValueError(
+                    "Con WHATSAPP_ENABLED=true y WHATSAPP_PROVIDER=meta, "
+                    "faltan configuración: " + ", ".join(faltantes) + "."
+                )
+
         access_token = (
             self.mercadopago_access_token.get_secret_value().strip()
             if self.mercadopago_access_token is not None
