@@ -88,6 +88,7 @@ class Settings(BaseSettings):
     whatsapp_business_account_id: str | None = None
     whatsapp_access_token: SecretStr | None = None
     whatsapp_verify_token: SecretStr | None = None
+    whatsapp_app_secret: SecretStr | None = None
     whatsapp_api_version: str | None = None
     demo_seed_enabled: bool = False
     demo_admin_email: str | None = None
