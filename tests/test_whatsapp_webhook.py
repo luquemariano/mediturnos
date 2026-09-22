@@ -70,3 +70,47 @@ def test_post_signature_and_invalid_json(monkeypatch):
     import asyncio
     result = asyncio.run(whatsapp_webhook.receive(Request()))
     assert result == {"received": True, "events": 0}
+
+
+def test_post_logs_only_safe_message_metadata(monkeypatch, caplog):
+    enable(monkeypatch)
+    body = json.dumps({"object": "whatsapp_business_account", "entry": [{"changes": [{"field": "messages", "value": {"metadata": {"phone_number_id": "phone-secret"}, "contacts": [{"profile": {"name": "Ana Contacto"}, "wa_id": "5491112345678"}], "messages": [{"id": "msg-safe-1", "type": "text", "text": {"body": "contenido privado"}}]}}]}]}).encode()
+
+    class Request:
+        def __init__(self):
+            self.headers = {"x-hub-signature-256": signed(body)}
+
+        async def body(self):
+            return body
+
+    import asyncio
+    with caplog.at_level("INFO", logger="mediturnos.whatsapp_webhook"):
+        result = asyncio.run(whatsapp_webhook.receive(Request()))
+
+    logs = caplog.text
+    assert result == {"received": True, "events": 1}
+    assert "whatsapp_webhook_accepted events=1" in logs
+    assert "whatsapp_webhook_event kind=message message_id=msg-safe-1 raw_type=text" in logs
+    for value in ("contenido privado", "5491112345678", "Ana Contacto", "phone-secret", SECRET, VERIFY, signed(body)):
+        assert value not in logs
+
+
+def test_post_logs_safe_status_metadata_and_unknown_event_stays_accepted(monkeypatch, caplog):
+    enable(monkeypatch)
+    body = json.dumps({"object": "whatsapp_business_account", "entry": [{"changes": [{"field": "messages", "value": {"statuses": [{"id": "msg-status-1", "status": "delivered"}, {"id": "msg-unknown-1", "status": "queued"}]}}]}]}).encode()
+
+    class Request:
+        def __init__(self):
+            self.headers = {"x-hub-signature-256": signed(body)}
+
+        async def body(self):
+            return body
+
+    import asyncio
+    with caplog.at_level("INFO", logger="mediturnos.whatsapp_webhook"):
+        result = asyncio.run(whatsapp_webhook.receive(Request()))
+
+    logs = caplog.text
+    assert result == {"received": True, "events": 2}
+    assert "whatsapp_webhook_event kind=status message_id=msg-status-1 status=delivered" in logs
+    assert "msg-unknown-1" not in logs

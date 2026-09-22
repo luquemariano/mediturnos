@@ -1,4 +1,5 @@
 import json
+import logging
 
 from fastapi import APIRouter, HTTPException, Query, Request, Response
 
@@ -7,6 +8,7 @@ from app.services.whatsapp_webhook_service import parse_webhook_events, verify_w
 
 
 router = APIRouter(prefix="/webhooks/whatsapp", tags=["WhatsApp webhook"])
+logger = logging.getLogger("mediturnos.whatsapp_webhook")
 
 
 def _enabled() -> None:
@@ -46,4 +48,18 @@ async def receive(request: Request) -> dict[str, bool | int]:
     except (TypeError, ValueError) as error:
         raise HTTPException(status_code=400, detail="Cuerpo inválido.") from error
     events = parse_webhook_events(payload)
+    logger.info("whatsapp_webhook_accepted events=%d", len(events))
+    for event in events:
+        if event.kind == "message":
+            logger.info(
+                "whatsapp_webhook_event kind=message message_id=%s raw_type=%s",
+                event.message_id,
+                event.raw_type,
+            )
+        elif event.kind == "status":
+            logger.info(
+                "whatsapp_webhook_event kind=status message_id=%s status=%s",
+                event.message_id,
+                event.status,
+            )
     return {"received": True, "events": len(events)}
