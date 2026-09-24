@@ -49,11 +49,11 @@ export async function buscarPacientesProfesional(q = ""): Promise<PacienteSelecc
   return respuesta.data;
 }
 
-export async function crearPacienteProfesional(datos: Omit<PacienteSeleccion, "id">): Promise<PacienteSeleccion> {
+export async function crearPacienteProfesional(datos: Omit<PacienteSeleccion, "id" | "whatsapp_opt_in_at" | "whatsapp_opt_out_at">): Promise<PacienteSeleccion> {
   return (await api.post<PacienteSeleccion>("/profesionales/me/pacientes", datos)).data;
 }
 
-export async function editarPacienteProfesional(id: number, datos: Partial<Omit<PacienteSeleccion, "id">>): Promise<PacienteSeleccion> {
+export async function editarPacienteProfesional(id: number, datos: Partial<Omit<PacienteSeleccion, "id" | "whatsapp_opt_in_at" | "whatsapp_opt_out_at">>): Promise<PacienteSeleccion> {
   return (await api.patch<PacienteSeleccion>(`/profesionales/me/pacientes/${id}`, datos)).data;
 }
 

@@ -34,7 +34,7 @@ type Props = {
 };
 
 type Historial = Awaited<ReturnType<typeof obtenerHistorialPaciente>>[number];
-const FORM_VACIO = { nombre: "", apellido: "", dni: "", telefono: "", email: "", fecha_nacimiento: "" };
+const FORM_VACIO = { nombre: "", apellido: "", dni: "", telefono: "", email: "", fecha_nacimiento: "", whatsapp_opt_in: false };
 const ZONA_HORARIA = "America/Argentina/Buenos_Aires";
 
 function detalleError(error: unknown): string {
@@ -106,7 +106,7 @@ export default function Pacientes(props: Props) {
     if (guardando) return;
     setGuardando(true); setError("");
     try {
-      const datos = Object.fromEntries(Object.entries(form).map(([clave, valor]) => [clave, valor || null]));
+      const datos = Object.fromEntries(Object.entries(form).map(([clave, valor]) => [clave, typeof valor === "boolean" ? valor : valor || null]));
       if (editando && seleccion) {
         const paciente = await editarPacienteProfesional(seleccion.id, datos);
         setSeleccion(paciente); setMensaje("Paciente actualizado correctamente.");
@@ -156,7 +156,7 @@ export default function Pacientes(props: Props) {
 
   function editar() {
     if (!seleccion) return;
-    setForm({ nombre: seleccion.nombre, apellido: seleccion.apellido, dni: seleccion.dni ?? "", telefono: seleccion.telefono ?? "", email: seleccion.email ?? "", fecha_nacimiento: seleccion.fecha_nacimiento ?? "" });
+    setForm({ nombre: seleccion.nombre, apellido: seleccion.apellido, dni: seleccion.dni ?? "", telefono: seleccion.telefono ?? "", email: seleccion.email ?? "", fecha_nacimiento: seleccion.fecha_nacimiento ?? "", whatsapp_opt_in: seleccion.whatsapp_opt_in ?? false });
     setEditando(true); setModal(true);
   }
 
@@ -184,7 +184,7 @@ export default function Pacientes(props: Props) {
       : pacientes.length === 0 ? <div className="pacientes-estado"><Icono nombre="usuario"/><h2>No hay pacientes para mostrar.</h2><p>{q ? "Probá con otra búsqueda." : "Creá tu primer paciente para empezar."}</p></div>
       : <ul className="pacientes-lista">{pacientes.map((paciente) => <li key={paciente.id}>
           <div className="pacientes-identidad"><span>{paciente.nombre.charAt(0)}{paciente.apellido.charAt(0)}</span><strong>{paciente.nombre} {paciente.apellido}</strong></div>
-          <dl><div><dt>Teléfono</dt><dd>{paciente.telefono || "No informado"}</dd></div><div><dt>Email</dt><dd>{paciente.email || "No informado"}</dd></div><div><dt>DNI</dt><dd>{paciente.dni || "No informado"}</dd></div></dl>
+          <dl><div><dt>Teléfono</dt><dd>{paciente.telefono || "No informado"}</dd></div><div><dt>Email</dt><dd>{paciente.email || "No informado"}</dd></div><div><dt>DNI</dt><dd>{paciente.dni || "No informado"}</dd></div><div><dt>WhatsApp</dt><dd>{paciente.whatsapp_opt_in ? "WhatsApp habilitado" : "WhatsApp no autorizado"}{paciente.whatsapp_opt_in_at && <small> · {fechaEvolucion(paciente.whatsapp_opt_in_at)}</small>}</dd></div></dl>
           <button type="button" className="pacientes-boton enlace" onClick={() => void ver(paciente)}>Ver paciente <Icono nombre="flecha"/></button>
         </li>)}</ul>}
     </div>
@@ -192,7 +192,7 @@ export default function Pacientes(props: Props) {
     {seleccion && <><button type="button" className="paciente-detalle-fondo" aria-label="Cerrar detalle" onClick={() => setSeleccion(null)} />
       <aside className="paciente-detalle" aria-label={`Detalle de ${seleccion.nombre} ${seleccion.apellido}`}>
         <header><div><span>Paciente</span><h2>{seleccion.nombre} {seleccion.apellido}</h2></div><button type="button" className="detalle-cerrar" aria-label="Cerrar detalle" onClick={() => setSeleccion(null)}>×</button></header>
-        <section className="detalle-datos"><h3>Datos personales</h3><dl><div><dt>Teléfono</dt><dd>{seleccion.telefono || "No informado"}</dd></div><div><dt>Email</dt><dd>{seleccion.email || "No informado"}</dd></div><div><dt>DNI</dt><dd>{seleccion.dni || "No informado"}</dd></div><div><dt>Nacimiento</dt><dd>{seleccion.fecha_nacimiento ? new Intl.DateTimeFormat("es-AR", { timeZone: "UTC" }).format(new Date(`${seleccion.fecha_nacimiento}T00:00:00Z`)) : "No informado"}</dd></div></dl></section>
+        <section className="detalle-datos"><h3>Datos personales</h3><dl><div><dt>Teléfono</dt><dd>{seleccion.telefono || "No informado"}</dd></div><div><dt>Email</dt><dd>{seleccion.email || "No informado"}</dd></div><div><dt>DNI</dt><dd>{seleccion.dni || "No informado"}</dd></div><div><dt>Nacimiento</dt><dd>{seleccion.fecha_nacimiento ? new Intl.DateTimeFormat("es-AR", { timeZone: "UTC" }).format(new Date(`${seleccion.fecha_nacimiento}T00:00:00Z`)) : "No informado"}</dd></div></dl><div className="whatsapp-estado"><strong>{seleccion.whatsapp_opt_in ? "WhatsApp habilitado" : "WhatsApp no autorizado"}</strong>{seleccion.whatsapp_opt_in_at && <span>Autorizado el {fechaEvolucion(seleccion.whatsapp_opt_in_at)}</span>}</div></section>
         <div className="detalle-acciones"><button type="button" className="pacientes-boton secundario" onClick={editar}>Editar</button><button type="button" className="pacientes-boton destructivo" onClick={() => setConfirmar(true)}>Desactivar paciente</button></div>
         <section className="detalle-historial"><header><span>Actividad</span><h3>Historial de turnos</h3></header>
           {cargandoHistorial ? <p>Cargando historial...</p> : historial.length ? <ol>{historial.map((turno) => <li key={turno.id}><time dateTime={turno.fecha_hora}>{fechaHistorial(turno.fecha_hora)}</time><div><strong>{turno.prestacion_nombre}</strong><span className={`historial-estado estado-${turno.estado}`}>{etiquetaEstado(turno.estado)}</span></div></li>)}</ol> : <p>Sin turnos registrados.</p>}
@@ -217,6 +217,7 @@ export default function Pacientes(props: Props) {
     {modal && <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="paciente-modal-titulo"><form className="modal-paciente" onSubmit={guardar}>
       <header className="modal-encabezado"><div><span className="modal-etiqueta">Datos básicos</span><h2 id="paciente-modal-titulo">{editando ? "Editar paciente" : "Nuevo paciente"}</h2><p>Completá la información necesaria para identificarlo.</p></div><button type="button" className="detalle-cerrar" aria-label="Cerrar" onClick={() => setModal(false)}>×</button></header>
       <div className="formulario-grilla">{([['nombre','Nombre *'],['apellido','Apellido *'],['dni','DNI'],['telefono','Teléfono'],['email','Email'],['fecha_nacimiento','Fecha de nacimiento']] as const).map(([clave, etiqueta]) => <label key={clave}><span>{etiqueta}</span><input type={clave === "email" ? "email" : clave === "fecha_nacimiento" ? "date" : "text"} required={clave === "nombre" || clave === "apellido"} value={form[clave]} onChange={(e) => setForm({ ...form, [clave]: e.target.value })}/></label>)}</div>
+      <section className="whatsapp-form-section"><h3>WhatsApp</h3><p>Podés ingresarlo como 0351 15..., 351... o +54 9 351... Turnelia lo normaliza automáticamente para WhatsApp. Si ingresás sólo 15..., necesitás indicar también el código de área.</p><label><input type="checkbox" checked={form.whatsapp_opt_in} onChange={(e) => setForm({ ...form, whatsapp_opt_in: e.target.checked })}/> El paciente autoriza recibir recordatorios y comunicaciones relacionadas con sus turnos por WhatsApp.</label></section>
       <footer className="modal-acciones"><button type="button" className="pacientes-boton secundario" onClick={() => setModal(false)}>Cancelar</button><button className="pacientes-boton primario" disabled={guardando}>{guardando ? (editando ? "Guardando…" : "Creando…") : editando ? "Guardar cambios" : "Crear paciente"}</button></footer>
     </form></div>}
   </ProfesionalShell>;

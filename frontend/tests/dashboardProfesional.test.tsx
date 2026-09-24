@@ -120,6 +120,13 @@ describe("dashboard profesional Signature", () => {
     expect(screen.getByLabelText("Resumen de la jornada")).toHaveTextContent("1 pendiente");
     expect(screen.getByLabelText("Resumen de la jornada")).toHaveTextContent("3 resueltos");
   });
+  it("muestra la novedad de recordatorios WhatsApp sin prometer cobertura total", async () => {
+    prepararDatos([]); renderizar();
+    expect(await screen.findByRole("heading", { name: "Recordatorios automáticos por WhatsApp" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Gestionar pacientes" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Cómo funciona" })).toBeInTheDocument();
+    expect(screen.queryByText(/todos los pacientes|a todos tus pacientes/i)).not.toBeInTheDocument();
+  });
 
   it("muestra el trial y los días calculados por backend", async () => {
     prepararDatos([]);

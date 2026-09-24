@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -36,6 +36,9 @@ class PacienteSeleccionRespuesta(BaseModel):
     apellido: str
     dni: str | None = None
     fecha_nacimiento: date | None = None
+    whatsapp_opt_in: bool = False
+    whatsapp_opt_in_at: datetime | None = None
+    whatsapp_opt_out_at: datetime | None = None
     telefono: str | None = None
     email: str | None = None
 
@@ -49,6 +52,7 @@ class PacienteProfesionalCrear(BaseModel):
     telefono: str | None = Field(default=None, min_length=6, max_length=30)
     email: str | None = Field(default=None, max_length=150)
     fecha_nacimiento: date | None = None
+    whatsapp_opt_in: bool = False
 
 class PacienteProfesionalActualizar(BaseModel):
     model_config = ConfigDict(extra="forbid")

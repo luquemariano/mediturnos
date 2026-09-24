@@ -53,3 +53,47 @@ def test_historial_ajeno_no_se_filtra():
     with pytest.raises(HTTPException) as error: obtener_turnos_paciente_profesional(db,p1.id,ajeno.id)
     assert error.value.status_code==404
     db.close()
+
+def datos_paciente(**cambios):
+    base = {"nombre": "Clara", "apellido": "Consentida", "telefono": "0351 15 1234567"}
+    base.update(cambios)
+    return PacienteProfesionalCrear(**base)
+
+def test_consentimiento_whatsapp_alta_y_transiciones():
+    from tests.conftest import SessionTest
+    db=SessionTest(); p1,_,propio,_=preparar(db)
+    sin=crear_paciente_profesional(db,p1.id,datos_paciente(telefono="0351 15 1234567", whatsapp_opt_in=False))
+    assert sin.whatsapp_opt_in is False and sin.whatsapp_opt_in_at is None and sin.whatsapp_opt_out_at is None
+    activo=crear_paciente_profesional(db,p1.id,datos_paciente(nombre="Brenda", whatsapp_opt_in=True))
+    alta=activo.whatsapp_opt_in_at
+    assert activo.whatsapp_opt_in is True and alta is not None and activo.whatsapp_opt_out_at is None
+    actualizado=actualizar_paciente_profesional(db,p1.id,activo.id,PacienteProfesionalActualizar(nombre="Brenda Editada"))
+    assert actualizado.whatsapp_opt_in_at == alta
+    revocado=actualizar_paciente_profesional(db,p1.id,activo.id,PacienteProfesionalActualizar(whatsapp_opt_in=False))
+    assert revocado.whatsapp_opt_in is False and revocado.whatsapp_opt_in_at == alta and revocado.whatsapp_opt_out_at is not None
+    reactivado=actualizar_paciente_profesional(db,p1.id,activo.id,PacienteProfesionalActualizar(whatsapp_opt_in=True))
+    assert reactivado.whatsapp_opt_in is True and reactivado.whatsapp_opt_in_at != alta and reactivado.whatsapp_opt_out_at is None
+    db.close()
+
+def test_consentimiento_rechaza_telefono_invalido_y_cambio_telefono_revoca():
+    from tests.conftest import SessionTest
+    db=SessionTest(); p1,_,_,_=preparar(db)
+    with pytest.raises(HTTPException) as error:
+        crear_paciente_profesional(db,p1.id,datos_paciente(telefono="abc123", whatsapp_opt_in=True))
+    assert error.value.status_code == 422
+    paciente=crear_paciente_profesional(db,p1.id,datos_paciente(whatsapp_opt_in=True)); alta=paciente.whatsapp_opt_in_at
+    revocado=actualizar_paciente_profesional(db,p1.id,paciente.id,PacienteProfesionalActualizar(telefono="351 15"))
+    assert revocado.whatsapp_opt_in is False and revocado.whatsapp_opt_in_at == alta and revocado.whatsapp_opt_out_at is not None
+    db.close()
+
+def test_schema_no_permite_timestamps_arbitrarios_y_ownership():
+    with pytest.raises(ValueError):
+        PacienteProfesionalCrear(**datos_paciente().model_dump(), whatsapp_opt_in_at=datetime.now(timezone.utc))
+    with pytest.raises(ValueError):
+        PacienteProfesionalActualizar(whatsapp_opt_out_at=datetime.now(timezone.utc))
+    from tests.conftest import SessionTest
+    db=SessionTest(); p1,_,_,ajeno=preparar(db)
+    with pytest.raises(HTTPException) as error:
+        actualizar_paciente_profesional(db,p1.id,ajeno.id,PacienteProfesionalActualizar(whatsapp_opt_in=True))
+    assert error.value.status_code == 404
+    db.close()
