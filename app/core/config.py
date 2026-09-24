@@ -3,6 +3,7 @@ from typing import Literal
 
 from pydantic import (
     AnyHttpUrl,
+    EmailStr,
     SecretStr,
     TypeAdapter,
     field_validator,
@@ -82,6 +83,7 @@ class Settings(BaseSettings):
     email_provider: Literal["in_memory", "resend"] = "in_memory"
     resend_api_key: SecretStr | None = None
     email_from: str | None = None
+    engagement_email_reply_to: str | None = None
     whatsapp_enabled: bool = False
     whatsapp_provider: Literal["fake", "meta"] = "fake"
     whatsapp_phone_number_id: str | None = None
@@ -117,6 +119,13 @@ class Settings(BaseSettings):
         if valor <= 0:
             raise ValueError("Los TTL de object storage deben ser mayores que cero.")
         return valor
+
+    @field_validator("engagement_email_reply_to")
+    @classmethod
+    def validar_engagement_email_reply_to(cls, valor: str | None) -> str | None:
+        if valor is None or not valor.strip():
+            return None
+        return TypeAdapter(EmailStr).validate_python(valor.strip())
 
     @field_validator(
         "rate_limit_window_seconds",

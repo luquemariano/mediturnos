@@ -1,9 +1,10 @@
 """Optional Turnelia news and quality follow-up email rendering and delivery."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from html import escape
 from urllib.parse import urlsplit
 
+from app.core.config import settings
 from app.services.email_service import (
     EmailDeliveryResult,
     TransactionalEmail,
@@ -22,6 +23,7 @@ class EngagementEmail:
     cta: str | None = None
     url_cta: str | None = None
     enlace_gestion_baja: str | None = None
+    reply_to: str | None = None
 
 
 class EngagementEmailURLInvalida(ValueError):
@@ -90,29 +92,44 @@ def construir_email_engagement(datos: EngagementEmail) -> TransactionalEmail:
                         f'Podés gestionar esta preferencia o darte de baja desde '
                         f'<a href="{safe(enlace_gestion_baja)}" style="color:#176f6a">este enlace</a>.</p>')
         gestion_texto = f"\n\nGestionar preferencias o darte de baja: {enlace_gestion_baja}"
+    respuesta_html = (
+        '<p style="margin:24px 0 0;color:#65716d;font-size:13px;line-height:1.6">'
+        "Podés responder directamente a este correo. Leemos cada respuesta.</p>"
+        if datos.reply_to
+        else ""
+    )
+    respuesta_texto = (
+        "\n\nPodés responder directamente a este correo. Leemos cada respuesta."
+        if datos.reply_to
+        else ""
+    )
     texto_novedades = "\n".join(f"• {item}" for item in datos.novedades)
     asunto = f"{datos.titulo} — Turnelia"
     bloque_texto_novedades = f"\n\n{texto_novedades}" if texto_novedades else ""
     texto = (f"Turnelia\n\n{datos.titulo}\n\nHola, {datos.nombre}.\n\n"
              f"{datos.mensaje_principal}{bloque_texto_novedades}"
-             f"{lineas_cta}{gestion_texto}\n\nTurnelia")
+             f"{lineas_cta}{gestion_texto}{respuesta_texto}\n\nTurnelia")
     html = f'''<!doctype html>
 <html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="x-apple-disable-message-reformatting"><title>{safe(datos.titulo)}</title></head>
 <body style="margin:0;background:#f6f5f0;color:#1d2927;font-family:Arial,sans-serif">
   <span style="display:none!important;visibility:hidden;opacity:0;color:transparent;height:0;width:0;overflow:hidden">{safe(datos.preheader)}</span>
   <div style="width:100%;background:#f6f5f0"><div style="max-width:560px;margin:0 auto;padding:28px 16px">
     <div style="background:#fff;border:1px solid #d9e0dc;border-radius:10px;padding:28px">
-      <p style="margin:0 0 20px;color:#176f6a;font-size:18px;font-weight:700">Turnelia</p>
+      <p style="margin:0 0 20px"><img src="https://turnelia.com.ar/brand/turnelia-email-logo.png" alt="Turnelia" width="160" style="display:block;width:160px;max-width:100%;height:auto;border:0;outline:none;text-decoration:none"></p>
       <h1 style="margin:0 0 16px;color:#153e3b;font-size:25px;line-height:1.3">{safe(datos.titulo)}</h1>
       <p style="margin:0 0 12px;line-height:1.6">Hola, {safe(datos.nombre)}.</p>
       <p style="margin:0;line-height:1.6;white-space:pre-line">{safe(datos.mensaje_principal)}</p>
-      {bloque_novedades}{boton}{gestion_html}
+      {bloque_novedades}{boton}{gestion_html}{respuesta_html}
     </div>
   </div></div>
 </body></html>'''
-    return TransactionalEmail(datos.destinatario, asunto, html, texto)
+    return TransactionalEmail(datos.destinatario, asunto, html, texto, datos.reply_to)
 
 
 def enviar_email_engagement(datos: EngagementEmail) -> EmailDeliveryResult:
     """Deliver only when a caller explicitly invokes this function."""
-    return obtener_email_provider().enviar(construir_email_engagement(datos))
+    reply_to = settings.engagement_email_reply_to
+    datos_configurados = replace(datos, reply_to=reply_to)
+    return obtener_email_provider().enviar(
+        construir_email_engagement(datos_configurados)
+    )

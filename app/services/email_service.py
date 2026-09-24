@@ -37,6 +37,7 @@ class TransactionalEmail:
     asunto: str
     html: str
     texto: str
+    reply_to: str | None = None
 
 
 @dataclass(frozen=True)
@@ -52,8 +53,12 @@ class EmailProvider(Protocol):
 class InMemoryEmailProvider:
     def enviar(self, email: TransactionalEmail) -> EmailDeliveryResult:
         development_email_outbox[email.destinatario] = email.texto
+        development_email_reply_to[email.destinatario] = email.reply_to
         logger.info("Email transaccional generado en la salida local controlada.")
         return EmailDeliveryResult(provider="in_memory")
+
+
+development_email_reply_to: dict[str, str | None] = {}
 
 
 class ResendEmailProvider:
@@ -62,6 +67,15 @@ class ResendEmailProvider:
         self._remitente = remitente
 
     def enviar(self, email: TransactionalEmail) -> EmailDeliveryResult:
+        payload = {
+            "from": self._remitente,
+            "to": [email.destinatario],
+            "subject": email.asunto,
+            "html": email.html,
+            "text": email.texto,
+        }
+        if email.reply_to:
+            payload["reply_to"] = email.reply_to
         try:
             respuesta = requests.post(
                 RESEND_API_URL,
@@ -69,13 +83,7 @@ class ResendEmailProvider:
                     "Authorization": f"Bearer {self._api_key}",
                     "Content-Type": "application/json",
                 },
-                json={
-                    "from": self._remitente,
-                    "to": [email.destinatario],
-                    "subject": email.asunto,
-                    "html": email.html,
-                    "text": email.texto,
-                },
+                json=payload,
                 timeout=RESEND_TIMEOUT_SECONDS,
             )
         except requests.RequestException as error:
