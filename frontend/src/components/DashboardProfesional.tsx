@@ -13,6 +13,7 @@ import { obtenerMiPerfilProfesional } from "../services/profesionalService";
 import { obtenerCuentaActual } from "../services/cuentaService";
 import { etiquetaSuscripcion } from "../utils/suscripcion";
 import ProductUpdateCard from "./ProductUpdateCard";
+import { PRODUCT_UPDATE_NOTIFICATION_IDS } from "../productUpdates";
 import { listarEstudiosPendientesRevision } from "../services/pacienteService";
 import type { CuentaActual } from "../types/cuenta";
 import {
@@ -245,7 +246,9 @@ export default function DashboardProfesional({
 
   async function abrirNotificacion(item: NotificationItem) {
     if (item.entity_type === "product_update") {
-      onAbrirListaEspera();
+      if (item.entity_id === PRODUCT_UPDATE_NOTIFICATION_IDS.WAITLIST) onAbrirListaEspera();
+      else if (item.entity_id === PRODUCT_UPDATE_NOTIFICATION_IDS.ONLINE_BOOKING) window.dispatchEvent(new CustomEvent("turnelia:reserva-online"));
+      else if (item.entity_id === PRODUCT_UPDATE_NOTIFICATION_IDS.WHATSAPP_REMINDERS) onAbrirPacientes();
       return;
     }
     if (item.entity_type !== "study_request") {
@@ -278,6 +281,17 @@ export default function DashboardProfesional({
     return turnosPeriodo.findIndex((turno) =>
       horaMinutosNegocio(new Date(turno.fecha_hora)) >= minutosAhora
     );
+  }
+
+  function abrirDestinoNovedad(path: string) {
+    if (path === "/pacientes") { onAbrirPacientes(); return; }
+    if (path === "/lista-espera") { onAbrirListaEspera(); return; }
+    if (path === "/reserva-online") { window.dispatchEvent(new CustomEvent("turnelia:reserva-online")); return; }
+    if (path === "/ayuda" || path.startsWith("/ayuda/")) {
+      window.history.pushState({}, "", path);
+      window.dispatchEvent(new PopStateEvent("popstate"));
+      return;
+    }
   }
 
   function renderTurno(turno: Turno) {
@@ -375,7 +389,7 @@ export default function DashboardProfesional({
             <strong>{turnosHoy.length}</strong> turnos <i /> <strong>{resumen.confirmados}</strong> confirmados <i /> <strong>{resumen.pendientes}</strong> pendiente{resumen.pendientes === 1 ? "" : "s"} <i /> <strong>{resumen.resueltos}</strong> resueltos
           </p>}
         </section>
-        <ProductUpdateCard onOpen={(path) => path === "/lista-espera" ? onAbrirListaEspera() : (window.history.pushState({}, "", path), window.dispatchEvent(new PopStateEvent("popstate")))} />
+        <ProductUpdateCard onOpen={abrirDestinoNovedad} />
 
         {cargandoAgenda ? <DashboardSkeleton /> : <>
           <section className="prof-proximo" aria-labelledby="proximo-titulo">

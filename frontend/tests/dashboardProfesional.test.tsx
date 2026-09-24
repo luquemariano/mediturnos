@@ -9,6 +9,9 @@ import * as cuentaService from "../src/services/cuentaService";
 import * as pacienteService from "../src/services/pacienteService";
 import type { Turno } from "../src/types/turno";
 
+vi.mock("../src/api/api", () => ({ default: { get: vi.fn(), post: vi.fn() } }));
+import api from "../src/api/api";
+
 vi.mock("../src/services/disponibilidadService", () => ({
   obtenerDisponibilidadesProfesional: vi.fn(),
 }));
@@ -82,6 +85,8 @@ beforeEach(() => {
   vi.useFakeTimers({ shouldAdvanceTime: true });
   vi.setSystemTime(new Date("2026-08-12T11:30:00Z"));
   vi.clearAllMocks();
+  vi.mocked(api.get).mockResolvedValue({ data: { items: [], unread_count: 0 } } as never);
+  vi.mocked(api.post).mockResolvedValue({ data: {} } as never);
 });
 
 afterEach(() => vi.useRealTimers());
@@ -126,6 +131,42 @@ describe("dashboard profesional Signature", () => {
     expect(screen.getByRole("button", { name: "Gestionar pacientes" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Cómo funciona" })).toBeInTheDocument();
     expect(screen.queryByText(/todos los pacientes|a todos tus pacientes/i)).not.toBeInTheDocument();
+  });
+
+  it("el CTA Gestionar pacientes abre pacientes una sola vez", async () => {
+    prepararDatos([]);
+    const acciones = renderizar();
+    fireEvent.click(await screen.findByRole("button", { name: "Gestionar pacientes" }));
+    expect(acciones.pacientes).toHaveBeenCalledTimes(1);
+    const cambioRuta = vi.fn();
+    window.addEventListener("popstate", cambioRuta);
+    fireEvent.click(screen.getByRole("button", { name: "Cómo funciona" }));
+    expect(window.location.pathname).toBe("/ayuda/recordatorios");
+    expect(cambioRuta).toHaveBeenCalledTimes(1);
+    window.removeEventListener("popstate", cambioRuta);
+    window.history.replaceState({}, "", "/");
+  });
+
+  it.each([
+    [127, "Ahora podés recuperar turnos cancelados", "waitlist"],
+    [128, "Copiá tu enlace personal", "booking"],
+    [129, "Turnelia ahora puede recordar los turnos", "patients"],
+  ] as const)("la novedad %i navega a su destino", async (entityId, message, destino) => {
+    prepararDatos([]);
+    vi.mocked(api.get).mockResolvedValue({ data: { items: [{ id: entityId, type: "product_release", title: "Novedad", message, entity_type: "product_update", entity_id: entityId, read_at: null, created_at: "2026-09-24T15:00:00Z" }], unread_count: 1 } } as never);
+    const acciones = renderizar();
+    const reserva = vi.fn();
+    const listaEspera = vi.fn();
+    window.addEventListener("turnelia:reserva-online", reserva);
+    window.addEventListener("turnelia:lista-espera", listaEspera);
+    fireEvent.click(await screen.findByRole("button", { name: "Notificaciones, 1 sin leer" }));
+    fireEvent.click(await screen.findByRole("button", { name: new RegExp(message) }));
+    await waitFor(() => expect(api.post).toHaveBeenCalledWith(`/notifications/${entityId}/read`));
+    if (destino === "waitlist") await waitFor(() => expect(listaEspera).toHaveBeenCalledTimes(1));
+    if (destino === "booking") await waitFor(() => expect(reserva).toHaveBeenCalledTimes(1));
+    if (destino === "patients") await waitFor(() => expect(acciones.pacientes).toHaveBeenCalledTimes(1));
+    window.removeEventListener("turnelia:reserva-online", reserva);
+    window.removeEventListener("turnelia:lista-espera", listaEspera);
   });
 
   it("muestra el trial y los días calculados por backend", async () => {
