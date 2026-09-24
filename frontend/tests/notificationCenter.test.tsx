@@ -33,4 +33,18 @@ describe("NotificationCenter", () => {
     expect(post).toHaveBeenCalledWith("/notifications/4/read");
     expect(onOpen).toHaveBeenCalledWith(expect.objectContaining({ entity_type: "study_request", entity_id: 8 }));
   });
+
+  it("muestra la novedad WhatsApp en el popover y descuenta unread al leerla", async () => {
+    const productRelease = { id: 129, type: "product_release", title: "Nuevo: recordatorios automáticos por WhatsApp", message: "Turnelia ahora puede recordar los turnos y permitir que tus pacientes confirmen o cancelen directamente desde WhatsApp.", entity_type: "product_update", entity_id: 129, read_at: null, created_at: "2026-09-24T15:00:00Z" };
+    get.mockResolvedValue({ data: { items: [productRelease], unread_count: 1 } } as never);
+    const onOpen = vi.fn();
+    render(<NotificationCenter onOpen={onOpen} />);
+    const trigger = await screen.findByRole("button", { name: "Notificaciones, 1 sin leer" });
+    expect(trigger).toHaveClass("notification-trigger-alerta");
+    fireEvent.click(trigger);
+    fireEvent.click(await screen.findByRole("button", { name: /Turnelia ahora puede recordar los turnos/ }));
+    await waitFor(() => expect(trigger).toHaveAccessibleName("Notificaciones"));
+    expect(post).toHaveBeenCalledWith("/notifications/129/read");
+    expect(onOpen).toHaveBeenCalledWith(expect.objectContaining({ entity_type: "product_update", entity_id: 129 }));
+  });
 });

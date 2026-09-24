@@ -10,6 +10,12 @@ export type ProductUpdate = {
   active: boolean;
 };
 
+export const PRODUCT_UPDATE_NOTIFICATION_IDS = {
+  WAITLIST: 127,
+  ONLINE_BOOKING: 128,
+  WHATSAPP_REMINDERS: 129,
+} as const;
+
 export const PRODUCT_UPDATES: ProductUpdate[] = [{
   id: "wa11b-whatsapp-reminders",
   title: "Recordatorios automáticos por WhatsApp",
