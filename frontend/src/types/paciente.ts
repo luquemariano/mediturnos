@@ -9,6 +9,9 @@ export interface Paciente {
   obra_social: string | null;
   numero_afiliado: string | null;
   activo: boolean;
+  whatsapp_opt_in?: boolean;
+  whatsapp_opt_in_at?: string | null;
+  whatsapp_opt_out_at?: string | null;
 }
 
 export interface PacienteCrear {
@@ -30,6 +33,9 @@ export interface PacienteSeleccion {
   telefono: string | null;
   email: string | null;
   fecha_nacimiento: string | null;
+  whatsapp_opt_in?: boolean;
+  whatsapp_opt_in_at?: string | null;
+  whatsapp_opt_out_at?: string | null;
 }
 
 export interface EvolucionClinica {

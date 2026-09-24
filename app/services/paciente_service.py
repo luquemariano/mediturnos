@@ -83,7 +83,14 @@ def obtener_pacientes_profesional(db: Session, profesional_id: int, q: str | Non
 def crear_paciente_profesional(db: Session, profesional_id: int, datos: PacienteProfesionalCrear, usuario_id: int | None = None, cuenta_id: int | None = None):
     if datos.dni and buscar_por_dni(db, datos.dni):
         raise HTTPException(status_code=409, detail="Ya existe un paciente con ese DNI.")
-    paciente = Paciente(**datos.model_dump(), activo=True)
+    datos_paciente = datos.model_dump()
+    opt_in = datos_paciente.pop("whatsapp_opt_in", False)
+    if opt_in and normalize_phone_number(datos_paciente.get("telefono")) is None:
+        raise HTTPException(status_code=422, detail="Para autorizar WhatsApp ingresá un teléfono válido.")
+    paciente = Paciente(**datos_paciente, activo=True, whatsapp_opt_in=False)
+    if opt_in:
+        paciente.whatsapp_opt_in = True
+        paciente.whatsapp_opt_in_at = datetime.now(UTC)
     db.add(paciente)
     try:
         db.flush()
@@ -119,6 +126,8 @@ def actualizar_paciente_profesional(db: Session, profesional_id: int, paciente_i
         paciente.whatsapp_opt_out_at = datetime.now(UTC)
     if cambio_opt_in is not None:
         if cambio_opt_in and not paciente.whatsapp_opt_in:
+            if normalize_phone_number(paciente.telefono) is None:
+                raise HTTPException(status_code=422, detail="Para autorizar WhatsApp ingresá un teléfono válido.")
             paciente.whatsapp_opt_in = True
             paciente.whatsapp_opt_in_at = datetime.now(UTC)
             paciente.whatsapp_opt_out_at = None

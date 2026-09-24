@@ -207,7 +207,7 @@ def test_profesional_lista_solo_datos_minimos_de_pacientes(
     respuesta = client.get("/profesionales/me/pacientes")
 
     assert respuesta.status_code == 200
-    assert respuesta.json() == [{"id": 2, "nombre": "Ana", "apellido": "López", "dni": None, "telefono": None, "email": None, "fecha_nacimiento": None}]
+    assert respuesta.json() == [{"id": 2, "nombre": "Ana", "apellido": "López", "dni": None, "telefono": None, "email": None, "fecha_nacimiento": None, "whatsapp_opt_in": False, "whatsapp_opt_in_at": None, "whatsapp_opt_out_at": None}]
 
 
 def test_profesional_crea_turno_sin_elegir_profesional(

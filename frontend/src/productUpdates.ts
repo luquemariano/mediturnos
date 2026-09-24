@@ -11,6 +11,16 @@ export type ProductUpdate = {
 };
 
 export const PRODUCT_UPDATES: ProductUpdate[] = [{
+  id: "wa11b-whatsapp-reminders",
+  title: "Recordatorios automáticos por WhatsApp",
+  description: "Turnelia puede recordar los turnos a tus pacientes y permitirles confirmar o cancelar directamente desde WhatsApp.",
+  publishedAt: "2026-09-24",
+  ctaLabel: "Gestionar pacientes",
+  ctaPath: "/pacientes",
+  helpPath: "/ayuda/recordatorios",
+  badge: "Nuevo",
+  active: true,
+}, {
   id: "f12-7-waitlist-discovery",
   title: "Nuevo: Lista de espera inteligente",
   description: "Recuperá turnos cancelados ofreciendo automáticamente el horario a pacientes que están esperando.",

@@ -19,8 +19,10 @@ it("mantiene Pacientes en la navegación profesional desde cualquier sección", 
     onCerrarSesion={accion}
   ><p>Contenido</p></ProfesionalShell>);
 
-  expect(screen.getAllByRole("button", { name: "Pacientes" })).toHaveLength(2);
   const navegacion = screen.getByRole("navigation", { name: "Navegación profesional" });
+  expect(within(navegacion).getByRole("button", { name: /Pacientes/ })).toBeInTheDocument();
+  const navegacionPrincipal = screen.getByRole("navigation", { name: "Navegación principal" });
+  expect(within(navegacionPrincipal).getByRole("button", { name: "Pacientes" })).toBeInTheDocument();
   expect(within(navegacion).getByRole("button", { name: "Ayuda" })).toBeInTheDocument();
   expect(Array.from(navegacion.querySelectorAll("button")).map((button) => button.textContent?.replace("Nuevo", "").trim())).toEqual(["Inicio", "Mi agenda", "Pacientes", "Mi disponibilidad", "Mis prestaciones", "Reserva online", "Lista de espera", "Mi perfil", "Ayuda"]);
   expect(within(navegacion).getByText("Nuevo")).toBeInTheDocument();
