@@ -60,6 +60,18 @@ class Usuario(Base):
     nullable=True,
     )
 
+    recibir_novedades_turnelia: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default=text("false"),
+    )
+
+    fecha_aceptacion_novedades: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True,
+    )
+
+    fecha_baja_novedades: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True,
+    )
+
     first_login_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
