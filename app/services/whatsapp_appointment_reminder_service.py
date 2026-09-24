@@ -4,7 +4,7 @@ from types import SimpleNamespace
 
 from sqlalchemy.orm import Session
 
-from app.core.datetime_utils import desde_base_utc
+from app.core.datetime_utils import desde_base_utc, utc_a_zona_negocio
 from app.integrations.messaging import (
     DEFAULT_TEMPLATE_MAPPING,
     OutboundMessage,
@@ -53,7 +53,7 @@ def _outbound_message(turno: Turno, recipient: str, confirm_token: str, cancel_t
         recipient=recipient,
         message_type="appointment_reminder_v1",
         payload={
-            "appointment_datetime": desde_base_utc(turno.fecha_hora).isoformat(),
+            "appointment_datetime": utc_a_zona_negocio(desde_base_utc(turno.fecha_hora)).strftime("%d/%m/%Y %H:%M"),
             "professional_name": f"{turno.profesional.nombre} {turno.profesional.apellido}",
             "confirm_token": confirm_token,
             "cancel_token": cancel_token,

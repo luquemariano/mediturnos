@@ -26,7 +26,7 @@ def normalize_phone_number(value: str | None) -> str | None:
             rest = rest[2:]
         if not 8 <= len(rest) <= 10:
             return None
-        return "549" + rest
+        return "54" + rest
     if digits.startswith("0"):
         digits = digits[1:]
     if len(digits) > 10:
@@ -34,7 +34,7 @@ def normalize_phone_number(value: str | None) -> str | None:
         if digits[area_end:area_end + 2] == "15":
             digits = digits[:area_end] + digits[area_end + 2:]
     if len(digits) == 10:
-        return "549" + digits
+        return "54" + digits
     if 8 <= len(digits) <= 15 and text.startswith("+"):
         return digits
     return None

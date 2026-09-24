@@ -58,13 +58,16 @@ def test_cancelled_and_finished_do_not_send():
 
 
 def test_eligible_turno_sends_once_and_persists_minimal_payload():
-    provider = FakeMessagingProvider(); turn = turno()
+    provider = FakeMessagingProvider(); turn = turno(fecha_hora=datetime(2026, 9, 23, 19, 0, tzinfo=UTC))
     db, result = execute(turn, provider); assert result.status == "sent"; assert len(provider.sent_messages) == 1
     item = db.get(MessageDelivery, result.delivery_id)
     message = provider.sent_messages[0]
     assert item.status == "sent" and item.provider == "fake" and item.provider_message_id
-    assert item.recipient_snapshot == "5493511234567" and "payload" not in item.__dict__
+    assert item.recipient_snapshot == "543511234567" and "payload" not in item.__dict__
     assert set(message.payload) == {"appointment_datetime", "professional_name", "confirm_token", "cancel_token"}
+    assert message.payload["appointment_datetime"] == "23/09/2026 16:00"
+    assert "T" not in message.payload["appointment_datetime"]
+    assert "+" not in message.payload["appointment_datetime"]
     assert "diagnostico" not in str(message.payload).lower() and "observaciones" not in str(message.payload).lower()
     confirm = message.payload["confirm_token"]
     cancel = message.payload["cancel_token"]
