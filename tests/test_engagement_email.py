@@ -9,8 +9,10 @@ import pytest
 from sqlalchemy import create_engine, inspect
 
 from app.core.jwt import crear_access_token
+from app.core.config import Settings
 from app.models.usuario import Usuario
 from app.services import engagement_email_service
+from app.services import email_service
 from app.services.email_service import EmailDeliveryResult
 from tests.conftest import SessionTest
 
@@ -112,7 +114,115 @@ def test_plantilla_renderiza_variables_y_escapa_html():
     assert "https://turnelia.test/encuesta?a=1&amp;b=2" in mensaje.html
     assert "https://turnelia.test/preferencias" in mensaje.texto
     assert "#f6f5f0" in mensaje.html and "#176f6a" in mensaje.html
+    assert 'src="https://turnelia.com.ar/brand/turnelia-email-logo.png"' in mensaje.html
+    assert 'alt="Turnelia"' in mensaje.html
     assert "Responder" in mensaje.html
+    assert "Podés responder directamente a este correo" not in mensaje.html
+
+
+def test_reply_to_configurado_incluye_logo_y_mensaje_respuesta(monkeypatch):
+    class Provider:
+        def __init__(self):
+            self.messages = []
+
+        def enviar(self, mensaje):
+            self.messages.append(mensaje)
+            return EmailDeliveryResult("in_memory")
+
+    provider = Provider()
+    monkeypatch.setattr(engagement_email_service, "obtener_email_provider", lambda: provider)
+    monkeypatch.setattr(
+        engagement_email_service.settings,
+        "engagement_email_reply_to",
+        "respuestas@example.com",
+    )
+
+    engagement_email_service.enviar_email_engagement(
+        engagement_email_service.EngagementEmail(
+            destinatario="persona@example.com", nombre="Ana", titulo="Seguimiento",
+            preheader="Gracias", mensaje_principal="Queremos conocer tu experiencia.",
+        )
+    )
+
+    enviado = provider.messages[0]
+    assert enviado.reply_to == "respuestas@example.com"
+    assert 'src="https://turnelia.com.ar/brand/turnelia-email-logo.png"' in enviado.html
+    frase = "Podés responder directamente a este correo. Leemos cada respuesta."
+    assert frase in enviado.html
+    assert frase in enviado.texto
+
+
+def test_reply_to_sin_configuracion_no_promete_respuesta(monkeypatch):
+    class Provider:
+        def __init__(self):
+            self.messages = []
+
+        def enviar(self, mensaje):
+            self.messages.append(mensaje)
+            return EmailDeliveryResult("in_memory")
+
+    provider = Provider()
+    monkeypatch.setattr(engagement_email_service, "obtener_email_provider", lambda: provider)
+    monkeypatch.setattr(engagement_email_service.settings, "engagement_email_reply_to", None)
+
+    engagement_email_service.enviar_email_engagement(
+        engagement_email_service.EngagementEmail(
+            destinatario="persona@example.com", nombre="Ana", titulo="Seguimiento",
+            preheader="Gracias", mensaje_principal="Queremos conocer tu experiencia.",
+        )
+    )
+
+    enviado = provider.messages[0]
+    assert enviado.reply_to is None
+    assert "Podés responder directamente a este correo" not in enviado.html
+    assert "Podés responder directamente a este correo" not in enviado.texto
+
+
+def test_config_reply_to_valida_email(monkeypatch):
+    monkeypatch.setenv("ENGAGEMENT_EMAIL_REPLY_TO", "  contacto@example.com ")
+    configuracion = Settings(_env_file=None, jwt_secret_key="test-secret")
+    assert configuracion.engagement_email_reply_to == "contacto@example.com"
+    monkeypatch.setenv("ENGAGEMENT_EMAIL_REPLY_TO", "no-es-un-email")
+    with pytest.raises(ValueError):
+        Settings(_env_file=None, jwt_secret_key="test-secret")
+
+
+def test_resend_incluye_reply_to_solo_si_se_configura(monkeypatch):
+    solicitudes = []
+
+    class Respuesta:
+        status_code = 202
+
+    def post(url, **kwargs):
+        solicitudes.append(kwargs["json"])
+        return Respuesta()
+
+    monkeypatch.setattr(email_service.requests, "post", post)
+    provider = email_service.ResendEmailProvider("api-key-test", "Turnelia <no-reply@mail.turnelia.com.ar>")
+    provider.enviar(email_service.TransactionalEmail("persona@example.com", "A", "H", "T"))
+    provider.enviar(email_service.TransactionalEmail(
+        "persona@example.com", "A", "H", "T", reply_to="contacto@example.com"
+    ))
+
+    assert "reply_to" not in solicitudes[0]
+    assert solicitudes[1]["reply_to"] == "contacto@example.com"
+
+
+def test_inmemory_conserva_reply_to_y_transaccional_no_lo_define():
+    email_service.development_email_outbox.clear()
+    email_service.development_email_reply_to.clear()
+    provider = email_service.InMemoryEmailProvider()
+
+    provider.enviar(email_service.TransactionalEmail(
+        "engagement@example.com", "Novedades", "<p>Hola</p>", "Hola",
+        reply_to="contacto@example.com",
+    ))
+    provider.enviar(email_service.TransactionalEmail(
+        "transaccional@example.com", "Turno", "<p>Recordatorio</p>", "Recordatorio",
+    ))
+
+    assert email_service.development_email_reply_to["engagement@example.com"] == "contacto@example.com"
+    assert email_service.development_email_reply_to["transaccional@example.com"] is None
 
 
 @pytest.mark.parametrize("campo", ["url_cta", "enlace_gestion_baja"])
@@ -134,25 +244,22 @@ def test_plantilla_rechaza_urls_no_absolutas_http(campo, url):
 
 
 def test_provider_recibe_email_solo_por_invocacion_explicita(monkeypatch):
-    class Provider:
-        def __init__(self):
-            self.messages = []
-
-        def enviar(self, mensaje):
-            self.messages.append(mensaje)
-            return EmailDeliveryResult("in_memory")
-
-    provider = Provider()
+    destinatario = "envio-explicito@example.com"
+    email_service.development_email_outbox.pop(destinatario, None)
+    email_service.development_email_reply_to.pop(destinatario, None)
+    provider = email_service.InMemoryEmailProvider()
     monkeypatch.setattr(engagement_email_service, "obtener_email_provider", lambda: provider)
-    assert provider.messages == []
+    monkeypatch.setattr(engagement_email_service.settings, "engagement_email_reply_to", None)
+    assert destinatario not in email_service.development_email_outbox
     resultado = engagement_email_service.enviar_email_engagement(
         engagement_email_service.EngagementEmail(
-            destinatario="persona@example.com", nombre="Ana", titulo="Seguimiento",
+            destinatario=destinatario, nombre="Ana", titulo="Seguimiento",
             preheader="Gracias", mensaje_principal="¿Cómo te resultó Turnelia?",
         )
     )
     assert resultado.provider == "in_memory"
-    assert len(provider.messages) == 1
+    assert destinatario in email_service.development_email_outbox
+    assert email_service.development_email_reply_to[destinatario] is None
 
 
 def test_migracion_upgrade_default_y_downgrade(tmp_path):
