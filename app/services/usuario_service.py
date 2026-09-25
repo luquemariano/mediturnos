@@ -34,6 +34,7 @@ def crear_usuario(
             datos.password
         ),
         rol=datos.rol,
+        recibir_novedades_turnelia=True,
     )
 
     guardar_usuario(

@@ -56,6 +56,8 @@ import SelfService from "./pages/SelfService";
 import { capturePostHogEvent } from "./posthog";
 import ListaEsperaProfesional from "./components/ListaEsperaProfesional";
 import WaitlistOfferPage from "./pages/WaitlistOfferPage";
+import CampaniasAdmin from "./pages/CampaniasAdmin";
+import BajaNovedades from "./pages/BajaNovedades";
 
 
 type Vista =
@@ -70,7 +72,8 @@ type Vista =
   | "disponibilidades"
   | "perfil"
   | "cuentas"
-  | "adopcion";
+  | "adopcion"
+  | "campanias";
 
 type VistaAcceso = "login" | "forgot" | "reset";
 
@@ -78,7 +81,7 @@ const UMBRAL_LOADER_MS = 600;
 const UMBRAL_ESPERA_PROLONGADA_MS = 7000;
 
 
-function App() {
+function App({ tokenBaja = null }: { tokenBaja?: string | null }) {
   const rutaInicial = window.location.pathname;
   const [ruta, setRuta] = useState(rutaInicial);
   const [email, setEmail] =
@@ -208,6 +211,8 @@ function App() {
   useEffect(() => {
     if (usuario && usuario.rol !== "profesional" && ruta.startsWith("/onboarding/")) navegar("/app");
   }, [navegar, ruta, usuario]);
+
+  if (ruta === "/baja-novedades") return <BajaNovedades token={tokenBaja} />;
 
 
   async function manejarInicioSesion(
@@ -537,6 +542,10 @@ function App() {
       return <AdopcionAdmin onVolver={() => setVista("dashboard")} />;
     }
 
+    if (vista === "campanias" && usuario.rol === "administrador") {
+      return <CampaniasAdmin onVolver={() => setVista("dashboard")} />;
+    }
+
     if (vista === "prestaciones" && usuario.rol === "profesional") {
       return <MisPrestaciones
         nombre={usuario.nombre}
@@ -587,6 +596,7 @@ function App() {
         onAbrirPerfil={() => setVista("perfil")}
         onAbrirCuentas={() => setVista("cuentas")}
         onAbrirAdopcion={() => setVista("adopcion")}
+        onAbrirCampanias={() => setVista("campanias")}
         onCerrarSesion={cerrarSesion}
       />
     );

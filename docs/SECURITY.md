@@ -27,6 +27,8 @@ La autorización se aplica mediante dependencias FastAPI y comprobaciones en rou
 
 Health checks, login, registro, recuperación, webhooks de Mercado Pago, acciones de confirmar/cancelar turnos y carga pública de estudios pueden ser públicos o no requerir sesión convencional. Usan validaciones propias: los tokens públicos no sustituyen autorización autenticada y los webhooks deben validar firma y referencias.
 
+La baja de novedades usa un token firmado de propósito específico ligado al ID del usuario y con vencimiento de 30 días. El GET sólo muestra una confirmación; el cambio persistente se realiza en el POST final. Los endpoints de campañas y del catálogo de novedades requieren administrador global. Las campañas sólo seleccionan usuarios profesionales y no consultan datos clínicos.
+
 ## Logging
 
 En acciones públicas de turnos se registran eventos técnicos como motivo de token inválido, reprogramación y acción aplicada, sin que los mensajes observados incluyan el token. El worker de recordatorios registra inicio/fin, conteos de elementos generados/procesados, configuración no secreta como proveedor y zona horaria, y errores operativos mediante excepciones. Los errores de recordatorio también pueden conservarse truncados en el estado interno del recordatorio.

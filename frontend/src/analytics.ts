@@ -20,11 +20,11 @@ function cargarAnalytics(): Promise<void> {
   return inicializando;
 }
 export function trackEvent(name: string, params?: Record<string, string>): void {
-  if (!EVENTOS_PERMITIDOS.has(name)) return;
+  if (window.location.pathname === "/baja-novedades" || !EVENTOS_PERMITIDOS.has(name)) return;
   const parametrosSeguros = params ? Object.fromEntries(Object.entries(params).filter(([key]) => ["source", "plan", "resultado", "error_type", "modalidad", "duracion"].includes(key))) : undefined;
   void cargarAnalytics().then(() => window.gtag?.("event", name, parametrosSeguros ?? {}));
 }
 export function trackPageView(path: string): void {
-  if (!esRutaPublica(path)) return;
+  if (window.location.pathname === "/baja-novedades" || path === "/baja-novedades" || !esRutaPublica(path)) return;
   void cargarAnalytics().then(() => window.gtag?.("event", "page_view", { page_path: path }));
 }

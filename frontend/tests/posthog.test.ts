@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import posthog from "posthog-js";
-import { POSTHOG_CONFIG, capturePostHogEvent, isPostHogEnabled } from "../src/posthog";
+import { POSTHOG_CONFIG, capturePostHogEvent, isPostHogEnabled, posthogParaRuta } from "../src/posthog";
+import { trackEvent, trackPageView } from "../src/analytics";
 
 describe("posthog", () => {
   beforeEach(() => {
@@ -80,5 +81,27 @@ describe("posthog", () => {
     capture.mockClear();
     capturePostHogEvent("business_event", { value: "no-send" });
     expect(capture).not.toHaveBeenCalled();
+  });
+
+  it("no inicializa ni captura eventos en la página pública de baja", () => {
+    vi.stubEnv("PROD", "true");
+    vi.stubEnv("VITE_POSTHOG_PROJECT_TOKEN", "test-token");
+    vi.stubEnv("VITE_POSTHOG_HOST", "https://eu.i.posthog.com");
+    const init = vi.spyOn(posthog, "init");
+    const capture = vi.spyOn(posthog, "capture");
+    const gtag = vi.fn();
+    window.gtag = gtag;
+    window.history.replaceState({}, "", "/baja-novedades#secret-token");
+
+    posthogParaRuta(window.location.pathname);
+    capturePostHogEvent("patient_created", { source: "patients" });
+    trackPageView(window.location.pathname);
+    trackEvent("public_booking_attempt", { source: "public_booking" });
+
+    expect(init).not.toHaveBeenCalled();
+    expect(capture).not.toHaveBeenCalled();
+    expect(gtag).not.toHaveBeenCalled();
+    window.history.replaceState({}, "", "/");
+    delete window.gtag;
   });
 });
