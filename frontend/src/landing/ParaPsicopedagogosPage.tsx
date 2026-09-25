@@ -21,7 +21,9 @@ const funciones = [
   ["Prestaciones y recordatorios", "Organizá prestaciones y enviá recordatorios automáticos por email y WhatsApp."],
 ] as const;
 
-const preguntas = [
+// Shared with the prerender so FAQPage exactly mirrors the visible accordion.
+// eslint-disable-next-line react/only-export-components
+export const preguntas = [
   ["¿Qué puede organizar un psicopedagogo con Turnelia?", "Puede organizar turnos, pacientes, horarios, disponibilidad, prestaciones y el seguimiento de su práctica desde un solo lugar."],
   ["¿Puedo gestionar turnos?", "Sí. Podés crear, consultar y reprogramar turnos desde la agenda profesional."],
   ["¿Puedo registrar pacientes?", "Sí. Podés crear pacientes, buscarlos y acceder a la información asociada a su atención."],
@@ -38,7 +40,7 @@ function PsicopedagogosHeader() {
   return <header className="landing-header psicopedagogos-seo-header"><div className="landing-container landing-header__inner">
     <a className="landing-logo" href="/" aria-label="Turnelia, inicio"><img src="/brand/mediturnos-logo-horizontal.svg" alt="Turnelia" /></a>
     <button className="menu-button" type="button" aria-expanded={abierto} aria-controls="psicopedagogos-navigation" onClick={() => setAbierto(!abierto)}><span /><span /><span /><span className="sr-only">Abrir menú</span></button>
-    <nav id="psicopedagogos-navigation" className={abierto ? "landing-nav is-open" : "landing-nav"} aria-label="Navegación principal" onClick={() => setAbierto(false)}><a href="#funciones">Funciones</a><a href="#como-empezar">Cómo empezar</a><a href="/ayuda">Centro de Ayuda</a><a className="nav-login" href="/login">Ingresar</a><a className="button button--small" href="/registro">Probar Turnelia</a></nav>
+    <nav id="psicopedagogos-navigation" className={abierto ? "landing-nav is-open" : "landing-nav"} aria-label="Navegación principal" onClick={() => setAbierto(false)}><a href="#funciones">Funciones</a><a href="#como-empezar">Cómo empezar</a><a href="/ayuda/primeros-pasos">Guía para empezar</a><a className="nav-login" href="/login">Ingresar</a><a className="button button--small" href="/registro">Probar Turnelia</a></nav>
   </div></header>;
 }
 
@@ -60,5 +62,5 @@ export default function ParaPsicopedagogosPage() {
     <section className="landing-section psicopedagogos-seo-benefits"><div className="landing-container"><div className="section-heading"><p className="eyebrow">Beneficios</p><h2>Una práctica más ordenada, desde cualquier dispositivo</h2></div><div className="psicopedagogos-seo-benefits__grid">{["Agenda más clara", "Información centralizada", "Menos herramientas separadas", "Seguimiento organizado", "Acceso desde distintos dispositivos"].map(item => <article key={item}><span>✓</span><strong>{item}</strong></article>)}</div></div></section>
     <section id="como-empezar" className="landing-section psicopedagogos-seo-steps"><div className="landing-container"><div className="section-heading"><p className="eyebrow">Cómo empezar</p><h2>Comenzá a ordenar tu práctica en pocos pasos</h2></div><ol>{["Crear tu cuenta", "Configurar tu perfil", "Cargar tus prestaciones", "Definir tu disponibilidad", "Cargar pacientes y gestionar turnos"].map((item, index) => <li key={item}><span>{index + 1}</span><strong>{item}</strong></li>)}</ol></div></section>
     <PsicopedagogosFaq /><section className="dark-cta dark-cta--final"><div className="landing-container dark-cta__inner"><div><p className="eyebrow">Turnelia para tu práctica</p><h2>Organizá tu práctica profesional con Turnelia</h2><p>Empezá a gestionar pacientes, turnos y evoluciones desde un solo lugar.</p></div><a className="button button--light" href="/registro">Probar Turnelia</a></div></section>
-  </main><footer className="landing-footer"><div className="landing-container psicopedagogos-seo-footer"><img src="/brand/mediturnos-logo-horizontal.svg" alt="Turnelia" /><div><a href="/">Inicio</a><a href="/software-para-consultorios">Gestión integral</a><a href="/sistema-de-turnos">Sistema de turnos</a><a href="/ayuda">Centro de Ayuda</a><a href="/registro">Probar Turnelia</a></div></div></footer></div>;
+  </main><footer className="landing-footer"><div className="landing-container psicopedagogos-seo-footer"><img src="/brand/mediturnos-logo-horizontal.svg" alt="Turnelia" /><div><a href="/">Inicio</a><a href="/software-para-consultorios">Software para consultorios</a><a href="/sistema-de-turnos">Sistema de turnos</a><a href="/ayuda/primeros-pasos">Cómo empezar a usar Turnelia</a><a href="/registro">Probar Turnelia</a></div></div></footer></div>;
 }

@@ -120,3 +120,14 @@ conflicto de merge. La concurrencia queda configurada, pero no fue validada
 empíricamente mediante cancelación. Esta evidencia cierra Fase 7B; la
 evaluación de Fase 7C queda pendiente hasta completar el umbral de estabilidad
 definido.
+
+## DEC-014 — Structured data SEO prerenderizado
+
+Tipo: convención SEO implementada en el frontend.
+
+El prerender genera un único JSON-LD `@graph` por página con referencias
+`@id` estables para Organization y WebSite, y WebPage enlazada al canonical.
+Las landings comerciales agregan SoftwareApplication; las breadcrumbs y
+FAQPage se limitan a rutas/contenido donde existen. Las respuestas FAQ
+reutilizan los datos de sus acordeones. No se agrega Product, rating, review,
+precio ni oferta estructurada sin datos verificables.

@@ -14,7 +14,7 @@ describe("landing de software para consultorios", () => {
     expect(screen.getByText("Agenda profesional")).toBeInTheDocument();
     expect(screen.getByText("¿Qué es un software para consultorios?")).toBeInTheDocument();
     expect(screen.getAllByRole("link", { name: "Probar Turnelia" })[0]).toHaveAttribute("href", "/registro");
-    expect(screen.getAllByRole("link", { name: "Centro de Ayuda" })[0]).toHaveAttribute("href", "/ayuda");
+    expect(screen.getAllByRole("link", { name: "Guía para empezar" })[0]).toHaveAttribute("href", "/ayuda/primeros-pasos");
   });
 
   it("mide el click real del CTA con el source de la landing", () => {
