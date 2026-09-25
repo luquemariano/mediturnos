@@ -19,6 +19,7 @@ export default function CampaniasAdmin({ onVolver }: { onVolver: () => void }) {
   const [novedadesElegidas, setNovedadesElegidas] = useState<number[]>([]);
   const [preview, setPreview] = useState<{ asunto: string; html: string; texto: string; destinatarios: number } | null>(null);
   const [estado, setEstado] = useState("");
+  const [errorGuardarNovedad, setErrorGuardarNovedad] = useState("");
   const [enviada, setEnviada] = useState(false);
   const [edicion, setEdicion] = useState<Novedad | null>(null);
   const [idempotencyKey] = useState(() => globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`);
@@ -33,8 +34,24 @@ export default function CampaniasAdmin({ onVolver }: { onVolver: () => void }) {
 
   async function guardarNovedad(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); if (!edicion) return;
-    if (edicion.id) await api.put(`/admin/campanias/novedades/${edicion.id}`, edicion); else await api.post("/admin/campanias/novedades", edicion);
-    setEdicion(null); await cargar();
+    const payloadNovedad = {
+      titulo: edicion.titulo,
+      descripcion_corta: edicion.descripcion_corta,
+      prioridad: edicion.prioridad,
+      cerrada: edicion.cerrada,
+      activa: edicion.activa,
+    };
+    setErrorGuardarNovedad("");
+    try {
+      if (edicion.id) await api.put(`/admin/campanias/novedades/${edicion.id}`, payloadNovedad);
+      else await api.post("/admin/campanias/novedades", payloadNovedad);
+    } catch {
+      setErrorGuardarNovedad("No pudimos guardar la novedad. Intentá nuevamente.");
+      return;
+    }
+    setErrorGuardarNovedad("");
+    setEdicion(null);
+    await cargar();
   }
   async function previsualizar() {
     const response = await api.post("/admin/campanias/preview", payload); setPreview(response.data);
@@ -134,12 +151,12 @@ export default function CampaniasAdmin({ onVolver }: { onVolver: () => void }) {
 
       <section className="campanias-management" aria-labelledby="campanias-gestion-titulo">
         <header><div><p className="campanias-admin__eyebrow">Catálogo</p><h2 id="campanias-gestion-titulo">Gestión de novedades</h2><p>Administrá las novedades que aparecerán en futuras campañas.</p></div>
-          <button type="button" className="campanias-button campanias-button--secondary" onClick={() => setEdicion({ id: 0, titulo: "", descripcion_corta: "", prioridad: "normal", cerrada: false, activa: true })}>Crear novedad</button>
+          <button type="button" className="campanias-button campanias-button--secondary" onClick={() => { setErrorGuardarNovedad(""); setEdicion({ id: 0, titulo: "", descripcion_corta: "", prioridad: "normal", cerrada: false, activa: true }); }}>Crear novedad</button>
         </header>
         {novedades.length > 0 ? <ul className="campanias-news-list">{novedades.map((n) => <li key={n.id}>
           <div><strong>{n.titulo}</strong><p>{n.descripcion_corta}</p></div>
           <div className="campanias-news-meta"><span className={n.cerrada ? "is-closed" : ""}>{n.cerrada ? "Cerrada" : "En curso"}</span><span className={n.activa ? "is-active" : ""}>{n.activa ? "Activa" : "Inactiva"}</span></div>
-          <button type="button" className="campanias-button campanias-button--quiet" onClick={() => setEdicion(n)}>Editar</button>
+          <button type="button" className="campanias-button campanias-button--quiet" onClick={() => { setErrorGuardarNovedad(""); setEdicion(n); }}>Editar</button>
         </li>)}</ul> : <p className="campanias-empty">Todavía no hay novedades en el catálogo.</p>}
       </section>
 
@@ -156,7 +173,8 @@ export default function CampaniasAdmin({ onVolver }: { onVolver: () => void }) {
               <label><input type="checkbox" checked={edicion.cerrada} onChange={(e) => setEdicion({ ...edicion, cerrada: e.target.checked })} /> Cerrada</label>
               <label><input type="checkbox" checked={edicion.activa} onChange={(e) => setEdicion({ ...edicion, activa: e.target.checked })} /> Activa</label>
             </div>
-            <footer><button type="button" className="campanias-button campanias-button--quiet" onClick={() => setEdicion(null)}>Cancelar</button><button type="submit" className="campanias-button campanias-button--primary">Guardar novedad</button></footer>
+            {errorGuardarNovedad && <p className="campanias-status" role="alert">{errorGuardarNovedad}</p>}
+            <footer><button type="button" className="campanias-button campanias-button--quiet" onClick={() => { setErrorGuardarNovedad(""); setEdicion(null); }}>Cancelar</button><button type="submit" className="campanias-button campanias-button--primary">Guardar novedad</button></footer>
           </form>
         </section>
       </div>}
