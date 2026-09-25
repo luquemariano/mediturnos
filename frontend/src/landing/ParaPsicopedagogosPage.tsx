@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { LANDING_ASSETS } from "./landingConfig";
 import { trackEvent } from "../analytics";
 import "./ParaPsicopedagogosPage.css";
@@ -47,19 +47,9 @@ function PsicopedagogosFaq() {
   return <section className="landing-section psicopedagogos-seo-faq"><div className="landing-container"><div className="section-heading"><p className="eyebrow">Preguntas frecuentes</p><h2>Conocé cómo puede acompañarte Turnelia</h2></div><div className="faq__list">{preguntas.map(([pregunta, respuesta], index) => { const activa = abierta === index; const id = `psicopedagogos-faq-${index}`; return <div className={`faq__item${activa ? " is-open" : ""}`} key={pregunta}><h3><button type="button" aria-expanded={activa} aria-controls={id} onClick={() => setAbierta(activa ? null : index)}><span>{pregunta}</span><span className="faq__indicator" aria-hidden="true">{activa ? "−" : "+"}</span></button></h3><div id={id} className="faq__answer" hidden={!activa}><p>{respuesta}</p></div></div>; })}</div></div></section>;
 }
 
-function PsicopedagogosStructuredData() {
-  useEffect(() => { const data = { "@context": "https://schema.org", "@graph": [
-    { "@type": "WebPage", "@id": "https://turnelia.com.ar/para-psicopedagogos", "url": "https://turnelia.com.ar/para-psicopedagogos", "name": "Software para psicopedagogos | Turnelia", "description": "Organizá turnos, pacientes, horarios e historias clínicas con Turnelia. Un software simple para psicopedagogos que gestionan su práctica profesional." },
-    { "@type": "SoftwareApplication", "name": "Turnelia", "applicationCategory": "BusinessApplication", "operatingSystem": "Web" },
-    { "@type": "BreadcrumbList", "itemListElement": [{ "@type": "ListItem", "position": 1, "name": "Inicio", "item": "https://turnelia.com.ar/" }, { "@type": "ListItem", "position": 2, "name": "Para psicopedagogos", "item": "https://turnelia.com.ar/para-psicopedagogos" }] },
-    { "@type": "FAQPage", "mainEntity": preguntas.map(([name, text]) => ({ "@type": "Question", name, acceptedAnswer: { "@type": "Answer", text } })) },
-  ] }; const script = document.createElement("script"); script.type = "application/ld+json"; script.textContent = JSON.stringify(data); document.head.append(script); return () => script.remove(); }, []);
-  return null;
-}
-
 export default function ParaPsicopedagogosPage() {
   function medirRegistro(evento: React.MouseEvent<HTMLDivElement>) { if ((evento.target as Element).closest('a[href="/registro"]')) trackEvent("sign_up_click", { source: "psicopedagogos" }); }
-  return <div className="landing-page psicopedagogos-seo" onClick={medirRegistro}><PsicopedagogosStructuredData /><PsicopedagogosHeader /><main>
+  return <div className="landing-page psicopedagogos-seo" onClick={medirRegistro}><PsicopedagogosHeader /><main>
     <section className="psicopedagogos-seo-hero"><div className="landing-container psicopedagogos-seo-hero__grid"><div><p className="eyebrow">Para psicopedagogos</p><h1>Software para psicopedagogos que simplifica tu gestión diaria</h1><p className="psicopedagogos-seo-hero__lead">Organizá turnos, pacientes, horarios y evoluciones desde un solo lugar. Turnelia te ayuda a mantener tu práctica ordenada sin depender de múltiples planillas, mensajes o anotaciones.</p><div className="button-row"><a className="button" href="/registro">Probar Turnelia</a><a className="button button--outline" href="#funciones">Ver cómo funciona</a></div></div><figure className="psicopedagogos-seo-hero__image"><img src={LANDING_ASSETS.dashboard} alt="Agenda profesional demo de Turnelia" loading="eager" fetchPriority="high" decoding="async" /></figure></div></section>
     <section className="psicopedagogos-seo-problems"><div className="landing-container"><div className="section-heading"><p className="eyebrow">Problemas cotidianos</p><h2>Más orden para la gestión diaria de tu práctica</h2><p>Turnelia reúne las tareas habituales de tu agenda profesional en un mismo espacio.</p></div><div className="psicopedagogos-seo-problems__grid">{problemas.map(item => <article key={item}><span aria-hidden="true">✓</span><h3>{item}</h3></article>)}</div></div></section>
     <section id="funciones" className="landing-section psicopedagogos-seo-functions"><div className="landing-container"><div className="section-heading"><p className="eyebrow">Funciones</p><h2>Una herramienta adecuada para organizar tu práctica profesional</h2></div><div className="features__grid">{funciones.map(([title, text]) => <article key={title}><h3>{title}</h3><p>{text}</p></article>)}</div></div></section>

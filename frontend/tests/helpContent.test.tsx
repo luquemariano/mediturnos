@@ -35,7 +35,7 @@ describe("páginas públicas de ayuda", () => {
     article.unmount();
     const missing = render(<HelpArticlePage slug="no-existe" onHome={() => undefined} onOpenArticle={() => undefined} />);
     expect(missing.getByRole("heading", { name: "No encontramos esta guía" })).toBeTruthy();
-    expect(missing.getByRole("button", { name: "Volver al Centro de Ayuda" })).toBeTruthy();
+    expect(missing.getByRole("link", { name: "Volver al Centro de Ayuda" })).toHaveAttribute("href", "/ayuda");
   });
 });
 

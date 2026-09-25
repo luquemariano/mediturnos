@@ -35,29 +35,34 @@ describe("metadatos SEO por ruta", () => {
   });
 
   it("indexa la landing de software para consultorios con metadata propia", () => {
-    expect(obtenerMetadatosRuta("/software-para-consultorios")).toEqual({
+    expect(obtenerMetadatosRuta("/software-para-consultorios")).toMatchObject({
       title: "Software para consultorios | Turnelia",
       description: "Gestioná turnos, pacientes, historia clínica, horarios y prestaciones desde una sola plataforma. Turnelia simplifica la gestión diaria de tu consultorio.",
       robots: "index, follow",
       canonical: "https://turnelia.com.ar/software-para-consultorios",
+      ogTitle: "Software para consultorios | Turnelia",
+      ogUrl: "https://turnelia.com.ar/software-para-consultorios",
+      twitterTitle: "Software para consultorios | Turnelia",
     });
   });
 
   it("indexa la landing de sistema de turnos con metadata propia", () => {
-    expect(obtenerMetadatosRuta("/sistema-de-turnos")).toEqual({
+    expect(obtenerMetadatosRuta("/sistema-de-turnos")).toMatchObject({
       title: "Sistema de turnos para consultorios | Turnelia",
       description: "Organizá turnos, horarios y disponibilidad desde una agenda simple. Creá, reprogramá y gestioná citas con Turnelia.",
       robots: "index, follow",
       canonical: "https://turnelia.com.ar/sistema-de-turnos",
+      ogUrl: "https://turnelia.com.ar/sistema-de-turnos",
     });
   });
 
   it("indexa la landing para psicopedagogos con metadata exacta", () => {
-    expect(obtenerMetadatosRuta("/para-psicopedagogos")).toEqual({
+    expect(obtenerMetadatosRuta("/para-psicopedagogos")).toMatchObject({
       title: "Software para psicopedagogos | Turnelia",
       description: "Organizá turnos, pacientes, horarios e historias clínicas con Turnelia. Un software simple para psicopedagogos que gestionan su práctica profesional.",
       robots: "index, follow",
       canonical: "https://turnelia.com.ar/para-psicopedagogos",
+      ogUrl: "https://turnelia.com.ar/para-psicopedagogos",
     });
   });
 
@@ -84,5 +89,18 @@ describe("metadatos SEO por ruta", () => {
       "https://turnelia.com.ar/",
     );
     expect(document.querySelector('meta[name="referrer"]')).toBeNull();
+  });
+
+  it("define metadata social completa para todas las rutas indexables", () => {
+    for (const path of ["/", "/software-para-consultorios", "/sistema-de-turnos", "/para-psicopedagogos", "/ayuda", "/terminos", "/privacidad", "/ayuda/agenda"]) {
+      const meta = obtenerMetadatosRuta(path);
+      expect(meta.ogTitle).toBe(meta.title);
+      expect(meta.ogDescription).toBe(meta.description);
+      expect(meta.ogUrl).toBe(meta.canonical);
+      expect(meta.ogImage).toMatch(/^https:\/\//);
+      expect(meta.twitterTitle).toBe(meta.title);
+      expect(meta.twitterDescription).toBe(meta.description);
+      expect(meta.twitterImage).toBe(meta.ogImage);
+    }
   });
 });

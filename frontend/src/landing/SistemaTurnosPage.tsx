@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { LANDING_ASSETS } from "./landingConfig";
 import { trackEvent } from "../analytics";
 import "./SistemaTurnosPage.css";
@@ -46,19 +46,9 @@ function TurnosFaq() {
   return <section className="landing-section turnos-seo-faq"><div className="landing-container"><div className="section-heading"><p className="eyebrow">Preguntas frecuentes</p><h2>Respuestas sobre tu agenda de turnos</h2></div><div className="faq__list">{preguntas.map(([pregunta, respuesta], index) => { const activa = abierta === index; const id = `turnos-faq-${index}`; return <div className={`faq__item${activa ? " is-open" : ""}`} key={pregunta}><h3><button type="button" aria-expanded={activa} aria-controls={id} onClick={() => setAbierta(activa ? null : index)}><span>{pregunta}</span><span className="faq__indicator" aria-hidden="true">{activa ? "−" : "+"}</span></button></h3><div id={id} className="faq__answer" hidden={!activa}><p>{respuesta}</p></div></div>; })}</div></div></section>;
 }
 
-function TurnosStructuredData() {
-  useEffect(() => { const data = { "@context": "https://schema.org", "@graph": [
-    { "@type": "WebPage", "@id": "https://turnelia.com.ar/sistema-de-turnos", "url": "https://turnelia.com.ar/sistema-de-turnos", "name": "Sistema de turnos para consultorios | Turnelia", "description": "Organizá turnos, horarios y disponibilidad desde una agenda simple. Creá, reprogramá y gestioná citas con Turnelia." },
-    { "@type": "SoftwareApplication", "name": "Turnelia", "applicationCategory": "BusinessApplication", "operatingSystem": "Web" },
-    { "@type": "BreadcrumbList", "itemListElement": [{ "@type": "ListItem", "position": 1, "name": "Inicio", "item": "https://turnelia.com.ar/" }, { "@type": "ListItem", "position": 2, "name": "Sistema de turnos", "item": "https://turnelia.com.ar/sistema-de-turnos" }] },
-    { "@type": "FAQPage", "mainEntity": preguntas.map(([name, text]) => ({ "@type": "Question", name, acceptedAnswer: { "@type": "Answer", text } })) },
-  ] }; const script = document.createElement("script"); script.type = "application/ld+json"; script.textContent = JSON.stringify(data); document.head.append(script); return () => script.remove(); }, []);
-  return null;
-}
-
 export default function SistemaTurnosPage() {
   function medirRegistro(evento: React.MouseEvent<HTMLDivElement>) { if ((evento.target as Element).closest('a[href="/registro"]')) trackEvent("sign_up_click", { source: "sistema_turnos" }); }
-  return <div className="landing-page turnos-seo" onClick={medirRegistro}><TurnosStructuredData /><TurnosHeader /><main>
+  return <div className="landing-page turnos-seo" onClick={medirRegistro}><TurnosHeader /><main>
     <section className="turnos-seo-hero"><div className="landing-container turnos-seo-hero__grid"><div><p className="eyebrow">Agenda profesional</p><h1>Sistema de turnos para organizar tu agenda profesional</h1><p className="turnos-seo-hero__lead">Centralizá tus turnos, horarios y disponibilidad en una agenda clara. Con Turnelia podés organizar cada jornada, reprogramar citas y mantener actualizado el estado de cada atención.</p><div className="button-row"><a className="button" href="/registro">Probar Turnelia</a><a className="button button--outline" href="#funciones">Ver cómo funciona</a></div></div><figure className="turnos-seo-hero__image"><img src={LANDING_ASSETS.dashboard} alt="Agenda de turnos de Turnelia" loading="eager" fetchPriority="high" decoding="async" /></figure></div></section>
     <section className="turnos-seo-problem"><div className="landing-container"><div className="section-heading"><p className="eyebrow">El problema</p><h2>Cuando organizar turnos se vuelve una tarea más</h2><p>Una agenda centralizada ayuda a tener una visión más clara de cada jornada.</p></div><div className="turnos-seo-problem__grid">{problemas.map(item => <article key={item}><span aria-hidden="true">✓</span><h3>{item}</h3></article>)}</div></div></section>
     <section id="funciones" className="landing-section turnos-seo-functions"><div className="landing-container"><div className="section-heading"><p className="eyebrow">Funciones para tu agenda</p><h2>Todo lo que necesitás para gestionar turnos</h2></div><div className="features__grid">{funciones.map(([title, text]) => <article key={title}><h3>{title}</h3><p>{text}</p></article>)}</div></div></section>

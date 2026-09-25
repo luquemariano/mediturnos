@@ -31,5 +31,6 @@ describe("metadata social de la portada", () => {
     expect(indexHtml).toContain('name="twitter:title"');
     expect(indexHtml).toContain('name="twitter:description"');
     expect(indexHtml).toContain('type="application/ld+json"');
+    expect(indexHtml).toContain('"logo": "https://turnelia.com.ar/brand/mediturnos-symbol.svg"');
   });
 });
