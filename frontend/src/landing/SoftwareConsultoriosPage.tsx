@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { LANDING_ASSETS } from "./landingConfig";
 import { trackEvent } from "../analytics";
 import "./SoftwareConsultoriosPage.css";
@@ -38,19 +38,9 @@ function Faq() {
   return <section id="preguntas-frecuentes" className="landing-section seo-faq"><div className="landing-container"><div className="section-heading"><p className="eyebrow">Preguntas frecuentes</p><h2>Todo más claro antes de empezar</h2></div><div className="faq__list">{preguntas.map(([pregunta, respuesta], index) => { const activa = index === abierta; const id = `seo-faq-${index}`; return <div className={`faq__item${activa ? " is-open" : ""}`} key={pregunta}><h3><button type="button" aria-expanded={activa} aria-controls={id} onClick={() => setAbierta(activa ? null : index)}><span>{pregunta}</span><span className="faq__indicator" aria-hidden="true">{activa ? "−" : "+"}</span></button></h3><div id={id} className="faq__answer" hidden={!activa}><p>{respuesta}</p></div></div>; })}</div></div></section>;
 }
 
-function StructuredData() {
-  useEffect(() => { const data = { "@context": "https://schema.org", "@graph": [
-    { "@type": "WebPage", "@id": "https://turnelia.com.ar/software-para-consultorios", "url": "https://turnelia.com.ar/software-para-consultorios", "name": "Software para consultorios | Turnelia", "description": "Gestioná turnos, pacientes, historia clínica, horarios y prestaciones desde una sola plataforma. Turnelia simplifica la gestión diaria de tu consultorio." },
-    { "@type": "SoftwareApplication", "name": "Turnelia", "applicationCategory": "BusinessApplication", "operatingSystem": "Web" },
-    { "@type": "BreadcrumbList", "itemListElement": [{ "@type": "ListItem", "position": 1, "name": "Inicio", "item": "https://turnelia.com.ar/" }, { "@type": "ListItem", "position": 2, "name": "Software para consultorios", "item": "https://turnelia.com.ar/software-para-consultorios" }] },
-    { "@type": "FAQPage", "mainEntity": preguntas.map(([name, text]) => ({ "@type": "Question", name, acceptedAnswer: { "@type": "Answer", text } })) },
-  ] }; const script = document.createElement("script"); script.type = "application/ld+json"; script.textContent = JSON.stringify(data); document.head.append(script); return () => script.remove(); }, []);
-  return null;
-}
-
 export default function SoftwareConsultoriosPage() {
   function medirRegistro(evento: React.MouseEvent<HTMLDivElement>) { if ((evento.target as Element).closest('a[href="/registro"]')) trackEvent("sign_up_click", { source: "software_consultorios" }); }
-  return <div className="landing-page seo-landing" onClick={medirRegistro}><StructuredData /><SoftwareHeader /><main>
+  return <div className="landing-page seo-landing" onClick={medirRegistro}><SoftwareHeader /><main>
     <section className="seo-hero"><div className="landing-container seo-hero__grid"><div><p className="eyebrow">Gestión profesional</p><h1>Software para consultorios simple y completo</h1><p className="seo-hero__lead">Organizá turnos, pacientes, horarios, prestaciones y seguimiento de la atención desde un solo lugar. Turnelia te ayuda a simplificar la gestión diaria de tu consultorio sin planillas ni herramientas separadas.</p><div className="button-row"><a className="button" href="/registro">Probar Turnelia</a><a className="button button--outline" href="#funciones">Ver cómo funciona</a></div></div><figure className="seo-hero__image"><img src={LANDING_ASSETS.dashboard} alt="Agenda y gestión de Turnelia en una pantalla" loading="eager" fetchPriority="high" decoding="async" /></figure></div></section>
     <section className="seo-problems"><div className="landing-container"><div className="section-heading"><p className="eyebrow">Menos tareas dispersas</p><h2>Una forma más ordenada de gestionar tu consultorio</h2><p>Centralizá lo que necesitás para trabajar con más claridad durante el día.</p></div><div className="seo-problems__grid">{["Turnos dispersos en distintos canales", "Agenda difícil de organizar y reprogramar", "Pacientes repartidos en múltiples planillas", "Horarios y disponibilidad difíciles de mantener", "Seguimiento de la atención separado"].map(item => <article key={item}><span aria-hidden="true">✓</span><h3>{item}</h3></article>)}</div></div></section>
     <section id="funciones" className="landing-section seo-functions"><div className="landing-container"><div className="section-heading"><p className="eyebrow">Funciones principales</p><h2>Todo lo necesario para la gestión de consultorios</h2></div><div className="features__grid">{funciones.map(([title, text]) => <article key={title}><h3>{title}</h3><p>{text}</p></article>)}</div></div></section>

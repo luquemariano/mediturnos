@@ -172,14 +172,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run frontend tests
-        run: npx vitest run tests
-
       - name: Run lint
         run: npm run lint
 
       - name: Build frontend
         run: npm run build
+
+      - name: Run frontend tests
+        run: npx vitest run tests
 
   playwright-e2e-ci:
     name: Playwright E2E CI
