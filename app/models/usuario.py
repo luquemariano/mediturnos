@@ -61,7 +61,7 @@ class Usuario(Base):
     )
 
     recibir_novedades_turnelia: Mapped[bool] = mapped_column(
-        Boolean, nullable=False, default=False, server_default=text("false"),
+        Boolean, nullable=False, default=True, server_default=text("true"),
     )
 
     fecha_aceptacion_novedades: Mapped[datetime | None] = mapped_column(

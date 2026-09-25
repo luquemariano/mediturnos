@@ -30,44 +30,39 @@ def crear_usuario(db, email="persona@example.com"):
     return usuario
 
 
-def test_preferencia_persistente_default_false_para_cuenta_existente(client):
+def test_preferencia_persistente_default_true_para_cuenta_existente(client):
     with SessionTest() as db:
         usuario = crear_usuario(db)
         headers = headers_para(usuario)
         respuesta = client.get("/usuarios/me/novedades", headers=headers)
         assert respuesta.status_code == 200
         assert respuesta.json() == {
-            "recibir_novedades_turnelia": False,
+            "recibir_novedades_turnelia": True,
             "fecha_aceptacion_novedades": None,
             "fecha_baja_novedades": None,
         }
         assert client.get("/auth/me", headers=headers).status_code == 200
 
 
-def test_activar_desactivar_y_marcas_de_fecha(client):
+def test_preferencia_no_registra_baja_fuera_del_email_ni_reactiva_bajas(client):
     with SessionTest() as db:
         usuario = crear_usuario(db)
         headers = headers_para(usuario)
         activado = client.patch("/usuarios/me/novedades", headers=headers, json={"recibir_novedades_turnelia": True})
         assert activado.status_code == 200
-        aceptacion = activado.json()["fecha_aceptacion_novedades"]
-        datetime.fromisoformat(aceptacion)
+        assert activado.json()["fecha_aceptacion_novedades"] is None
         baja = client.patch("/usuarios/me/novedades", headers=headers, json={"recibir_novedades_turnelia": False})
-        assert baja.status_code == 200
-        assert baja.json()["fecha_aceptacion_novedades"] == aceptacion
-        fecha_baja = baja.json()["fecha_baja_novedades"]
-        datetime.fromisoformat(fecha_baja)
-        baja_repetida = client.patch("/usuarios/me/novedades", headers=headers, json={"recibir_novedades_turnelia": False})
-        assert baja_repetida.json()["fecha_aceptacion_novedades"] == aceptacion
-        assert baja_repetida.json()["fecha_baja_novedades"] == fecha_baja
+        assert baja.status_code == 410
+        with SessionTest() as db:
+            usuario = db.get(Usuario, usuario.id)
+            assert usuario.fecha_baja_novedades is None
+            usuario.fecha_baja_novedades = datetime.utcnow()
+            usuario.recibir_novedades_turnelia = False
+            db.commit()
         reactivado = client.patch("/usuarios/me/novedades", headers=headers, json={"recibir_novedades_turnelia": True})
         assert reactivado.status_code == 200
-        nueva_aceptacion = reactivado.json()["fecha_aceptacion_novedades"]
-        assert datetime.fromisoformat(nueva_aceptacion) >= datetime.fromisoformat(aceptacion)
-        assert reactivado.json()["fecha_baja_novedades"] == fecha_baja
-        activacion_repetida = client.patch("/usuarios/me/novedades", headers=headers, json={"recibir_novedades_turnelia": True})
-        assert activacion_repetida.json()["fecha_aceptacion_novedades"] == nueva_aceptacion
-        assert activacion_repetida.json()["fecha_baja_novedades"] == fecha_baja
+        assert reactivado.json()["recibir_novedades_turnelia"] is False
+        assert reactivado.json()["fecha_baja_novedades"] is not None
 
 
 def test_preferencia_requiere_autenticacion_y_no_acepta_campos_extra(client):
@@ -93,8 +88,8 @@ def test_usuario_no_puede_modificar_preferencia_de_otra_cuenta(client):
         assert respuesta.status_code == 422
         db.refresh(primero)
         db.refresh(segundo)
-        assert primero.recibir_novedades_turnelia is False
-        assert segundo.recibir_novedades_turnelia is False
+        assert primero.recibir_novedades_turnelia is True
+        assert segundo.recibir_novedades_turnelia is True
 
 
 def test_plantilla_renderiza_variables_y_escapa_html():

@@ -49,8 +49,13 @@ export function initializePostHog(): typeof posthog {
   return posthog;
 }
 
+export function posthogParaRuta(pathname: string): typeof posthog {
+  if (pathname === "/baja-novedades") return posthog;
+  return initializePostHog();
+}
+
 export function capturePostHogEvent(name: string, properties?: Properties): void {
-  if (!isPostHogEnabled() || !POSTHOG_ALLOWED_EVENTS.has(name)) return;
+  if (window.location.pathname === "/baja-novedades" || !isPostHogEnabled() || !POSTHOG_ALLOWED_EVENTS.has(name)) return;
   const safeProperties = Object.fromEntries(Object.entries(properties ?? {}).filter(([key, value]) => {
     if (!ALLOWED_PROPERTIES.has(key) || typeof value !== "string") return false;
     return key !== "error_type" || ERROR_TYPES.has(value);

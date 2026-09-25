@@ -30,4 +30,8 @@ Turnelia es una aplicación web para gestionar agendas y turnos médicos. Este d
 | Suscripciones SaaS | Gestionar suscripción de cuenta | Flujo Mercado Pago separado |
 | Onboarding | Guiar alta profesional | Pasos de perfil, prestaciones y disponibilidad |
 
+## Campañas de novedades
+
+Las campañas son una comunicación global por email dirigida únicamente a profesionales con perfil y usuario activos. `recibir_novedades_turnelia` representa una suscripción activa y su valor predeterminado es `true`. La única exclusión persistente es `fecha_baja_novedades`, que se registra al confirmar la baja desde un email. Una baja existente no se reactiva por cambios de preferencias ni por migraciones. Las campañas se crean y envían explícitamente desde el panel del administrador global; el MVP no programa envíos.
+
 El nombre comercial actual es **Turnelia**. `mediturnos`/`MediTurnos` permanece como identidad técnica o histórica; no debe renombrarse automáticamente.
