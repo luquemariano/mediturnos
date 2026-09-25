@@ -51,7 +51,7 @@ def _outbound_message(turno: Turno, recipient: str, confirm_token: str, cancel_t
     return OutboundMessage(
         channel="whatsapp",
         recipient=recipient,
-        message_type="appointment_reminder_v1",
+        message_type="appointment_reminder_v2",
         payload={
             "appointment_datetime": utc_a_zona_negocio(desde_base_utc(turno.fecha_hora)).strftime("%d/%m/%Y %H:%M"),
             "professional_name": f"{turno.profesional.nombre} {turno.profesional.apellido}",
@@ -94,7 +94,7 @@ def send_whatsapp_appointment_reminder(
             db,
             channel="whatsapp",
             purpose="appointment_reminder",
-            message_type="appointment_reminder_v1",
+            message_type="appointment_reminder_v2",
             recipient_snapshot=recipient,
             idempotency_key=key,
         )

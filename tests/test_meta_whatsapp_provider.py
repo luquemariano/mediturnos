@@ -17,7 +17,7 @@ from app.integrations.messaging.meta_whatsapp import MetaTemplateDefinition
 TOKEN = "test-meta-secret-token-DO-NOT-LEAK"
 
 
-def message(message_type="appointment_reminder_v1"):
+def message(message_type="appointment_reminder_v2"):
     return OutboundMessage(
         channel="whatsapp", recipient="5493511234567", message_type=message_type,
         payload={"appointment_datetime": "2026-09-23T10:00:00+00:00", "professional_name": "Profesional de prueba", "confirm_token": "fake-confirm-token", "cancel_token": "fake-cancel-token"},
@@ -25,7 +25,7 @@ def message(message_type="appointment_reminder_v1"):
 
 
 TEMPLATE_MAPPING = {
-    "appointment_reminder_v1": MetaTemplateDefinition(
+    "appointment_reminder_v2": MetaTemplateDefinition(
         name="test_appointment_reminder_template",
         language_code="es_AR",
         body_parameter_keys=("appointment_datetime", "professional_name"),
@@ -86,7 +86,7 @@ def test_invalid_success_and_non_json_fail_without_body_or_token():
 
 def test_unknown_message_type_and_invalid_recipient_fail():
     with pytest.raises(MessagingProviderError): provider(lambda request: httpx.Response(200, json={"messages": [{"id": "x"}]})).send(message("unknown"))
-    with pytest.raises(MessagingProviderError): provider(lambda request: httpx.Response(200, json={"messages": [{"id": "x"}]})).send(OutboundMessage(channel="whatsapp", recipient="+549", message_type="appointment_reminder_v1"))
+    with pytest.raises(MessagingProviderError): provider(lambda request: httpx.Response(200, json={"messages": [{"id": "x"}]})).send(OutboundMessage(channel="whatsapp", recipient="+549", message_type="appointment_reminder_v2"))
 
 
 def test_timeout_is_sanitized():
@@ -102,16 +102,16 @@ def test_factory_keeps_fake_and_builds_meta_or_rejects_incomplete_config():
 
 
 def test_default_template_mapping_includes_appointment_reminder():
-    mapping = DEFAULT_TEMPLATE_MAPPING["appointment_reminder_v1"]
+    mapping = DEFAULT_TEMPLATE_MAPPING["appointment_reminder_v2"]
 
-    assert mapping.name == "appointment_reminder_v1"
+    assert mapping.name == "appointment_reminder_v2"
     assert mapping.language_code == "es_AR"
     assert mapping.body_parameter_keys == ("appointment_datetime", "professional_name")
     assert mapping.button_parameter_keys == ("confirm_token", "cancel_token")
     provider = get_messaging_provider(
         "meta", api_version="v99.0", phone_number_id="test-id", access_token=SecretStr(TOKEN),
     )
-    assert "appointment_reminder_v1" in provider._template_mapping
+    assert "appointment_reminder_v2" in provider._template_mapping
     provider.close()
     customized = get_messaging_provider(
         "meta",

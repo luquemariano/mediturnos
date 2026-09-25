@@ -21,8 +21,8 @@ class MetaTemplateDefinition:
 
 
 DEFAULT_TEMPLATE_MAPPING = {
-    "appointment_reminder_v1": MetaTemplateDefinition(
-        name="appointment_reminder_v1",
+    "appointment_reminder_v2": MetaTemplateDefinition(
+        name="appointment_reminder_v2",
         language_code="es_AR",
         body_parameter_keys=("appointment_datetime", "professional_name"),
         button_parameter_keys=("confirm_token", "cancel_token"),
