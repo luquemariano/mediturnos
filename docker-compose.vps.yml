@@ -41,10 +41,10 @@ services:
       context: ./frontend
       dockerfile: Dockerfile.vps
       args:
-        VITE_API_URL: ${VITE_API_URL}
-        VITE_MERCADOPAGO_PUBLIC_KEY: ${VITE_MERCADOPAGO_PUBLIC_KEY}
-        VITE_POSTHOG_PROJECT_TOKEN: ${VITE_POSTHOG_PROJECT_TOKEN}
-        VITE_POSTHOG_HOST: ${VITE_POSTHOG_HOST}
+        VITE_API_URL: ${VITE_API_URL:?VITE_API_URL must be set}
+        VITE_MERCADOPAGO_PUBLIC_KEY: ${VITE_MERCADOPAGO_PUBLIC_KEY:?VITE_MERCADOPAGO_PUBLIC_KEY must be set}
+        VITE_POSTHOG_PROJECT_TOKEN: ${VITE_POSTHOG_PROJECT_TOKEN:?VITE_POSTHOG_PROJECT_TOKEN must be set}
+        VITE_POSTHOG_HOST: ${VITE_POSTHOG_HOST:?VITE_POSTHOG_HOST must be set}
     container_name: turnelia-ovh-frontend
     restart: unless-stopped
     networks:
