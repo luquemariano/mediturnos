@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import api from "../api/api";
+import "./CampaniasAdmin.css";
 
 type Novedad = { id: number; titulo: string; descripcion_corta: string; prioridad: "normal" | "importante"; cerrada: boolean; activa: boolean };
 type Destinatario = { id: number; nombre: string; email: string };
@@ -47,14 +48,118 @@ export default function CampaniasAdmin({ onVolver }: { onVolver: () => void }) {
   }
   const cerradasActivas = novedades.filter((n) => n.cerrada && n.activa);
 
-  return <main className="pagina-dashboard"><section className="dashboard" style={{ maxWidth: 1000 }}>
-    <header className="dashboard-encabezado"><div><p className="dashboard-etiqueta">Administración global</p><h1>Campañas de novedades</h1></div><button className="boton-secundario" onClick={onVolver}>Volver</button></header>
-    {estado && <p role="status">{estado}</p>}
-    <section className="tarjeta-login"><h2>1. Novedades para incluir</h2><p>Elegí novedades activas y cerradas para esta campaña.</p>{cerradasActivas.length ? cerradasActivas.map((n) => <label key={n.id} style={{ display: "block", padding: 8 }}><input type="checkbox" checked={novedadesElegidas.includes(n.id)} onChange={(e) => setNovedadesElegidas((v) => e.target.checked ? [...v, n.id] : v.filter((id) => id !== n.id))} /> {n.titulo} — {n.descripcion_corta} {n.prioridad === "importante" ? "· Importante" : ""}</label>) : <p>No hay novedades cerradas activas.</p>}</section>
-    <section className="tarjeta-login"><h2>2. Contenido del email</h2><label>Asunto<input value={asunto} onChange={(e) => setAsunto(e.target.value)} /></label><label>Preheader<input value={preheader} onChange={(e) => setPreheader(e.target.value)} /></label><label>Mensaje principal<textarea rows={5} value={mensaje} onChange={(e) => setMensaje(e.target.value)} /></label></section>
-    <section className="tarjeta-login"><h2>3. Destinatarios</h2><label><input type="radio" checked={todos} onChange={() => setTodos(true)} /> Todos los profesionales activos excepto quienes se dieron de baja</label><label><input type="radio" checked={!todos} onChange={() => setTodos(false)} /> Selección manual</label>{!todos && <><label>Buscar profesional<input value={busqueda} onChange={(e) => setBusqueda(e.target.value)} placeholder="Nombre o email" /></label><div style={{ maxHeight: 200, overflow: "auto" }}>{destinatarios.map((d) => <label key={d.id} style={{ display: "block" }}><input type="checkbox" checked={seleccion.includes(d.id)} onChange={(e) => setSeleccion((v) => e.target.checked ? [...v, d.id] : v.filter((id) => id !== d.id))} /> {d.nombre} · {d.email}</label>)}</div></>}<p><strong>{cantidadSeleccionada}</strong> destinatarios</p></section>
-    <section className="tarjeta-login"><h2>4. Vista previa y envío</h2><button type="button" className="boton-secundario" onClick={() => void previsualizar()} disabled={!asunto || !preheader || !mensaje}>Vista previa del email</button>{preview && <><p>Asunto: {preview.asunto} · Para {preview.destinatarios} destinatarios</p><iframe title="Vista previa del email" sandbox="" srcDoc={preview.html} style={{ width: "100%", minHeight: 500, border: "1px solid #d9e0dc", background: "#f6f5f0" }} /><details><summary>Versión de texto</summary><pre>{preview.texto}</pre></details></>}<button type="button" onClick={() => void enviar()} disabled={enviada || !preview || !asunto || !preheader || !mensaje || cantidadSeleccionada === 0}>{enviada ? "Envío completado" : "Enviar ahora"}</button></section>
-    <section className="tarjeta-login"><h2>Gestión de novedades</h2><button type="button" className="boton-secundario" onClick={() => setEdicion({ id: 0, titulo: "", descripcion_corta: "", prioridad: "normal", cerrada: false, activa: true })}>Crear novedad</button>{novedades.map((n) => <p key={n.id}>{n.titulo} · {n.cerrada ? "Cerrada" : "En curso"} · {n.activa ? "Activa" : "Inactiva"} <button type="button" onClick={() => setEdicion(n)}>Editar</button></p>)}</section>
-    {edicion && <div role="dialog" aria-modal="true" className="tarjeta-login"><form onSubmit={(e) => void guardarNovedad(e)}><h2>{edicion.id ? "Editar" : "Crear"} novedad</h2><label>Título<input required value={edicion.titulo} onChange={(e) => setEdicion({ ...edicion, titulo: e.target.value })} /></label><label>Descripción corta<input required value={edicion.descripcion_corta} onChange={(e) => setEdicion({ ...edicion, descripcion_corta: e.target.value })} /></label><label>Prioridad<select value={edicion.prioridad} onChange={(e) => setEdicion({ ...edicion, prioridad: e.target.value as Novedad["prioridad"] })}><option value="normal">Normal</option><option value="importante">Importante</option></select></label><label><input type="checkbox" checked={edicion.cerrada} onChange={(e) => setEdicion({ ...edicion, cerrada: e.target.checked })} /> Cerrada</label><label><input type="checkbox" checked={edicion.activa} onChange={(e) => setEdicion({ ...edicion, activa: e.target.checked })} /> Activa</label><button type="submit">Guardar</button><button type="button" className="boton-secundario" onClick={() => setEdicion(null)}>Cancelar</button></form></div>}
-  </section></main>;
+  return <main className="pagina-dashboard campanias-admin-pagina">
+    <section className="campanias-admin">
+      <header className="campanias-admin__header">
+        <div>
+          <p className="campanias-admin__eyebrow">Administración global</p>
+          <h1>Campañas de novedades</h1>
+          <p className="campanias-admin__intro">Prepará una actualización para profesionales y revisá el email antes de enviarlo.</p>
+        </div>
+        <button type="button" className="campanias-button campanias-button--quiet" onClick={onVolver}>Volver al panel</button>
+      </header>
+
+      {estado && <p className="campanias-status" role="status">{estado}</p>}
+
+      <div className="campanias-workflow">
+        <section className="campanias-card" aria-labelledby="campanias-novedades-titulo">
+          <header className="campanias-card__header">
+            <span className="campanias-step" aria-hidden="true">1</span>
+            <div><h2 id="campanias-novedades-titulo">Novedades para incluir</h2><p>Elegí las novedades activas que ya estén cerradas.</p></div>
+          </header>
+          {cerradasActivas.length ? <div className="campanias-checklist">
+            {cerradasActivas.map((n) => <label className="campanias-check-row" key={n.id}>
+              <input type="checkbox" checked={novedadesElegidas.includes(n.id)} onChange={(e) => setNovedadesElegidas((v) => e.target.checked ? [...v, n.id] : v.filter((id) => id !== n.id))} />
+              <span><strong>{n.titulo}</strong><small>{n.descripcion_corta}</small></span>
+              {n.prioridad === "importante" && <span className="campanias-priority">Importante</span>}
+            </label>)}
+          </div> : <p className="campanias-empty">No hay novedades cerradas activas.</p>}
+        </section>
+
+        <section className="campanias-card" aria-labelledby="campanias-contenido-titulo">
+          <header className="campanias-card__header">
+            <span className="campanias-step" aria-hidden="true">2</span>
+            <div><h2 id="campanias-contenido-titulo">Contenido del email</h2><p>Definí el asunto y el mensaje que recibirán los profesionales.</p></div>
+          </header>
+          <div className="campanias-form-fields">
+            <label htmlFor="campanias-asunto">Asunto<input id="campanias-asunto" value={asunto} onChange={(e) => setAsunto(e.target.value)} /></label>
+            <label htmlFor="campanias-preheader">Preheader<input id="campanias-preheader" value={preheader} onChange={(e) => setPreheader(e.target.value)} /></label>
+            <label htmlFor="campanias-mensaje">Mensaje principal<textarea id="campanias-mensaje" rows={5} value={mensaje} onChange={(e) => setMensaje(e.target.value)} /></label>
+          </div>
+        </section>
+
+        <section className="campanias-card" aria-labelledby="campanias-destinatarios-titulo">
+          <header className="campanias-card__header">
+            <span className="campanias-step" aria-hidden="true">3</span>
+            <div><h2 id="campanias-destinatarios-titulo">Destinatarios</h2><p>Elegí a quiénes querés enviar esta campaña.</p></div>
+          </header>
+          <fieldset className="campanias-recipient-options">
+            <legend className="campanias-sr-only">Modo de selección de destinatarios</legend>
+            <label><input type="radio" name="modo-destinatarios" checked={todos} onChange={() => setTodos(true)} /><span><strong>Todos los profesionales activos</strong><small>Se excluyen quienes se dieron de baja.</small></span></label>
+            <label><input type="radio" name="modo-destinatarios" checked={!todos} onChange={() => setTodos(false)} /><span><strong>Selección manual</strong><small>Elegí profesionales de la lista.</small></span></label>
+          </fieldset>
+          {!todos && <div className="campanias-manual-selection">
+            <label htmlFor="campanias-busqueda">Buscar profesional<input id="campanias-busqueda" value={busqueda} onChange={(e) => setBusqueda(e.target.value)} placeholder="Nombre o email" /></label>
+            <div className="campanias-recipient-list" role="group" aria-label="Profesionales disponibles">
+              {destinatarios.map((d) => <label className="campanias-recipient-row" key={d.id}>
+                <input type="checkbox" checked={seleccion.includes(d.id)} onChange={(e) => setSeleccion((v) => e.target.checked ? [...v, d.id] : v.filter((id) => id !== d.id))} />
+                <span><strong>{d.nombre}</strong><small>{d.email}</small></span>
+              </label>)}
+              {destinatarios.length === 0 && <p className="campanias-empty">No encontramos profesionales con esa búsqueda.</p>}
+            </div>
+          </div>}
+          <p className="campanias-recipient-count" aria-live="polite"><strong>{cantidadSeleccionada}</strong><span>{cantidadSeleccionada === 1 ? "destinatario" : "destinatarios"}</span></p>
+        </section>
+
+        <section className="campanias-card campanias-card--preview" aria-labelledby="campanias-preview-titulo">
+          <header className="campanias-card__header">
+            <span className="campanias-step" aria-hidden="true">4</span>
+            <div><h2 id="campanias-preview-titulo">Vista previa y envío</h2><p>Revisá el mensaje completo. El envío comienza al confirmar “Enviar ahora”.</p></div>
+          </header>
+          <div className="campanias-preview-actions">
+            <button type="button" className="campanias-button campanias-button--secondary" onClick={() => void previsualizar()} disabled={!asunto || !preheader || !mensaje}>Vista previa del email</button>
+            {preview && <span className="campanias-preview-note">Vista previa para {preview.destinatarios} {preview.destinatarios === 1 ? "destinatario" : "destinatarios"}</span>}
+          </div>
+          {preview && <div className="campanias-preview-content">
+            <p className="campanias-preview-subject"><span>Asunto</span><strong>{preview.asunto}</strong></p>
+            <iframe title="Vista previa del email" sandbox="" srcDoc={preview.html} />
+            <details><summary>Ver versión de texto</summary><pre>{preview.texto}</pre></details>
+          </div>}
+          <footer className="campanias-send-footer">
+            <p>Se enviará inmediatamente a <strong>{cantidadSeleccionada}</strong> {cantidadSeleccionada === 1 ? "profesional" : "profesionales"}.</p>
+            <button type="button" className="campanias-button campanias-button--primary" onClick={() => void enviar()} disabled={enviada || !preview || !asunto || !preheader || !mensaje || cantidadSeleccionada === 0}>{enviada ? "Envío completado" : "Enviar ahora"}</button>
+          </footer>
+        </section>
+      </div>
+
+      <section className="campanias-management" aria-labelledby="campanias-gestion-titulo">
+        <header><div><p className="campanias-admin__eyebrow">Catálogo</p><h2 id="campanias-gestion-titulo">Gestión de novedades</h2><p>Administrá las novedades que aparecerán en futuras campañas.</p></div>
+          <button type="button" className="campanias-button campanias-button--secondary" onClick={() => setEdicion({ id: 0, titulo: "", descripcion_corta: "", prioridad: "normal", cerrada: false, activa: true })}>Crear novedad</button>
+        </header>
+        {novedades.length > 0 ? <ul className="campanias-news-list">{novedades.map((n) => <li key={n.id}>
+          <div><strong>{n.titulo}</strong><p>{n.descripcion_corta}</p></div>
+          <div className="campanias-news-meta"><span className={n.cerrada ? "is-closed" : ""}>{n.cerrada ? "Cerrada" : "En curso"}</span><span className={n.activa ? "is-active" : ""}>{n.activa ? "Activa" : "Inactiva"}</span></div>
+          <button type="button" className="campanias-button campanias-button--quiet" onClick={() => setEdicion(n)}>Editar</button>
+        </li>)}</ul> : <p className="campanias-empty">Todavía no hay novedades en el catálogo.</p>}
+      </section>
+
+      {edicion && <div className="campanias-dialog-backdrop">
+        <section role="dialog" aria-modal="true" aria-labelledby="campanias-dialog-titulo" className="campanias-dialog">
+          <form onSubmit={(e) => void guardarNovedad(e)}>
+            <header><p className="campanias-admin__eyebrow">Catálogo de novedades</p><h2 id="campanias-dialog-titulo">{edicion.id ? "Editar novedad" : "Crear novedad"}</h2></header>
+            <div className="campanias-form-fields">
+              <label htmlFor="novedad-titulo">Título<input id="novedad-titulo" required value={edicion.titulo} onChange={(e) => setEdicion({ ...edicion, titulo: e.target.value })} /></label>
+              <label htmlFor="novedad-descripcion">Descripción corta<input id="novedad-descripcion" required value={edicion.descripcion_corta} onChange={(e) => setEdicion({ ...edicion, descripcion_corta: e.target.value })} /></label>
+              <label htmlFor="novedad-prioridad">Prioridad<select id="novedad-prioridad" value={edicion.prioridad} onChange={(e) => setEdicion({ ...edicion, prioridad: e.target.value as Novedad["prioridad"] })}><option value="normal">Normal</option><option value="importante">Importante</option></select></label>
+            </div>
+            <div className="campanias-toggle-list">
+              <label><input type="checkbox" checked={edicion.cerrada} onChange={(e) => setEdicion({ ...edicion, cerrada: e.target.checked })} /> Cerrada</label>
+              <label><input type="checkbox" checked={edicion.activa} onChange={(e) => setEdicion({ ...edicion, activa: e.target.checked })} /> Activa</label>
+            </div>
+            <footer><button type="button" className="campanias-button campanias-button--quiet" onClick={() => setEdicion(null)}>Cancelar</button><button type="submit" className="campanias-button campanias-button--primary">Guardar novedad</button></footer>
+          </form>
+        </section>
+      </div>}
+    </section>
+  </main>;
 }

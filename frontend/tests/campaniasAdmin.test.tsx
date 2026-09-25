@@ -30,12 +30,12 @@ describe("CampaniasAdmin", () => {
   });
 
   it("conserva la selección manual al cambiar la búsqueda y envía el mismo conjunto contado", async () => {
-    render(<CampaniasAdmin onVolver={vi.fn()} />);
-    fireEvent.click(await screen.findByLabelText("Selección manual"));
+    const { container } = render(<CampaniasAdmin onVolver={vi.fn()} />);
+    fireEvent.click(await screen.findByRole("radio", { name: /Selección manual/ }));
     fireEvent.click(screen.getByLabelText(/Dra\. Ana/));
     fireEvent.change(screen.getByPlaceholderText("Nombre o email"), { target: { value: "Bruno" } });
     expect(await screen.findByLabelText(/Dr\. Bruno/)).toBeInTheDocument();
-    expect(screen.getByText("1", { selector: "strong" })).toBeInTheDocument();
+    expect(container.querySelector(".campanias-recipient-count strong")).toHaveTextContent("1");
 
     fireEvent.change(screen.getByLabelText("Asunto"), { target: { value: "Novedades" } });
     fireEvent.change(screen.getByLabelText("Preheader"), { target: { value: "Actualizaciones" } });
