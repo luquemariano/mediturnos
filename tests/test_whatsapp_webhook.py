@@ -39,6 +39,14 @@ def test_parser_recognizes_messages_and_statuses_defensively():
     assert parse_webhook_events({"object": "whatsapp_business_account"}) == []
 
 
+def test_parser_extracts_only_first_failed_status_error_fields():
+    payload = {"object": "whatsapp_business_account", "entry": [{"changes": [{"field": "messages", "value": {"statuses": [{"id": "msg-failed", "status": "failed", "errors": [{"code": 131047, "title": "Re-engagement message", "message": "Window expired", "error_data": {"details": "private"}}, {"code": 999, "title": "ignored", "message": "ignored"}]}, {"id": "msg-failed-no-error", "status": "failed", "errors": "invalid"}, {"id": "msg-delivered", "status": "delivered", "errors": [{"code": 999, "title": "ignored", "message": "ignored"}] }]}}]}]}
+    events = parse_webhook_events(payload)
+    assert (events[0].error_code, events[0].error_title, events[0].error_message) == (131047, "Re-engagement message", "Window expired")
+    assert (events[1].kind, events[1].status, events[1].error_code, events[1].error_title, events[1].error_message) == ("status", "failed", None, None, None)
+    assert (events[2].kind, events[2].status, events[2].error_code, events[2].error_title, events[2].error_message) == ("status", "delivered", None, None, None)
+
+
 def test_get_verification_success_and_failures(monkeypatch):
     enable(monkeypatch)
     response = whatsapp_webhook.verify("subscribe", VERIFY, "challenge-test")
@@ -114,3 +122,54 @@ def test_post_logs_safe_status_metadata_and_unknown_event_stays_accepted(monkeyp
     assert result == {"received": True, "events": 2}
     assert "whatsapp_webhook_event kind=status message_id=msg-status-1 status=delivered" in logs
     assert "msg-unknown-1" not in logs
+
+
+def test_post_logs_failed_error_details_without_sensitive_payload_data(monkeypatch, caplog):
+    enable(monkeypatch)
+    payload = {
+        "object": "whatsapp_business_account",
+        "entry": [{
+            "changes": [{
+                "field": "messages",
+                "value": {
+                    "metadata": {"phone_number_id": "phone-secret"},
+                    "contacts": [{"profile": {"name": "Ana Contacto"}, "wa_id": "5491112345678"}],
+                    "statuses": [{
+                        "id": "msg-failed-1",
+                        "status": "failed",
+                        "errors": [{
+                            "code": 131047,
+                            "title": "Re-engagement message",
+                            "message": "Window expired",
+                            "error_data": {
+                                "details": "private error data",
+                                "access_token": "access-secret",
+                                "app_secret": "app-secret",
+                                "verify_token": "verify-secret",
+                                "patient": "Paciente Privado",
+                                "phone": "5491198765432",
+                            },
+                        }],
+                    }],
+                },
+            }],
+        }],
+    }
+    body = json.dumps(payload).encode()
+
+    class Request:
+        def __init__(self):
+            self.headers = {"x-hub-signature-256": signed(body)}
+
+        async def body(self):
+            return body
+
+    import asyncio
+    with caplog.at_level("INFO", logger=whatsapp_webhook.logger.name):
+        result = asyncio.run(whatsapp_webhook.receive(Request()))
+
+    logs = caplog.text
+    assert result == {"received": True, "events": 1}
+    assert "whatsapp_webhook_event kind=status message_id=msg-failed-1 status=failed error_code=131047 error_title=Re-engagement message error_message=Window expired" in logs
+    for value in ("private error data", "access-secret", "app-secret", "verify-secret", "Paciente Privado", "5491112345678", "5491198765432", "Ana Contacto", "phone-secret", SECRET, VERIFY, signed(body)):
+        assert value not in logs

@@ -57,9 +57,19 @@ async def receive(request: Request) -> dict[str, bool | int]:
                 event.raw_type,
             )
         elif event.kind == "status":
-            logger.info(
-                "whatsapp_webhook_event kind=status message_id=%s status=%s",
-                event.message_id,
-                event.status,
-            )
+            if event.status == "failed":
+                logger.info(
+                    "whatsapp_webhook_event kind=status message_id=%s status=%s error_code=%s error_title=%s error_message=%s",
+                    event.message_id,
+                    event.status,
+                    event.error_code,
+                    event.error_title,
+                    event.error_message,
+                )
+            else:
+                logger.info(
+                    "whatsapp_webhook_event kind=status message_id=%s status=%s",
+                    event.message_id,
+                    event.status,
+                )
     return {"received": True, "events": len(events)}
