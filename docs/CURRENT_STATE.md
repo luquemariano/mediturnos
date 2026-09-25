@@ -233,3 +233,5 @@ Ante una contingencia grave se debe preservar primero la base actual OVH y luego
 - `docs/DEPLOYMENT.md`: arquitectura y operación productiva actual.
 - `docs/VPS_DEPLOY_CHECKLIST.md`: checklist para despliegues y verificaciones.
 - `.env.vps.example`: contrato de variables productivas sin secretos.
+## Work git commit test
+Prueba temporal de commit local mediante ChatGPT Work.
