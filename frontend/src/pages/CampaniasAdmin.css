@@ -1,0 +1,691 @@
+.campanias-admin-pagina {
+  background: #f4f7f6;
+  color: #173d36;
+}
+
+.campanias-admin {
+  width: min(1040px, 100%);
+  margin: 0 auto;
+}
+
+.campanias-admin__header,
+.campanias-management > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 22px;
+  padding: 24px 28px;
+  border: 1px solid #dbe7e3;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 7px 22px #1f51470a;
+}
+
+.campanias-admin__header h1,
+.campanias-management h2 {
+  margin: 0;
+  color: #153e3b;
+  font-family: Manrope, "Source Sans 3", Arial, sans-serif;
+  font-weight: 750;
+  letter-spacing: -0.035em;
+}
+
+.campanias-admin__header h1 {
+  font-size: clamp(28px, 4vw, 36px);
+  line-height: 1.15;
+}
+
+.campanias-admin__eyebrow {
+  margin: 0 0 5px;
+  color: #287565;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.campanias-admin__intro,
+.campanias-management > header p:last-child {
+  max-width: 660px;
+  margin: 8px 0 0;
+  color: #60736f;
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.campanias-workflow {
+  display: grid;
+  gap: 16px;
+}
+
+.campanias-card,
+.campanias-management {
+  min-width: 0;
+  padding: 24px 26px;
+  border: 1px solid #dbe7e3;
+  border-radius: 15px;
+  background: #fff;
+  box-shadow: 0 7px 22px #1f51470a;
+}
+
+.campanias-card__header {
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+  margin-bottom: 19px;
+}
+
+.campanias-card__header h2 {
+  margin: 0;
+  color: #173d36;
+  font-family: Manrope, "Source Sans 3", Arial, sans-serif;
+  font-size: 19px;
+  font-weight: 750;
+  line-height: 1.35;
+}
+
+.campanias-card__header p {
+  margin: 4px 0 0;
+  color: #60736f;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.campanias-step {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  place-items: center;
+  border-radius: 10px;
+  background: #e5f2ee;
+  color: #176f6a;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.campanias-checklist,
+.campanias-recipient-list,
+.campanias-news-list {
+  display: grid;
+  gap: 8px;
+}
+
+.campanias-check-row,
+.campanias-recipient-row {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 14px;
+  border: 1px solid #e1eae7;
+  border-radius: 10px;
+  background: #fbfcfb;
+  color: #173d36;
+  cursor: pointer;
+  transition: background-color 140ms ease, border-color 140ms ease;
+}
+
+.campanias-check-row:hover,
+.campanias-recipient-row:hover {
+  border-color: #a9c8be;
+  background: #f5faf8;
+}
+
+.campanias-check-row > span:nth-child(2),
+.campanias-recipient-row > span {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.campanias-check-row strong,
+.campanias-recipient-row strong {
+  font-size: 14px;
+  font-weight: 750;
+}
+
+.campanias-check-row small,
+.campanias-recipient-row small {
+  overflow-wrap: anywhere;
+  color: #60736f;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.campanias-priority {
+  flex: 0 0 auto;
+  margin-left: auto;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: #fff2d9;
+  color: #805400;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.campanias-form-fields {
+  display: grid;
+  gap: 16px;
+}
+
+.campanias-form-fields label,
+.campanias-manual-selection > label {
+  display: grid;
+  min-width: 0;
+  gap: 7px;
+  color: #34554e;
+  font-size: 14px;
+  font-weight: 750;
+}
+
+.campanias-form-fields input,
+.campanias-form-fields textarea,
+.campanias-form-fields select,
+.campanias-manual-selection > label input {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 46px;
+  padding: 11px 13px;
+  border: 1px solid #b9ccc7;
+  border-radius: 9px;
+  background: #fff;
+  color: #173d36;
+  font: 400 15px/1.5 "Source Sans 3", Arial, sans-serif;
+}
+
+.campanias-form-fields textarea {
+  min-height: 132px;
+  resize: vertical;
+}
+
+.campanias-admin input[type="checkbox"],
+.campanias-admin input[type="radio"],
+.campanias-dialog input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  accent-color: #176f6a;
+  cursor: pointer;
+}
+
+.campanias-admin :is(input, textarea, select, button, summary):focus-visible,
+.campanias-dialog :is(input, textarea, select, button):focus-visible {
+  outline: 3px solid #28756555;
+  outline-offset: 3px;
+}
+
+.campanias-recipient-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.campanias-recipient-options > label {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid #dbe7e3;
+  border-radius: 11px;
+  background: #fbfcfb;
+  color: #173d36;
+  cursor: pointer;
+}
+
+.campanias-recipient-options > label:has(input:checked) {
+  border-color: #4c9184;
+  background: #edf7f3;
+  box-shadow: inset 0 0 0 1px #4c9184;
+}
+
+.campanias-recipient-options > label > span {
+  display: grid;
+  gap: 3px;
+}
+
+.campanias-recipient-options strong {
+  font-size: 14px;
+}
+
+.campanias-recipient-options small {
+  color: #60736f;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.campanias-manual-selection {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.campanias-recipient-list {
+  max-height: 260px;
+  overflow: auto;
+  padding: 2px 4px 2px 2px;
+}
+
+.campanias-recipient-count {
+  display: flex;
+  width: fit-content;
+  align-items: baseline;
+  gap: 7px;
+  margin: 16px 0 0;
+  padding: 8px 13px;
+  border-radius: 9px;
+  background: #eaf4f1;
+  color: #245c52;
+  font-size: 14px;
+}
+
+.campanias-recipient-count strong {
+  color: #153e3b;
+  font-size: 19px;
+}
+
+.campanias-preview-actions,
+.campanias-send-footer,
+.campanias-management > header,
+.campanias-news-list > li,
+.campanias-news-meta,
+.campanias-dialog footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.campanias-preview-note {
+  color: #60736f;
+  font-size: 13px;
+}
+
+.campanias-preview-content {
+  display: grid;
+  gap: 13px;
+  margin-top: 18px;
+}
+
+.campanias-preview-subject {
+  display: grid;
+  gap: 3px;
+  color: #60736f;
+  font-size: 13px;
+}
+
+.campanias-preview-subject strong {
+  color: #173d36;
+  font-size: 15px;
+}
+
+.campanias-preview-content iframe {
+  display: block;
+  width: 100%;
+  min-height: 500px;
+  border: 1px solid #d9e0dc;
+  border-radius: 10px;
+  background: #f6f5f0;
+}
+
+.campanias-preview-content details {
+  color: #34554e;
+  font-size: 14px;
+}
+
+.campanias-preview-content summary {
+  width: fit-content;
+  color: #176f6a;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.campanias-preview-content pre {
+  max-height: 320px;
+  overflow: auto;
+  margin-top: 10px;
+  padding: 14px;
+  border: 1px solid #dbe7e3;
+  border-radius: 9px;
+  background: #f8faf9;
+  color: #173d36;
+  font: 14px/1.55 "Source Sans 3", Arial, sans-serif;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.campanias-send-footer {
+  flex-wrap: wrap;
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid #e1eae7;
+}
+
+.campanias-send-footer p {
+  margin: 0;
+  color: #60736f;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.campanias-send-footer p strong {
+  color: #173d36;
+}
+
+.campanias-button {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 16px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  font: 700 14px/1.3 "Source Sans 3", Arial, sans-serif;
+  text-align: center;
+  cursor: pointer;
+  transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease;
+}
+
+.campanias-button--primary {
+  border-color: #176f6a;
+  background: #176f6a;
+  color: #fff;
+}
+
+.campanias-button--primary:hover:not(:disabled) {
+  border-color: #125953;
+  background: #125953;
+}
+
+.campanias-button--secondary {
+  border-color: #176f6a;
+  background: #edf7f3;
+  color: #176f6a;
+}
+
+.campanias-button--secondary:hover:not(:disabled) {
+  background: #dceee8;
+}
+
+.campanias-button--quiet {
+  border-color: #b9ccc7;
+  background: #fff;
+  color: #245c52;
+}
+
+.campanias-button--quiet:hover:not(:disabled) {
+  background: #f3f8f6;
+}
+
+.campanias-button:disabled {
+  border-color: #d4dedb;
+  background: #e9eeec;
+  color: #697a76;
+  cursor: not-allowed;
+}
+
+.campanias-management {
+  margin-top: 22px;
+}
+
+.campanias-management > header {
+  align-items: center;
+  margin: 0 0 14px;
+  padding: 0 0 18px;
+  border: 0;
+  border-bottom: 1px solid #e1eae7;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.campanias-management h2 {
+  font-size: 21px;
+}
+
+.campanias-news-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.campanias-news-list > li {
+  min-width: 0;
+  padding: 14px 0;
+  border-bottom: 1px solid #e8eeec;
+}
+
+.campanias-news-list > li:last-child {
+  border-bottom: 0;
+}
+
+.campanias-news-list > li > div:first-child {
+  min-width: 0;
+  flex: 1;
+}
+
+.campanias-news-list > li > div:first-child strong {
+  overflow-wrap: anywhere;
+  font-size: 14px;
+}
+
+.campanias-news-list > li > div:first-child p {
+  margin: 3px 0 0;
+  color: #60736f;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.campanias-news-meta {
+  flex: 0 0 auto;
+  justify-content: flex-start;
+}
+
+.campanias-news-meta span {
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: #eef1f0;
+  color: #53635f;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.campanias-news-meta .is-closed,
+.campanias-news-meta .is-active {
+  background: #e4f5ec;
+  color: #176646;
+}
+
+.campanias-status,
+.campanias-empty {
+  padding: 14px 16px;
+  border: 1px solid #dbe7e3;
+  border-radius: 10px;
+  background: #f8faf9;
+  color: #536b65;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.campanias-status {
+  margin-bottom: 16px;
+  border-color: #b9d8cf;
+  background: #edf7f3;
+  color: #245c52;
+}
+
+.campanias-dialog-backdrop {
+  position: fixed;
+  z-index: 100;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  overflow-y: auto;
+  padding: 24px;
+  background: #122b2680;
+}
+
+.campanias-dialog {
+  box-sizing: border-box;
+  width: min(560px, 100%);
+  max-height: min(90vh, 780px);
+  overflow-y: auto;
+  padding: 26px;
+  border: 1px solid #dbe7e3;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 24px 70px #102a2540;
+}
+
+.campanias-dialog form {
+  display: grid;
+  gap: 22px;
+}
+
+.campanias-dialog h2 {
+  margin: 0;
+  color: #153e3b;
+  font: 750 23px/1.25 Manrope, "Source Sans 3", Arial, sans-serif;
+}
+
+.campanias-toggle-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.campanias-toggle-list label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #34554e;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.campanias-dialog footer {
+  justify-content: flex-end;
+  padding-top: 18px;
+  border-top: 1px solid #e1eae7;
+}
+
+.campanias-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  clip-path: inset(50%);
+}
+
+@media (max-width: 700px) {
+  .pagina-dashboard.campanias-admin-pagina {
+    padding: 20px 14px 36px;
+  }
+
+  .campanias-admin__header,
+  .campanias-management > header {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 16px;
+    padding: 21px 19px;
+  }
+
+  .campanias-admin__header .campanias-button,
+  .campanias-management > header .campanias-button {
+    width: 100%;
+  }
+
+  .campanias-card,
+  .campanias-management {
+    padding: 20px 18px;
+  }
+
+  .campanias-management > header {
+    margin-bottom: 8px;
+    padding: 0 0 16px;
+  }
+
+  .campanias-recipient-options {
+    grid-template-columns: 1fr;
+  }
+
+  .campanias-news-list > li {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .campanias-news-list > li > div:first-child {
+    flex-basis: calc(100% - 2px);
+  }
+
+  .campanias-news-meta {
+    flex-wrap: wrap;
+  }
+
+  .campanias-preview-actions,
+  .campanias-send-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .campanias-preview-actions .campanias-button,
+  .campanias-send-footer .campanias-button {
+    width: 100%;
+  }
+
+  .campanias-dialog-backdrop {
+    align-items: end;
+    padding: 12px;
+  }
+
+  .campanias-dialog {
+    width: 100%;
+    max-height: calc(100dvh - 24px);
+    padding: 22px 18px;
+    border-radius: 16px 16px 12px 12px;
+  }
+}
+
+@media (max-width: 420px) {
+  .campanias-admin__header,
+  .campanias-card,
+  .campanias-management {
+    padding-right: 15px;
+    padding-left: 15px;
+  }
+
+  .campanias-check-row,
+  .campanias-recipient-row {
+    align-items: flex-start;
+    padding: 12px 10px;
+  }
+
+  .campanias-priority {
+    margin-left: 30px;
+  }
+
+  .campanias-preview-content iframe {
+    min-height: 440px;
+  }
+
+  .campanias-dialog footer {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .campanias-admin *,
+  .campanias-dialog * {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
