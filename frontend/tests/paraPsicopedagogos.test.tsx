@@ -13,7 +13,7 @@ describe("landing para psicopedagogos", () => {
     expect(screen.getByRole("heading", { level: 1, name: "Software para psicopedagogos que simplifica tu gestión diaria" })).toBeInTheDocument();
     expect(screen.getByText("¿Qué puede organizar un psicopedagogo con Turnelia?")).toBeInTheDocument();
     expect(screen.getAllByRole("link", { name: "Probar Turnelia" })[0]).toHaveAttribute("href", "/registro");
-    expect(screen.getByRole("link", { name: "Gestión integral" })).toHaveAttribute("href", "/software-para-consultorios");
+    expect(screen.getByRole("link", { name: "Software para consultorios" })).toHaveAttribute("href", "/software-para-consultorios");
     expect(screen.getByRole("link", { name: "Sistema de turnos" })).toHaveAttribute("href", "/sistema-de-turnos");
   });
 

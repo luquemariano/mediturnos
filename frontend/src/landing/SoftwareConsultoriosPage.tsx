@@ -12,7 +12,9 @@ const funciones = [
   ["Seguimiento de la atención", "Registrá evoluciones y consultá el seguimiento cuando lo necesites."],
 ] as const;
 
-const preguntas = [
+// Shared with the prerender so FAQPage exactly mirrors the visible accordion.
+// eslint-disable-next-line react/only-export-components
+export const preguntas = [
   ["¿Qué es un software para consultorios?", "Es una herramienta que reúne en un mismo lugar la agenda, los turnos, los pacientes y la información necesaria para organizar la actividad diaria de un consultorio."],
   ["¿Turnelia sirve para profesionales independientes?", "Sí. Turnelia está pensado para profesionales independientes que gestionan sus propios pacientes, horarios, prestaciones y turnos."],
   ["¿Puedo administrar horarios y disponibilidad?", "Sí. Podés definir tus días de atención, franjas horarias, excepciones y vacaciones para ordenar tu agenda."],
@@ -29,7 +31,7 @@ function SoftwareHeader() {
   return <header className="landing-header seo-landing-header"><div className="landing-container landing-header__inner">
     <a className="landing-logo" href="/" aria-label="Turnelia, inicio"><img src="/brand/mediturnos-logo-horizontal.svg" alt="Turnelia" /></a>
     <button className="menu-button" type="button" aria-expanded={abierto} aria-controls="seo-navigation" onClick={() => setAbierto(!abierto)}><span /><span /><span /><span className="sr-only">Abrir menú</span></button>
-    <nav id="seo-navigation" className={abierto ? "landing-nav is-open" : "landing-nav"} aria-label="Navegación principal" onClick={() => setAbierto(false)}><a href="#funciones">Funciones</a><a href="#como-empezar">Cómo empezar</a><a href="/sistema-de-turnos">Sistema de turnos</a><a href="/ayuda">Centro de Ayuda</a><a className="nav-login" href="/login">Ingresar</a><a className="button button--small" href="/registro">Probar Turnelia</a></nav>
+    <nav id="seo-navigation" className={abierto ? "landing-nav is-open" : "landing-nav"} aria-label="Navegación principal" onClick={() => setAbierto(false)}><a href="#funciones">Funciones</a><a href="#como-empezar">Cómo empezar</a><a href="/sistema-de-turnos">Sistema de turnos</a><a href="/para-psicopedagogos">Turnelia para psicopedagogos</a><a href="/ayuda/primeros-pasos">Guía para empezar</a><a className="nav-login" href="/login">Ingresar</a><a className="button button--small" href="/registro">Probar Turnelia</a></nav>
   </div></header>;
 }
 
@@ -50,5 +52,5 @@ export default function SoftwareConsultoriosPage() {
     <section className="landing-section seo-audience"><div className="landing-container"><div className="section-heading"><p className="eyebrow">Para quién sirve</p><h2>Para profesionales que gestionan pacientes y turnos</h2></div><div className="audience__list">{["Psicólogos", ["Psicopedagogos", "/para-psicopedagogos"], "Kinesiólogos", "Nutricionistas", "Médicos independientes", "Otros profesionales"].map(item => { const contenido = Array.isArray(item) ? <a href={item[1]}>{item[0]}</a> : item; return <span key={Array.isArray(item) ? item[0] : item}>{contenido}</span>; })}</div></div></section>
     <section id="como-empezar" className="landing-section seo-steps"><div className="landing-container"><div className="section-heading"><p className="eyebrow">Cómo empezar</p><h2>Empezá a organizar tu consultorio en pocos pasos</h2></div><ol>{["Crear tu cuenta", "Configurar tu perfil", "Cargar tus prestaciones", "Definir tu disponibilidad", "Empezar a gestionar pacientes y turnos"].map((item, index) => <li key={item}><span>{index + 1}</span><strong>{item}</strong></li>)}</ol></div></section>
     <Faq /><section className="dark-cta dark-cta--final"><div className="landing-container dark-cta__inner"><div><p className="eyebrow">Turnelia</p><h2>Organizá tu consultorio con Turnelia</h2><p>Probá una gestión más simple para tu actividad diaria.</p></div><a className="button button--light" href="/registro">Probar Turnelia</a></div></section>
-  </main><footer className="landing-footer"><div className="landing-container seo-footer"><img src="/brand/mediturnos-logo-horizontal.svg" alt="Turnelia" /><div><a href="/">Inicio</a><a href="/sistema-de-turnos">Sistema de turnos</a><a href="/ayuda">Centro de Ayuda</a><a href="/registro">Probar Turnelia</a></div></div></footer></div>;
+  </main><footer className="landing-footer"><div className="landing-container seo-footer"><img src="/brand/mediturnos-logo-horizontal.svg" alt="Turnelia" /><div><a href="/">Inicio</a><a href="/sistema-de-turnos">Sistema de turnos</a><a href="/para-psicopedagogos">Turnelia para psicopedagogos</a><a href="/ayuda/primeros-pasos">Guía para empezar</a><a href="/registro">Probar Turnelia</a></div></div></footer></div>;
 }

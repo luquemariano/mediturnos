@@ -13,7 +13,7 @@ describe("landing de sistema de turnos", () => {
     expect(screen.getByRole("heading", { level: 1, name: "Sistema de turnos para organizar tu agenda profesional" })).toBeInTheDocument();
     expect(screen.getByText("¿Qué es un sistema de turnos para consultorios?")).toBeInTheDocument();
     expect(screen.getAllByRole("link", { name: "Probar Turnelia" })[0]).toHaveAttribute("href", "/registro");
-    expect(screen.getAllByRole("link", { name: "Gestión integral" })[0]).toHaveAttribute("href", "/software-para-consultorios");
+    expect(screen.getAllByRole("link", { name: "Software para consultorios" })[0]).toHaveAttribute("href", "/software-para-consultorios");
   });
 
   it("mide el click real del CTA con el source de sistema de turnos", () => {
