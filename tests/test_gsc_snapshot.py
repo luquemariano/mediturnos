@@ -35,6 +35,25 @@ def config():
     return GSCConfig("cid", "secret", "refresh", "sc-domain:turnelia.com.ar")
 
 
+def test_config_rejects_empty_or_malformed_site_url(monkeypatch):
+    for value in ("", "not-a-property", "https://user:pass@example.com"):
+        monkeypatch.setenv("GSC_CLIENT_ID", "cid")
+        monkeypatch.setenv("GSC_CLIENT_SECRET", "secret")
+        monkeypatch.setenv("GSC_REFRESH_TOKEN", "refresh")
+        monkeypatch.setenv("GSC_SITE_URL", value)
+        with pytest.raises(ValueError, match="GSC_SITE_URL"):
+            GSCConfig.from_env()
+
+
+def test_config_accepts_domain_and_url_prefix_properties(monkeypatch):
+    monkeypatch.setenv("GSC_CLIENT_ID", "cid")
+    monkeypatch.setenv("GSC_CLIENT_SECRET", "secret")
+    monkeypatch.setenv("GSC_REFRESH_TOKEN", "refresh")
+    for value in ("sc-domain:turnelia.com.ar", "https://turnelia.com.ar/path"):
+        monkeypatch.setenv("GSC_SITE_URL", value)
+        assert GSCConfig.from_env().site_url == value
+
+
 def row(keys=None, clicks=1, impressions=10, ctr=.1, position=5):
     result = {
         "clicks": clicks,
@@ -226,6 +245,21 @@ def test_force_allows_history_overwrite(tmp_path):
     gsc.write_snapshot(snapshot(), tmp_path, force=True)
 
 
+def test_snapshot_write_failure_does_not_publish_latest(tmp_path, monkeypatch):
+    original_replace = Path.replace
+
+    def fail_history_replace(path, target):
+        if Path(target).name == "2026-09-25.json":
+            raise OSError("disk failure")
+        return original_replace(path, target)
+
+    monkeypatch.setattr(Path, "replace", fail_history_replace)
+    with pytest.raises(OSError, match="disk failure"):
+        gsc.write_snapshot(snapshot(), tmp_path)
+    assert not (tmp_path / "latest.json").exists()
+    assert list((tmp_path / "history").iterdir()) == []
+
+
 def test_desktop_credentials_required(tmp_path):
     path = tmp_path / "oauth.json"
     path.write_text(json.dumps({"web": {}}))
@@ -265,6 +299,17 @@ def test_env_output_contains_expected_values(tmp_path):
     assert "GSC_CLIENT_SECRET=sec" in content
     assert "GSC_REFRESH_TOKEN=ref" in content
     assert "GSC_SITE_URL=sc-domain:turnelia.com.ar" in content
+
+
+def test_env_output_rejects_multiline_credentials(tmp_path):
+    with pytest.raises(ValueError, match="una sola línea"):
+        oauth.write_env(
+            tmp_path / "gsc.env",
+            client_id="cid\nOTHER=value",
+            client_secret="sec",
+            refresh_token="ref",
+            site_url="sc-domain:turnelia.com.ar",
+        )
 
 
 def test_exchange_error_is_sanitized():
