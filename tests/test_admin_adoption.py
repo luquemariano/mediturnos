@@ -43,7 +43,9 @@ def crear_profesional(db, suffix: str, events: list[tuple[str, datetime]]):
 
 
 def test_metricas_de_adopcion_calculan_estado_conteos_y_dias_activos(client):
-    now = datetime.now(UTC)
+    # Use midday so relative events stay on the intended calendar dates even
+    # when the test runs near midnight UTC.
+    now = datetime(2026, 9, 25, 12, 0, tzinfo=UTC)
     with SessionTest() as db:
         crear_profesional(
             db,

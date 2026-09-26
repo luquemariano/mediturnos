@@ -280,16 +280,24 @@ def write_snapshot(
     payload = json.dumps(
         snapshot, ensure_ascii=False, indent=2, sort_keys=True
     ) + "\n"
-    with tempfile.NamedTemporaryFile(
-        "w",
-        encoding="utf-8",
-        dir=root,
-        delete=False,
-    ) as tmp:
-        tmp.write(payload)
-        tmp_path = Path(tmp.name)
-    tmp_path.replace(root / "latest.json")
-    history_path.write_text(payload, encoding="utf-8")
+    temp_paths: list[Path] = []
+    try:
+        for destination in (history_path, root / "latest.json"):
+            with tempfile.NamedTemporaryFile(
+                "w",
+                encoding="utf-8",
+                dir=destination.parent,
+                delete=False,
+            ) as tmp:
+                tmp.write(payload)
+                temp_paths.append(Path(tmp.name))
+        # Publish history first. If its atomic replacement fails, latest remains
+        # untouched; each individual file is never left partially written.
+        temp_paths[0].replace(history_path)
+        temp_paths[1].replace(root / "latest.json")
+    finally:
+        for temp_path in temp_paths:
+            temp_path.unlink(missing_ok=True)
     return root / "latest.json", history_path
 
 

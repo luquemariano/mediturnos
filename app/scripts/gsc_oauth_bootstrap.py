@@ -113,6 +113,12 @@ def write_env(
     refresh_token: str,
     site_url: str,
 ) -> None:
+    values = (client_id, client_secret, refresh_token, site_url)
+    if any(not value or "\n" in value or "\r" in value for value in values):
+        raise ValueError("Las variables GSC deben ser valores de una sola línea.")
+    from app.core.gsc_config import validate_site_url
+
+    validate_site_url(site_url)
     path.parent.mkdir(parents=True, exist_ok=True)
     payload = (
         f"GSC_CLIENT_ID={client_id}\n"
