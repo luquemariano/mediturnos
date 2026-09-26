@@ -9,8 +9,8 @@
 - Backend: FastAPI, SQLAlchemy, Pydantic, Alembic, JWT y PostgreSQL.
 - Frontend: React, TypeScript, Vite, Axios y CSS propio.
 - Capas backend: `router → service → repository` cuando corresponde.
-- Infraestructura declarada: Docker, Render, PostgreSQL y Render Cron; operación real NO DETERMINADA desde el repositorio.
-- Integraciones implementadas/configurables: Mercado Pago, Resend y Cloudflare R2; operación productiva NO DETERMINADA.
+- Producción verificada: VPS OVH con Docker Compose, PostgreSQL, Caddy y cron del host; consultar `docs/DEPLOYMENT.md` para el procedimiento vigente.
+- Integraciones implementadas/configurables: Mercado Pago, Resend y Cloudflare R2; confirmar el estado productivo en la documentación vigente antes de operar.
 - Tests backend: pytest, habitualmente sobre SQLite; esto no demuestra por sí solo compatibilidad PostgreSQL.
 
 ## Documentación canónica
@@ -20,19 +20,20 @@
 - [`docs/CURRENT_STATE.md`](docs/CURRENT_STATE.md): estado comprobable, límites y deuda conocida.
 - [`docs/DECISIONS.md`](docs/DECISIONS.md): decisiones técnicas demostrables y revisables.
 - [`docs/WORKFLOW.md`](docs/WORKFLOW.md): forma de trabajo con agentes.
+- [`docs/AUTONOMOUS_WORKFLOW.md`](docs/AUTONOMOUS_WORKFLOW.md): flujo autónomo desde requisito hasta producción, cuando el usuario lo autoriza explícitamente.
 - [`docs/SECURITY.md`](docs/SECURITY.md): autenticación, autorización y datos sensibles.
 - [`docs/TESTING.md`](docs/TESTING.md): comandos, cobertura y limitaciones de validación.
 - [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md): Render, Aiven, variables e integraciones declaradas.
 - [`docs/deployment/VPS_OVH.md`](docs/deployment/VPS_OVH.md): despliegue paralelo de staging en VPS OVH.
 - [`docs/ROADMAP.md`](docs/ROADMAP.md): trabajo pendiente y estado del Harness.
 
-Consultar primero este archivo; luego el documento específico de la tarea.
+Consultar primero este archivo; luego el documento específico de la tarea. Si el usuario pide ejecutar una tarea con el flujo autónomo, leer además `docs/AUTONOMOUS_WORKFLOW.md` antes de empezar.
 
 ## Reglas de trabajo
 
 - Preservar cambios ajenos y archivos no relacionados.
 - No exponer ni registrar contraseñas, JWT, tokens, secretos de webhooks ni datos sensibles de pacientes.
-- No hacer checkout, merge, commit, push ni Git destructivo salvo autorización explícita.
+- No hacer checkout, merge, commit, push ni deploy salvo autorización explícita. Una instrucción del usuario que invoque el flujo autónomo definido en `docs/AUTONOMOUS_WORKFLOW.md` constituye autorización para las operaciones rutinarias cubiertas por ese documento. Git destructivo sigue requiriendo necesidad técnica clara y prudencia adicional.
 - Usar Alembic para cambios persistentes; no confiar en `create_all()` para producción.
 - Mantener compatibilidad PostgreSQL aunque los tests usen SQLite.
 - Mantener permisos en el router y ownership en la lógica de negocio.
