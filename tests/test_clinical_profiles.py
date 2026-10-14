@@ -52,3 +52,23 @@ def test_profesional_ajeno_no_accede_y_admin_solo_lee(client, escenario_clinico)
     autenticar(usuarios["administrador"])
     assert client.get(f"/pacientes/{paciente.id}/clinical-profile").status_code == 200
     assert client.put(f"/pacientes/{paciente.id}/clinical-profile", json={}).status_code == 403
+
+
+def test_dos_profesionales_comparten_paciente_pero_no_perfil(client, escenario_clinico):
+    usuarios, profesional, paciente, _ = escenario_clinico
+    db = SessionTest()
+    ajeno = db.query(Profesional).filter_by(usuario_id=usuarios["ajeno"].id).one()
+    db.add(ProfesionalPaciente(profesional_id=ajeno.id, paciente_id=paciente.id)); db.commit(); db.close()
+    autenticar(usuarios["profesional"])
+    ruta = f"/pacientes/{paciente.id}/clinical-profile"
+    assert client.put(ruta, json={"antecedentes": "Privado de A"}).status_code == 200
+    autenticar(usuarios["ajeno"])
+    assert client.get(ruta).json()["id"] is None
+    respuesta_b = client.put(ruta, json={"antecedentes": "Privado de B"})
+    assert respuesta_b.status_code == 200
+    autenticar(usuarios["profesional"])
+    assert client.get(ruta).json()["antecedentes"] == "Privado de A"
+    db = SessionTest()
+    assert db.query(ClinicalProfile).filter_by(paciente_id=paciente.id).count() == 2
+    assert db.query(ClinicalProfile).filter_by(paciente_id=paciente.id, profesional_id=profesional.id).one().antecedentes == "Privado de A"
+    db.close()

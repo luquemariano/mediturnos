@@ -140,7 +140,7 @@ try {
     & $python -m app.scripts.seed_e2e
     if ($LASTEXITCODE -ne 0) { Fail 'Fixture E2E' 'Falló el fixture E2E.' }
 
-    $apiProcess = Start-Process -FilePath $python -ArgumentList '-m','uvicorn','app.main:app','--host','127.0.0.1','--port','8001' -WorkingDirectory $repoRoot -PassThru -NoNewWindow
+    $apiProcess = Start-Process -FilePath $python -ArgumentList '-m','uvicorn','app.main:app','--host','127.0.0.1','--port','8001','--no-access-log' -WorkingDirectory $repoRoot -PassThru -NoNewWindow
     Wait-Http 'http://127.0.0.1:8001/health/ready' 60 $apiProcess
     $npmCommand = (Get-Command npm.cmd -ErrorAction SilentlyContinue).Source
     if (-not $npmCommand) { Fail 'Frontend E2E' 'No se encontró npm.cmd para iniciar Vite.' }

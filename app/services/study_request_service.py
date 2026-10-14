@@ -27,7 +27,7 @@ def crear_solicitud(db: Session, paciente_id: int, profesional_id: int, datos: S
 def listar_solicitudes(db: Session, paciente_id: int, profesional_id: int | None, status: str | None = None):
     _acceso(db, paciente_id, profesional_id)
     if status is not None and status not in {"pending", "submitted", "reviewed", "closed", "cancelled"}: raise HTTPException(422, "Estado inválido.")
-    return listar_por_paciente(db, paciente_id, status)
+    return listar_por_paciente(db, paciente_id, status, profesional_id)
 def obtener_solicitud(db: Session, paciente_id: int, request_id: int, profesional_id: int | None): return _owned(db, paciente_id, request_id, profesional_id)
 def cancelar_solicitud(db: Session, paciente_id: int, request_id: int, profesional_id: int):
     request = _owned(db, paciente_id, request_id, profesional_id)

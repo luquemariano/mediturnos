@@ -64,6 +64,34 @@ def test_roles_are_restricted_and_admin_can_read(client, monkeypatch):
     for restricted in (reception, patient): autenticar(restricted); assert client.get(ruta).status_code == 403
     app.dependency_overrides.pop(obtener_usuario_actual, None); db.close()
 
+def test_documents_for_shared_patient_are_scoped_to_owner_and_request(client, monkeypatch):
+    from app.models.study_request import StudyRequest
+    from datetime import datetime, UTC
+    db, user_a, pro_a, patient, _ = escenario()
+    user_b = Usuario(nombre="Profesional B", email="docs-pro-b@test", password_hash="hash", rol="profesional"); db.add(user_b); db.flush()
+    pro_b = Profesional(usuario_id=user_b.id, nombre="Doc B", apellido="Tor", matricula="DOC-2"); db.add(pro_b); db.flush()
+    db.add(ProfesionalPaciente(profesional_id=pro_b.id, paciente_id=patient.id))
+    request = StudyRequest(paciente_id=patient.id, profesional_id=pro_a.id, title="Estudio privado A", status="pending", requested_at=datetime.now(UTC), created_at=datetime.now(UTC), updated_at=datetime.now(UTC)); db.add(request); db.flush()
+    document = PatientDocument(paciente_id=patient.id, profesional_id=pro_a.id, study_request_id=request.id, origin="patient", storage_key="patient-documents/shared.pdf", original_filename="privado.pdf", mime_type="application/pdf", size_bytes=3, category="study_result", status="available")
+    db.add(document); db.commit()
+    autenticar(user_b)
+    assert client.get(f"/pacientes/{patient.id}/documents").json() == []
+    assert client.get(f"/pacientes/{patient.id}/study-requests/{request.id}/documents").status_code == 404
+    for method, suffix in (("post", "confirm"), ("post", "download-url"), ("delete", "")):
+        url = f"/pacientes/{patient.id}/documents/{document.id}" + (f"/{suffix}" if suffix else "")
+        assert getattr(client, method)(url).status_code == 404
+    autenticar(user_a)
+    assert client.get(f"/pacientes/{patient.id}/study-requests/{request.id}/documents").status_code == 200
+    app.dependency_overrides.pop(obtener_usuario_actual, None); db.close()
+
+def test_legacy_document_without_verifiable_owner_is_hidden_from_professional(client):
+    db, user, _, patient, _ = escenario()
+    ambiguous = PatientDocument(paciente_id=patient.id, profesional_id=None, uploaded_by_profesional_id=None, storage_key="patient-documents/ambiguous.pdf", original_filename="ambiguo.pdf", mime_type="application/pdf", size_bytes=3, category="other", status="available")
+    db.add(ambiguous); db.commit(); autenticar(user)
+    assert client.get(f"/pacientes/{patient.id}/documents").json() == []
+    assert client.post(f"/pacientes/{patient.id}/documents/{ambiguous.id}/download-url").status_code == 404
+    app.dependency_overrides.pop(obtener_usuario_actual, None); db.close()
+
 @pytest.mark.parametrize("mime_type", ["image/jpeg", "image/png", "image/webp"])
 def test_supported_image_mimes_and_exact_limit(client, monkeypatch, mime_type):
     db, usuario, _, paciente, _ = escenario(); monkeypatch.setattr("app.services.patient_document_service._provider", lambda: FakeObjectStorageProvider()); autenticar(usuario); base = {"filename": "x", "mime_type": mime_type, "size_bytes": 10 * 1024 * 1024, "category": "other"}

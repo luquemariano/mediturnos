@@ -101,6 +101,6 @@ class Profesional(Base):
     )
     pacientes_vinculados: Mapped[list["ProfesionalPaciente"]] = relationship(back_populates="profesional", cascade="all, delete-orphan")
     evoluciones: Mapped[list["EvolucionClinica"]] = relationship(back_populates="profesional")
-    clinical_profiles_updated: Mapped[list["ClinicalProfile"]] = relationship(back_populates="updated_by_profesional")
+    clinical_profiles_updated: Mapped[list["ClinicalProfile"]] = relationship(back_populates="updated_by_profesional", foreign_keys="ClinicalProfile.updated_by_profesional_id")
     study_requests: Mapped[list["StudyRequest"]] = relationship(back_populates="profesional")
     study_reviews: Mapped[list["StudyReview"]] = relationship(back_populates="profesional")

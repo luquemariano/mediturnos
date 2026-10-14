@@ -13,6 +13,7 @@ class PatientDocument(Base):
     __table_args__ = (UniqueConstraint("storage_key", name="uq_patient_documents_storage_key"),)
     id: Mapped[int] = mapped_column(primary_key=True)
     paciente_id: Mapped[int] = mapped_column(ForeignKey("pacientes.id", ondelete="CASCADE"), nullable=False, index=True)
+    profesional_id: Mapped[int | None] = mapped_column(ForeignKey("profesionales.id", ondelete="RESTRICT"), nullable=True, index=True)
     study_request_id: Mapped[int | None] = mapped_column(ForeignKey("study_requests.id", ondelete="SET NULL"), nullable=True, index=True)
     origin: Mapped[str] = mapped_column(String(20), nullable=False, default="professional")
     uploaded_by_profesional_id: Mapped[int | None] = mapped_column(ForeignKey("profesionales.id", ondelete="SET NULL"), nullable=True, index=True)

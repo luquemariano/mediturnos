@@ -34,7 +34,9 @@ def escenario_evoluciones():
     db.add_all([
         EvolucionClinica(paciente_id=propio.id, profesional_id=profesional.id, contenido="Registro anterior", created_at=ahora - timedelta(days=2)),
         EvolucionClinica(paciente_id=propio.id, profesional_id=profesional.id, contenido="Registro reciente", created_at=ahora),
+        EvolucionClinica(paciente_id=propio.id, profesional_id=profesional_ajeno.id, contenido="Registro privado de Bruno", created_at=ahora + timedelta(seconds=1)),
     ])
+    db.add(ProfesionalPaciente(profesional_id=profesional_ajeno.id, paciente_id=propio.id))
     db.commit()
     datos = {**usuarios, "usuario_ajeno": usuario_ajeno, "profesional_modelo": profesional, "propio": propio, "ajeno": ajeno}
     yield datos
@@ -52,6 +54,19 @@ def test_profesional_obtiene_evoluciones_propias_ordenadas(client, escenario_evo
     assert respuesta.status_code == 200
     assert [item["contenido"] for item in respuesta.json()] == ["Registro reciente", "Registro anterior"]
     assert respuesta.json()[0]["profesional_nombre"] == "Sofía Rodríguez"
+
+
+def test_mismo_paciente_no_expone_evoluciones_de_otro_profesional(client, escenario_evoluciones):
+    datos = escenario_evoluciones
+    autenticar(datos["profesional"])
+    ruta = f'/pacientes/{datos["propio"].id}/evoluciones'
+    respuesta_a = client.get(ruta)
+    assert respuesta_a.status_code == 200
+    assert len(respuesta_a.json()) == 2
+    assert all(item["contenido"] != "Registro privado de Bruno" for item in respuesta_a.json())
+    autenticar(datos["usuario_ajeno"])
+    respuesta_b = client.get(ruta)
+    assert [item["contenido"] for item in respuesta_b.json()] == ["Registro privado de Bruno"]
 
 
 def test_profesional_crea_evolucion_con_autor_de_sesion(client, escenario_evoluciones):

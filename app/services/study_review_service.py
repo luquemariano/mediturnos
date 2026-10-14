@@ -27,7 +27,7 @@ def obtener_review(db: Session, paciente_id: int, request_id: int, profesional_i
 def crear_review(db: Session, paciente_id: int, request_id: int, profesional_id: int, datos: StudyReviewCreate):
     request = _request(db, paciente_id, request_id, profesional_id)
     if request.status != "submitted": raise HTTPException(409, "La solicitud no está lista para revisión.")
-    if not listar_disponibles_por_solicitud(db, paciente_id, request_id): raise HTTPException(409, "La solicitud no tiene documentos disponibles para revisar.")
+    if not listar_disponibles_por_solicitud(db, paciente_id, request_id, profesional_id): raise HTTPException(409, "La solicitud no tiene documentos disponibles para revisar.")
     try:
         review = StudyReview(study_request_id=request.id, profesional_id=profesional_id, review_text=datos.review_text, disposition=datos.disposition)
         db.add(review); db.flush()

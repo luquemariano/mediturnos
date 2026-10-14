@@ -29,7 +29,7 @@ def crear_intent(db: Session, token: str, filename: str, mime_type: str, size_by
     if mime_type not in ALLOWED_DOCUMENT_MIME_TYPES or size_bytes <= 0 or size_bytes > MAX_DOCUMENT_SIZE_BYTES: raise HTTPException(422, "El archivo no cumple los requisitos permitidos.")
     active = db.query(PatientDocument).filter(PatientDocument.study_request_id == request.id, PatientDocument.origin == "patient", PatientDocument.status.in_(["pending_upload", "available"])).count()
     if active >= MAX_ACTIVE_DOCUMENTS: raise HTTPException(409, "Se alcanzó el máximo de archivos para esta solicitud.")
-    document = PatientDocument(paciente_id=request.paciente_id, study_request_id=request.id, origin="patient", uploaded_by_profesional_id=None, storage_key=generate_document_storage_key(mime_type), original_filename=_filename(filename), mime_type=mime_type, size_bytes=size_bytes, category="study_result", status="pending_upload")
+    document = PatientDocument(paciente_id=request.paciente_id, profesional_id=request.profesional_id, study_request_id=request.id, origin="patient", uploaded_by_profesional_id=None, storage_key=generate_document_storage_key(mime_type), original_filename=_filename(filename), mime_type=mime_type, size_bytes=size_bytes, category="study_result", status="pending_upload")
     db.add(document)
     try:
         presigned = factory.get_object_storage_provider().create_upload_url(document.storage_key, mime_type, settings.r2_presigned_upload_ttl_seconds)
