@@ -15,7 +15,7 @@ def submitted(db, professional, patient, status="submitted"):
 
 
 def document(db, patient, request, origin="patient", status="available"):
-    value = PatientDocument(paciente_id=patient.id, study_request_id=request.id, origin=origin, storage_key=f"review-{request.id}-{origin}-{status}", original_filename="resultado.pdf", mime_type="application/pdf", size_bytes=10, category="study_result", status=status)
+    value = PatientDocument(paciente_id=patient.id, profesional_id=request.profesional_id, study_request_id=request.id, origin=origin, storage_key=f"review-{request.id}-{origin}-{status}", original_filename="resultado.pdf", mime_type="application/pdf", size_bytes=10, category="study_result", status=status)
     db.add(value); db.commit(); return value
 
 

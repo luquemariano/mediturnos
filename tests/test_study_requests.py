@@ -23,6 +23,19 @@ def test_create_rejects_invalid_access_and_expiration(client):
 def test_list_detail_and_ownership(client):
     db, user, other_user, professional, other, patient, _, other_patient = scenario(); request = StudyRequest(paciente_id=patient.id, profesional_id=professional.id, title="Primero", status="pending", requested_at=datetime.now(timezone.utc) - timedelta(days=1), created_at=datetime.now(timezone.utc), updated_at=datetime.now(timezone.utc)); db.add(request); db.commit(); auth(user); route = f"/pacientes/{patient.id}/study-requests"; assert client.get(route).status_code == 200; assert client.get(f"{route}/{request.id}").status_code == 200; auth(other_user); assert client.get(f"/pacientes/{patient.id}/study-requests/{request.id}").status_code == 404; cleanup(db)
 
+def test_request_list_for_shared_patient_is_scoped_by_professional(client):
+    db, user_a, user_b, pro_a, pro_b, patient, _, _ = scenario()
+    db.add(ProfesionalPaciente(profesional_id=pro_b.id, paciente_id=patient.id))
+    now = datetime.now(timezone.utc)
+    own = StudyRequest(paciente_id=patient.id, profesional_id=pro_a.id, title="Privado A", status="pending", requested_at=now, created_at=now, updated_at=now)
+    foreign = StudyRequest(paciente_id=patient.id, profesional_id=pro_b.id, title="Privado B", status="pending", requested_at=now, created_at=now, updated_at=now)
+    db.add_all([own, foreign]); db.commit()
+    auth(user_a); body_a = client.get(f"/pacientes/{patient.id}/study-requests").json()
+    assert [row["id"] for row in body_a] == [own.id]
+    auth(user_b); body_b = client.get(f"/pacientes/{patient.id}/study-requests").json()
+    assert [row["id"] for row in body_b] == [foreign.id]
+    cleanup(db)
+
 def test_cancel_and_close_are_owner_only_and_idempotent(client):
     db, user, other_user, professional, other, patient, _, _ = scenario(); request = StudyRequest(paciente_id=patient.id, profesional_id=professional.id, title="Cancelar", status="pending", requested_at=datetime.now(timezone.utc), created_at=datetime.now(timezone.utc), updated_at=datetime.now(timezone.utc)); closed = StudyRequest(paciente_id=patient.id, profesional_id=professional.id, title="Cerrar", status="pending", requested_at=datetime.now(timezone.utc), created_at=datetime.now(timezone.utc), updated_at=datetime.now(timezone.utc)); db.add_all([request, closed]); db.commit(); auth(other_user); assert client.post(f"/pacientes/{patient.id}/study-requests/{request.id}/cancel").status_code == 404; auth(user); assert client.post(f"/pacientes/{patient.id}/study-requests/{request.id}/cancel").json()["status"] == "cancelled"; assert client.post(f"/pacientes/{patient.id}/study-requests/{request.id}/cancel").json()["status"] == "cancelled"; assert client.post(f"/pacientes/{patient.id}/study-requests/{closed.id}/close").json()["status"] == "closed"; assert client.post(f"/pacientes/{patient.id}/study-requests/{closed.id}/close").json()["status"] == "closed"; cleanup(db)
 

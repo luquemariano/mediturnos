@@ -11,18 +11,18 @@ def _validar_lectura(db: Session, paciente_id: int, profesional_id: int | None) 
     elif buscar_por_id(db, paciente_id) is None: raise HTTPException(404, "Paciente no encontrado.")
 def obtener_perfil(db: Session, paciente_id: int, profesional_id: int | None):
     _validar_lectura(db, paciente_id, profesional_id)
-    return buscar_por_paciente(db, paciente_id) or {"paciente_id": paciente_id}
+    return buscar_por_paciente(db, paciente_id, profesional_id) or {"paciente_id": paciente_id}
 def upsert_perfil(db: Session, paciente_id: int, profesional_id: int, datos: ClinicalProfileUpdate):
     if buscar_propio(db, profesional_id, paciente_id) is None: raise HTTPException(404, "Paciente no encontrado.")
     valores = datos.model_dump()
-    profile = buscar_por_paciente(db, paciente_id)
+    profile = buscar_por_paciente(db, paciente_id, profesional_id)
     if profile is None: profile = crear(db, paciente_id, profesional_id, valores)
     else: actualizar(profile, profesional_id, valores)
     profile.updated_at = datetime.now(timezone.utc)
     try:
         db.commit(); db.refresh(profile)
     except IntegrityError:
-        db.rollback(); profile = buscar_por_paciente(db, paciente_id)
+        db.rollback(); profile = buscar_por_paciente(db, paciente_id, profesional_id)
         if profile is None: raise HTTPException(409, "No se pudo guardar el resumen clínico.") from None
         actualizar(profile, profesional_id, valores); profile.updated_at = datetime.now(timezone.utc)
         db.commit(); db.refresh(profile)

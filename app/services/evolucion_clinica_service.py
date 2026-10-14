@@ -14,7 +14,7 @@ def validar_paciente_profesional(db: Session, profesional_id: int, paciente_id: 
 
 def obtener_evoluciones_profesional(db: Session, profesional_id: int, paciente_id: int) -> list[EvolucionClinica]:
     validar_paciente_profesional(db, profesional_id, paciente_id)
-    return listar_por_paciente(db, paciente_id)
+    return listar_por_paciente(db, paciente_id, profesional_id)
 
 
 def obtener_evoluciones_administrador(db: Session, paciente_id: int) -> list[EvolucionClinica]:

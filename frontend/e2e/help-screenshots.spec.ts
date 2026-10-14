@@ -1,6 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 
-const OUT = "public/help/screenshots";
+const OUT = process.env.E2E_SCREENSHOTS_DIR ?? "public/help/screenshots";
 const password = process.env.E2E_ADMIN_PASSWORD;
 if (!password) throw new Error("Falta E2E_ADMIN_PASSWORD.");
 

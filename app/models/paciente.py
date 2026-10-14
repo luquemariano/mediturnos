@@ -87,6 +87,6 @@ class Paciente(Base):
     )
     profesionales_vinculados: Mapped[list["ProfesionalPaciente"]] = relationship(back_populates="paciente", cascade="all, delete-orphan")
     evoluciones: Mapped[list["EvolucionClinica"]] = relationship(back_populates="paciente", cascade="all, delete-orphan")
-    clinical_profile: Mapped["ClinicalProfile | None"] = relationship(back_populates="paciente", uselist=False, cascade="all, delete-orphan")
+    clinical_profile: Mapped[list["ClinicalProfile"]] = relationship(back_populates="paciente", cascade="all, delete-orphan")
     patient_documents: Mapped[list["PatientDocument"]] = relationship(back_populates="paciente", cascade="all, delete-orphan")
     study_requests: Mapped[list["StudyRequest"]] = relationship(back_populates="paciente", cascade="all, delete-orphan")

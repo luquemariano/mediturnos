@@ -14,7 +14,7 @@ def add_request(db, professional, patient, status, submitted_at):
     db.add(request); db.commit(); return request
 
 def add_document(db, patient, request, status="available", origin="patient"):
-    document = PatientDocument(paciente_id=patient.id, study_request_id=request.id, origin=origin, storage_key=f"patient-documents/{request.id}-{status}-{origin}.pdf", original_filename="resultado.pdf", mime_type="application/pdf", size_bytes=10, category="study_result", status=status)
+    document = PatientDocument(paciente_id=patient.id, profesional_id=request.profesional_id, study_request_id=request.id, origin=origin, storage_key=f"patient-documents/{request.id}-{status}-{origin}.pdf", original_filename="resultado.pdf", mime_type="application/pdf", size_bytes=10, category="study_result", status=status)
     db.add(document); db.commit(); return document
 
 def test_pending_review_filters_orders_counts_and_isolates_professional(client):

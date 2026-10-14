@@ -9,9 +9,10 @@ if TYPE_CHECKING:
 
 class ClinicalProfile(Base):
     __tablename__ = "clinical_profiles"
-    __table_args__ = (UniqueConstraint("paciente_id", name="uq_clinical_profiles_paciente_id"),)
+    __table_args__ = (UniqueConstraint("paciente_id", "profesional_id", name="uq_clinical_profiles_paciente_profesional"),)
     id: Mapped[int] = mapped_column(primary_key=True)
     paciente_id: Mapped[int] = mapped_column(ForeignKey("pacientes.id", ondelete="CASCADE"), nullable=False, index=True)
+    profesional_id: Mapped[int | None] = mapped_column(ForeignKey("profesionales.id", ondelete="RESTRICT"), nullable=True, index=True)
     antecedentes: Mapped[str | None] = mapped_column(Text, nullable=True)
     alergias: Mapped[str | None] = mapped_column(Text, nullable=True)
     medicacion_habitual: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -20,4 +21,5 @@ class ClinicalProfile(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
     updated_by_profesional_id: Mapped[int | None] = mapped_column(ForeignKey("profesionales.id", ondelete="SET NULL"), nullable=True, index=True)
     paciente: Mapped["Paciente"] = relationship(back_populates="clinical_profile")
-    updated_by_profesional: Mapped["Profesional | None"] = relationship(back_populates="clinical_profiles_updated")
+    updated_by_profesional: Mapped["Profesional | None"] = relationship(back_populates="clinical_profiles_updated", foreign_keys=[updated_by_profesional_id])
+    profesional: Mapped["Profesional | None"] = relationship(foreign_keys=[profesional_id])

@@ -42,10 +42,17 @@ def crear_profesional(db, suffix: str, events: list[tuple[str, datetime]]):
     return usuario, profesional
 
 
-def test_metricas_de_adopcion_calculan_estado_conteos_y_dias_activos(client):
+def test_metricas_de_adopcion_calculan_estado_conteos_y_dias_activos(client, monkeypatch):
     # Use midday so relative events stay on the intended calendar dates even
     # when the test runs near midnight UTC.
     now = datetime(2026, 9, 25, 12, 0, tzinfo=UTC)
+
+    class FrozenDateTime(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return now if tz else now.replace(tzinfo=None)
+
+    monkeypatch.setattr("app.services.admin_adoption_service.datetime", FrozenDateTime)
     with SessionTest() as db:
         crear_profesional(
             db,

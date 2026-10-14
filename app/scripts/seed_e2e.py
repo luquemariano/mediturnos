@@ -85,7 +85,7 @@ def main() -> None:
             ))
         professional_user = db.query(Usuario).filter(Usuario.email == "profesional.screenshots@example.com").one_or_none()
         if professional_user is None:
-            professional_user = Usuario(nombre="Laura Martínez", email="profesional.screenshots@example.com", password_hash=generar_hash_password(password), rol="profesional", activo=True)
+            professional_user = Usuario(nombre="Laura Martínez", email="profesional.screenshots@example.com", password_hash=generar_hash_password(password), rol="profesional", activo=True, email_verificado=True, email_verificado_en=datetime.now(UTC))
             db.add(professional_user); db.flush()
         account = db.query(Cuenta).filter(Cuenta.nombre == "Consultorio Demo Screenshots").one_or_none()
         if account is None:
@@ -120,16 +120,51 @@ def main() -> None:
             for slot, (offset, state) in enumerate([(0,"confirmado"),(0,"reservado"),(1,"confirmado"),(2,"reservado"),(3,"confirmado"),(7,"reservado"),(8,"confirmado")]):
                 start = base + timedelta(days=offset, hours=slot * 2); db.add(Turno(paciente_id=patients[slot % len(patients)].id, prestacion_id=prestations[slot % len(prestations)].id, profesional_id=professional.id, fecha_hora=start, fecha_fin=start + timedelta(minutes=30), estado=state, observaciones="Turno demo para documentación."))
         patient = patients[0]
-        if not db.query(ClinicalProfile).filter_by(paciente_id=patient.id).first(): db.add(ClinicalProfile(paciente_id=patient.id, antecedentes="Control clínico anual.", alergias="Sin alergias registradas.", medicacion_habitual="Sin medicación habitual.", condiciones_relevantes="Sin condiciones relevantes registradas.", observaciones="Paciente demo utilizado exclusivamente para documentación.", updated_at=datetime.utcnow(), updated_by_profesional_id=professional.id))
+        if not db.query(ClinicalProfile).filter_by(paciente_id=patient.id, profesional_id=professional.id).first(): db.add(ClinicalProfile(paciente_id=patient.id, profesional_id=professional.id, antecedentes="Control clínico anual.", alergias="Sin alergias registradas.", medicacion_habitual="Sin medicación habitual.", condiciones_relevantes="Sin condiciones relevantes registradas.", observaciones="Paciente demo utilizado exclusivamente para documentación.", updated_at=datetime.utcnow(), updated_by_profesional_id=professional.id))
         if not db.query(EvolucionClinica).filter_by(paciente_id=patient.id).first():
             for days, text in [(2,"Control general. Se registran signos habituales."),(12,"Seguimiento programado. Sin novedades relevantes informadas.")]: db.add(EvolucionClinica(paciente_id=patient.id, profesional_id=professional.id, contenido=text, created_at=datetime.utcnow() - timedelta(days=days)))
         request = db.query(StudyRequest).filter_by(paciente_id=patient.id, profesional_id=professional.id, title="Laboratorio de control").first()
         if request is None:
             now = datetime.utcnow(); request = StudyRequest(paciente_id=patient.id, profesional_id=professional.id, title="Laboratorio de control", instructions="Adjuntar resultados cuando estén disponibles.", status="submitted", requested_at=now-timedelta(days=1), submitted_at=now, created_at=now-timedelta(days=1), updated_at=now); db.add(request); db.flush()
-            db.add(PatientDocument(paciente_id=patient.id, study_request_id=request.id, origin="patient", storage_key=f"screenshots/{request.id}.pdf", original_filename="DOCUMENTO_DE_EJEMPLO.pdf", mime_type="application/pdf", size_bytes=1024, category="study_result", status="available", available_at=now, created_at=now))
+            db.add(PatientDocument(paciente_id=patient.id, profesional_id=professional.id, study_request_id=request.id, origin="patient", storage_key=f"screenshots/{request.id}.pdf", original_filename="DOCUMENTO_DE_EJEMPLO.pdf", mime_type="application/pdf", size_bytes=1024, category="study_result", status="available", available_at=now, created_at=now))
         pending_request = db.query(StudyRequest).filter_by(paciente_id=patient.id, profesional_id=professional.id, title="Radiografía de control").first()
         if pending_request is None:
             now = datetime.utcnow(); db.add(StudyRequest(paciente_id=patient.id, profesional_id=professional.id, title="Radiografía de control", instructions="Subí el resultado cuando esté disponible.", status="pending", requested_at=now, created_at=now, updated_at=now))
+
+        # Independent synthetic account to exercise private-record boundaries in Playwright.
+        isolation_email = "profesional.isolation.e2e@example.com"
+        isolation_user = db.query(Usuario).filter_by(email=isolation_email).one_or_none()
+        if isolation_user is None:
+            isolation_user = Usuario(nombre="Profesional Aislamiento E2E", email=isolation_email, password_hash=generar_hash_password(password), rol="profesional", activo=True, email_verificado=True, email_verificado_en=datetime.now(UTC))
+            db.add(isolation_user); db.flush()
+        isolation_account = db.query(Cuenta).filter_by(nombre="Cuenta aislamiento E2E").one_or_none()
+        if isolation_account is None:
+            isolation_account = Cuenta(nombre="Cuenta aislamiento E2E", tipo="individual"); db.add(isolation_account); db.flush()
+        if not db.query(CuentaUsuario).filter_by(cuenta_id=isolation_account.id, usuario_id=isolation_user.id).one_or_none():
+            db.add(CuentaUsuario(cuenta_id=isolation_account.id, usuario_id=isolation_user.id, rol_cuenta="propietario"))
+        isolation_professional = db.query(Profesional).filter_by(usuario_id=isolation_user.id).one_or_none()
+        if isolation_professional is None:
+            isolation_professional = Profesional(usuario_id=isolation_user.id, cuenta_id=isolation_account.id, nombre="Profesional", apellido="Aislamiento E2E", matricula="MP-ISOLATION-E2E", onboarding_step="perfil"); db.add(isolation_professional); db.flush()
+        isolation_patient = db.query(Paciente).filter_by(email="consultorio.isolation.e2e@example.com").one_or_none()
+        if isolation_patient is None:
+            isolation_patient = Paciente(nombre="Paciente", apellido="Aislamiento E2E", email="consultorio.isolation.e2e@example.com", activo=True); db.add(isolation_patient); db.flush()
+        for owner in (professional, isolation_professional):
+            if not db.query(ProfesionalPaciente).filter_by(profesional_id=owner.id, paciente_id=isolation_patient.id).one_or_none():
+                db.add(ProfesionalPaciente(profesional_id=owner.id, paciente_id=isolation_patient.id, activo=True))
+        db.flush()
+        if not db.query(ClinicalProfile).filter_by(paciente_id=isolation_patient.id, profesional_id=professional.id).one_or_none():
+            db.add(ClinicalProfile(paciente_id=isolation_patient.id, profesional_id=professional.id, antecedentes="Dato sintético privado de A", updated_by_profesional_id=professional.id))
+        if not db.query(ClinicalProfile).filter_by(paciente_id=isolation_patient.id, profesional_id=isolation_professional.id).one_or_none():
+            db.add(ClinicalProfile(paciente_id=isolation_patient.id, profesional_id=isolation_professional.id, antecedentes="Dato sintético privado de B", updated_by_profesional_id=isolation_professional.id))
+        for owner, content in ((professional, "Evolución sintética privada A"), (isolation_professional, "Evolución sintética privada B")):
+            if not db.query(EvolucionClinica).filter_by(paciente_id=isolation_patient.id, profesional_id=owner.id, contenido=content).one_or_none():
+                db.add(EvolucionClinica(paciente_id=isolation_patient.id, profesional_id=owner.id, contenido=content))
+        for owner, title in ((professional, "Solicitud sintética privada A"), (isolation_professional, "Solicitud sintética privada B")):
+            if not db.query(StudyRequest).filter_by(paciente_id=isolation_patient.id, profesional_id=owner.id, title=title).one_or_none():
+                now = datetime.now(UTC); db.add(StudyRequest(paciente_id=isolation_patient.id, profesional_id=owner.id, title=title, status="pending", requested_at=now, created_at=now, updated_at=now))
+        isolation_document_key = "consultorio-isolation/a.pdf"
+        if not db.query(PatientDocument).filter_by(storage_key=isolation_document_key).one_or_none():
+            db.add(PatientDocument(paciente_id=isolation_patient.id, profesional_id=professional.id, origin="professional", uploaded_by_profesional_id=professional.id, storage_key=isolation_document_key, original_filename="sintetico-privado.pdf", mime_type="application/pdf", size_bytes=12, category="other", status="available"))
         db.commit()
     finally:
         db.close()
