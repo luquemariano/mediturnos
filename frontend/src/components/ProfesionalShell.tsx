@@ -6,7 +6,7 @@ import NotificationCenter from "./NotificationCenter";
 import type { NotificationItem } from "../types/paciente";
 import { ACTIVE_PRODUCT_UPDATE } from "../productUpdates";
 
-type SeccionProfesional = "inicio" | "agenda" | "pacientes" | "disponibilidad" | "prestaciones" | "reserva-online" | "lista-espera" | "perfil" | "ayuda";
+type SeccionProfesional = "inicio" | "agenda" | "pacientes" | "disponibilidad" | "prestaciones" | "reserva-online" | "lista-espera" | "perfil" | "ayuda" | "consultorio";
 
 type ProfesionalShellProps = {
   activo: SeccionProfesional;
@@ -22,6 +22,8 @@ type ProfesionalShellProps = {
   onAbrirListaEspera?: () => void;
   onAbrirPerfil: () => void;
   onAbrirAyuda?: () => void;
+  onAbrirConsultorio?: () => void;
+  modoConsultorio?: boolean;
   onCerrarSesion: () => void;
   accionTopbar?: ReactNode;
   onAbrirNotificacion?: (item: NotificationItem) => void;
@@ -41,6 +43,8 @@ export default function ProfesionalShell({
   onAbrirListaEspera = () => window.dispatchEvent(new CustomEvent("turnelia:lista-espera")),
   onAbrirPerfil,
   onAbrirAyuda = () => { window.history.pushState({}, "", "/ayuda"); window.dispatchEvent(new PopStateEvent("popstate")); },
+  onAbrirConsultorio,
+  modoConsultorio = false,
   onCerrarSesion,
   accionTopbar,
   onAbrirNotificacion,
@@ -48,7 +52,10 @@ export default function ProfesionalShell({
   const iniciales = nombre.split(" ").slice(0, 2)
     .map((parte) => parte.charAt(0)).join("").toUpperCase();
 
-  const items = [
+  const items = modoConsultorio ? [
+    { id: "inicio" as const, texto: "Agenda profesional", icono: "inicio" as const, accion: onAbrirInicio },
+    ...(onAbrirConsultorio ? [{ id: "consultorio" as const, texto: "Consultorio", icono: "agenda" as const, accion: onAbrirConsultorio }] : []),
+  ] : [
     { id: "inicio" as const, texto: "Inicio", icono: "inicio" as const, accion: onAbrirInicio },
     { id: "agenda" as const, texto: "Mi agenda", icono: "agenda" as const, accion: onAbrirAgenda },
     { id: "pacientes" as const, texto: "Pacientes", icono: "usuario" as const, accion: onAbrirPacientes },
@@ -58,6 +65,7 @@ export default function ProfesionalShell({
     { id: "lista-espera" as const, texto: "Lista de espera", icono: "reloj" as const, accion: onAbrirListaEspera },
     { id: "perfil" as const, texto: "Mi perfil", icono: "perfil" as const, accion: onAbrirPerfil },
     { id: "ayuda" as const, texto: "Ayuda", icono: "ayuda" as const, accion: onAbrirAyuda },
+    ...(onAbrirConsultorio ? [{ id: "consultorio" as const, texto: "Consultorio", icono: "agenda" as const, accion: onAbrirConsultorio }] : []),
   ];
 
   return <div className="prof-app-shell">
@@ -86,7 +94,7 @@ export default function ProfesionalShell({
       <header className="prof-topbar">
         <div className="prof-marca-movil"><img className="prof-marca-simbolo" src="/brand/mediturnos-symbol.svg" alt="" aria-hidden="true" /><strong>Turnelia</strong></div>
         <span className="prof-topbar-titulo">{tituloTopbar}</span>
-        <NotificationCenter onOpen={onAbrirNotificacion} />
+        {!modoConsultorio && <NotificationCenter onOpen={onAbrirNotificacion} />}
         {accionTopbar}
         <button type="button" className="prof-avatar prof-avatar-movil" onClick={onAbrirPerfil} aria-label="Abrir mi perfil">{iniciales || "P"}</button>
       </header>

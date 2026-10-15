@@ -59,4 +59,4 @@ class OcurrenciaModulo(Base):
     def profesional_nombre(self) -> str:
         if self.profesional is not None:
             return f"{self.profesional.nombre} {self.profesional.apellido}"
-        return self.invitacion.nombre_visible if self.invitacion and self.invitacion.nombre_visible else "Invitación pendiente"
+        return "Invitación pendiente"

@@ -1,6 +1,7 @@
 import os
 import sys
 from datetime import UTC, datetime, timedelta, time
+from zoneinfo import ZoneInfo
 from decimal import Decimal
 
 from sqlalchemy import text
@@ -26,6 +27,13 @@ from app.models.evolucion_clinica import EvolucionClinica
 from app.models.patient_document import PatientDocument
 from app.models.study_request import StudyRequest
 from app.models.study_review import StudyReview
+from app.models.consultorio import Consultorio
+from app.models.consultorio_administrador import ConsultorioAdministrador
+from app.models.consultorio_profesional import ConsultorioProfesional
+from app.models.sala import Sala
+from app.models.serie_modulo import SerieModulo
+from app.models.regla_recurrencia_modulo import ReglaRecurrenciaModulo
+from app.models.ocurrencia_modulo import OcurrenciaModulo
 
 
 E2E_EMAIL = "admin.e2e@example.com"
@@ -144,7 +152,7 @@ def main() -> None:
             db.add(CuentaUsuario(cuenta_id=isolation_account.id, usuario_id=isolation_user.id, rol_cuenta="propietario"))
         isolation_professional = db.query(Profesional).filter_by(usuario_id=isolation_user.id).one_or_none()
         if isolation_professional is None:
-            isolation_professional = Profesional(usuario_id=isolation_user.id, cuenta_id=isolation_account.id, nombre="Profesional", apellido="Aislamiento E2E", matricula="MP-ISOLATION-E2E", onboarding_step="perfil"); db.add(isolation_professional); db.flush()
+            isolation_professional = Profesional(usuario_id=isolation_user.id, cuenta_id=isolation_account.id, nombre="Profesional", apellido="Aislamiento E2E", matricula="MP-ISOLATION-E2E", onboarding_step="completado"); db.add(isolation_professional); db.flush()
         isolation_patient = db.query(Paciente).filter_by(email="consultorio.isolation.e2e@example.com").one_or_none()
         if isolation_patient is None:
             isolation_patient = Paciente(nombre="Paciente", apellido="Aislamiento E2E", email="consultorio.isolation.e2e@example.com", activo=True); db.add(isolation_patient); db.flush()
@@ -165,6 +173,46 @@ def main() -> None:
         isolation_document_key = "consultorio-isolation/a.pdf"
         if not db.query(PatientDocument).filter_by(storage_key=isolation_document_key).one_or_none():
             db.add(PatientDocument(paciente_id=isolation_patient.id, profesional_id=professional.id, origin="professional", uploaded_by_profesional_id=professional.id, storage_key=isolation_document_key, original_filename="sintetico-privado.pdf", mime_type="application/pdf", size_bytes=12, category="other", status="available"))
+
+        # Isolated synthetic identity and room occupancy for the Consultorio admin E2E flow.
+        consultorio_user = db.query(Usuario).filter_by(email="profesional.consultorio.e2e@example.com").one_or_none()
+        if consultorio_user is None:
+            consultorio_user = Usuario(nombre="Valentina E2E", email="profesional.consultorio.e2e@example.com", password_hash=generar_hash_password(password), rol="profesional", activo=True, email_verificado=True, email_verificado_en=datetime.now(UTC))
+            db.add(consultorio_user); db.flush()
+        consultorio_individual = db.query(Cuenta).filter_by(nombre="Cuenta individual Consultorio E2E").one_or_none()
+        if consultorio_individual is None:
+            consultorio_individual = Cuenta(nombre="Cuenta individual Consultorio E2E", tipo="individual")
+            db.add(consultorio_individual); db.flush()
+        consultorio_professional = db.query(Profesional).filter_by(usuario_id=consultorio_user.id).one_or_none()
+        if consultorio_professional is None:
+            consultorio_professional = Profesional(usuario_id=consultorio_user.id, cuenta_id=consultorio_individual.id, nombre="Valentina", apellido="E2E", matricula="MP-CONSULTORIO-E2E", onboarding_step="completado")
+            db.add(consultorio_professional); db.flush()
+        org = db.query(Cuenta).filter_by(nombre="Organización Consultorio E2E").one_or_none()
+        if org is None:
+            org = Cuenta(nombre="Organización Consultorio E2E", tipo="organizacion")
+            db.add(org); db.flush()
+        clinic = db.query(Consultorio).filter_by(cuenta_id=org.id).one_or_none()
+        if clinic is None:
+            clinic = Consultorio(cuenta_id=org.id, nombre="Consultorio E2E", zona_horaria="America/Argentina/Buenos_Aires", duracion_modulo_minutos=240, horizonte_materializacion_dias=90, cupo_profesionales=4, invitacion_expiracion_dias=7)
+            db.add(clinic); db.flush()
+        if not db.query(ConsultorioAdministrador).filter_by(consultorio_id=clinic.id, usuario_id=consultorio_user.id).one_or_none():
+            db.add(ConsultorioAdministrador(consultorio_id=clinic.id, usuario_id=consultorio_user.id, rol="propietaria"))
+        if not db.query(ConsultorioProfesional).filter_by(consultorio_id=clinic.id, profesional_id=consultorio_professional.id).one_or_none():
+            db.add(ConsultorioProfesional(consultorio_id=clinic.id, profesional_id=consultorio_professional.id, estado="activo"))
+        room = db.query(Sala).filter_by(consultorio_id=clinic.id, codigo="CONS-E2E").one_or_none()
+        if room is None:
+            room = Sala(consultorio_id=clinic.id, nombre="Sala E2E", codigo="CONS-E2E", estado="activa")
+            db.add(room); db.flush()
+        if not db.query(OcurrenciaModulo).filter_by(consultorio_id=clinic.id).first():
+            now = datetime.now(UTC)
+            days_until_monday = (7 - now.weekday()) % 7 or 7
+            monday = (now + timedelta(days=days_until_monday)).astimezone(ZoneInfo(clinic.zona_horaria)).date()
+            series = SerieModulo(consultorio_id=clinic.id, sala_id=room.id, profesional_id=consultorio_professional.id, creado_por_usuario_id=consultorio_user.id)
+            db.add(series); db.flush()
+            rule = ReglaRecurrenciaModulo(serie_id=series.id, version=1, dia_semana=0, hora_inicio=time(9), duracion_minutos=240, zona_horaria=clinic.zona_horaria, vigente_desde=monday, vigente_hasta=None, estado="activa")
+            db.add(rule); db.flush()
+            inicio = datetime.combine(monday, time(9), tzinfo=ZoneInfo(clinic.zona_horaria)).astimezone(UTC)
+            db.add(OcurrenciaModulo(consultorio_id=clinic.id, serie_id=series.id, regla_id=rule.id, sala_id=room.id, profesional_id=consultorio_professional.id, fecha_inicio=inicio, fecha_fin=inicio + timedelta(hours=4), fecha_origen=monday, estado="activa", origen="recurrente", creado_por_usuario_id=consultorio_user.id))
         db.commit()
     finally:
         db.close()

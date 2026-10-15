@@ -22,7 +22,7 @@ Ninguna de las dos formas es universalmente superior: la primera usa explícitam
 
 La colección cubre autenticación, recuperación, roles/ownership, profesionales, pacientes, turnos, disponibilidad, excepciones, feriados, solapamientos, concurrencia, invitaciones de Consultorio, pagos, webhooks, suscripciones, recordatorios, emails, documentos, estudios, evoluciones, perfiles clínicos, notificaciones, storage, rate limiting, health checks, seed y bootstrap.
 
-La profundidad de cobertura varía por módulo. Consultar `tests/` para el detalle. Invitaciones: pruebas SQLite de hash/rotación, expiración/revocación, email coincidente, aceptación idempotente, cupo y autorización; PostgreSQL prueba cupo concurrente y exclusión GiST para ocurrencias pendientes.
+La profundidad de cobertura varía por módulo. Consultar `tests/` para el detalle. Invitaciones: pruebas SQLite de hash/rotación, expiración/revocación, email coincidente, aceptación idempotente, cupo y autorización; PostgreSQL prueba cupo concurrente y exclusión GiST para ocurrencias pendientes. El panel añade pruebas HTTP allowlist y de acceso administrativo, además de pruebas Vitest/RTL de visibilidad condicional, agenda semanal, invitaciones y conflictos sin datos clínicos.
 
 ## Frontend
 
@@ -37,7 +37,7 @@ npm run build
 
 `npx vitest run tests` es la suite frontend unitaria/de integración canónica para CI. No se usa `npm test` como comando canónico porque su descubrimiento amplio puede incluir `frontend/e2e/` y mezclar Playwright; los E2E se ejecutan únicamente de forma explícita con `verify.ps1 -E2E`.
 
-Hay cobertura de sesión, recuperación, dashboards, agenda, pacientes, profesionales, disponibilidad, prestaciones, suscripciones, estudios, documentos, notificaciones y SEO.
+Hay cobertura de sesión, recuperación, dashboards, agenda, pacientes, profesionales, disponibilidad, prestaciones, suscripciones, estudios, documentos, notificaciones, SEO y panel administrativo de Consultorio. Playwright incluye el acceso condicional al panel, agenda sin información clínica, invitación con proveedor simulado, comprobación móvil sin desbordamiento horizontal y rechazo de un profesional no administrador.
 
 La cobertura no es uniforme entre módulos. Consultar `frontend/tests/` para el detalle.
 

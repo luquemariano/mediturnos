@@ -15,6 +15,7 @@ import { etiquetaSuscripcion } from "../utils/suscripcion";
 import ProductUpdateCard from "./ProductUpdateCard";
 import { PRODUCT_UPDATE_NOTIFICATION_IDS } from "../productUpdates";
 import { listarEstudiosPendientesRevision } from "../services/pacienteService";
+import { listarConsultoriosAdministrados } from "../services/consultorioService";
 import type { CuentaActual } from "../types/cuenta";
 import {
   finalizarMiTurno,
@@ -44,6 +45,7 @@ type DashboardProfesionalProps = {
   onAbrirPerfil: () => void;
   onAbrirSuscripcion?: () => void;
   onAbrirListaEspera?: () => void;
+  onAbrirConsultorio?: () => void;
   onCerrarSesion: () => void;
 };
 
@@ -149,6 +151,7 @@ export default function DashboardProfesional({
   onAbrirPerfil,
   onAbrirSuscripcion,
   onAbrirListaEspera = () => window.dispatchEvent(new CustomEvent("turnelia:lista-espera")),
+  onAbrirConsultorio,
   onCerrarSesion,
 }: DashboardProfesionalProps) {
   const [ahora] = useState(() => new Date());
@@ -166,6 +169,17 @@ export default function DashboardProfesional({
   const [pendingReview, setPendingReview] = useState<PendingReviewItem[]>([]);
   const [pendingReviewLoading, setPendingReviewLoading] = useState(true);
   const [pendingReviewError, setPendingReviewError] = useState(false);
+  const [tieneConsultorioAdministrado, setTieneConsultorioAdministrado] = useState(false);
+
+  useEffect(() => {
+    let vigente = true;
+    void listarConsultoriosAdministrados().then((consultorios) => {
+      if (vigente) setTieneConsultorioAdministrado(consultorios.length > 0);
+    }).catch(() => {
+      if (vigente) setTieneConsultorioAdministrado(false);
+    });
+    return () => { vigente = false; };
+  }, []);
 
   const cargarAgenda = useCallback(async () => {
     setCargandoAgenda(true);
@@ -376,6 +390,7 @@ export default function DashboardProfesional({
     onAbrirDisponibilidad={onAbrirDisponibilidad}
     onAbrirPrestaciones={onAbrirPrestaciones}
     onAbrirPerfil={onAbrirPerfil}
+    onAbrirConsultorio={tieneConsultorioAdministrado ? onAbrirConsultorio : undefined}
     onCerrarSesion={onCerrarSesion}
     onAbrirNotificacion={(item) => void abrirNotificacion(item)}
     accionTopbar={<button type="button" className="prof-enlace-topbar" onClick={onAbrirAgenda}>Ver agenda completa <Icono nombre="flecha" /></button>}
@@ -400,6 +415,10 @@ export default function DashboardProfesional({
               <div className={`prof-proximo-estado estado-${proximoTurno.estado}`}><span className="prof-estado"><i aria-hidden="true" />{etiquetaEstado(proximoTurno.estado)}</span><button type="button" onClick={onAbrirAgenda}>Ir a la agenda</button></div>
             </> : <div className="prof-proximo-vacio"><span>Próximo</span><h2 id="proximo-titulo">No hay más turnos próximos</h2><p>Tu agenda no tiene reservas futuras activas.</p></div>}
           </section>
+          {tieneConsultorioAdministrado && onAbrirConsultorio && <section className="prof-consultorio-acceso" aria-label="Administración del consultorio">
+            <div><strong>Administrás un consultorio</strong><span>Revisá la ocupación del espacio y gestioná módulos e invitaciones.</span></div>
+            <button type="button" onClick={onAbrirConsultorio}>Abrir panel de Consultorio <Icono nombre="flecha" /></button>
+          </section>}
 
           <div className="prof-layout">
             <section className="prof-agenda-seccion" aria-labelledby="agenda-hoy-titulo">

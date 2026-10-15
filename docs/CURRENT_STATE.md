@@ -27,9 +27,10 @@ Este documento combina estado del repositorio con evidencia operativa validada d
 | Backups PostgreSQL | VERIFICADO EN PRODUCCIÓN | Dump manual, SHA256 y programación diaria validados |
 | R2 | DECLARADO EN CONFIGURACIÓN | Producción actual mantiene `OBJECT_STORAGE_PROVIDER=fake`; no hay uso productivo real validado |
 | E2E / Playwright | IMPLEMENTADO EN CÓDIGO | Suite y CI existentes |
-| Consultorio (fundación) | INTEGRADO EN `main` | Entrega 02 mergeada como `f667cc1` (PR #88). Añade consultorio, salas y autorización administrativa; no opera membresías múltiples. |
+| Consultorio (fundación) | INTEGRADO EN `main` | Entrega 02 integrada como `f667cc1` (PR #88). Añade consultorio, salas y autorización administrativa; no opera membresías múltiples. |
 | Consultorio (módulos) | INTEGRADO EN `main`, NO DESPLEGADO | Entrega 03 integrada en `983f34f` (PR #89): reglas semanales, ocurrencias a 90 días, exclusión GiST, validación de turnos y consulta profesional propia. |
-| Consultorio (invitaciones) | EN IMPLEMENTACIÓN, NO DESPLEGADO | Entrega 04 en `codex/consultorio-04-invitaciones`: plazas y reservas recurrentes pendientes, aceptación autenticada, revocación y reenvío; PostgreSQL protege cupos y sala. No cambia ownership clínico ni suscripciones. El alta individual existente requiere matrícula y especialidad; no cubre todavía actividades que no las exijan. |
+| Consultorio (invitaciones) | INTEGRADO EN `main`, NO DESPLEGADO | Entrega 04 integra plazas y reservas recurrentes pendientes, aceptación autenticada, revocación y reenvío; PostgreSQL protege cupos y sala. No cambia ownership clínico ni suscripciones. El alta individual existente requiere matrícula y especialidad; no cubre todavía actividades que no las exijan. |
+| Consultorio (panel administrativo) | IMPLEMENTADO EN RAMA DE REVISIÓN, VALIDADO, NO DESPLEGADO | Entrega 05 añade acceso condicional, panel en el shell profesional, agenda semanal por sala, operación visual de módulos e invitaciones y dos lecturas administrativas allowlist. Suites locales y E2E sintético con PostgreSQL aislado aprobados; no altera membresías, pagos ni suscripciones. |
 
 ## Infraestructura productiva
 

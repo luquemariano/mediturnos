@@ -393,6 +393,34 @@ def listar_modulos(db: Session, usuario: Usuario, consultorio_id: int, desde: da
     return repository.listar_ocurrencias(db, consultorio_id, inicio, fin)
 
 
+def listar_reglas(db: Session, usuario: Usuario, consultorio_id: int) -> list[dict]:
+    _administrar(db, usuario, consultorio_id)
+    rows = []
+    for rule in repository.listar_reglas_consultorio(db, consultorio_id):
+        series = rule.serie
+        professional = series.profesional
+        rows.append({
+            "id": rule.id,
+            "sala_id": series.sala_id,
+            "sala_nombre": series.sala.nombre,
+            "profesional_id": series.profesional_id,
+            "profesional_nombre": (
+                f"{professional.nombre} {professional.apellido}"
+                if professional is not None
+                else "Invitación pendiente"
+            ),
+            "invitacion_pendiente": series.invitacion_id is not None,
+            "dia_semana": rule.dia_semana,
+            "hora_inicio": rule.hora_inicio,
+            "duracion_minutos": rule.duracion_minutos,
+            "zona_horaria": rule.zona_horaria,
+            "vigente_desde": rule.vigente_desde,
+            "vigente_hasta": rule.vigente_hasta,
+            "estado": rule.estado,
+        })
+    return rows
+
+
 def listar_mis_modulos(db: Session, usuario: Usuario) -> list[OcurrenciaModulo]:
     """Read-only list; deliberately does not extend/materialize the recurrence horizon."""
     if usuario.rol != "profesional":

@@ -146,8 +146,14 @@ Una regla semanal define hora civil en la zona IANA del consultorio y una versi�
 
 ## DEC-017 — Invitación previa a cuenta, plaza y módulos
 
-Tipo: diseño funcional y de seguridad implementado en la rama `codex/consultorio-04-invitaciones`; no desplegado.
+Tipo: diseño funcional y de seguridad integrado en `main` mediante PR #90; no desplegado.
 
 La propietaria prepara una invitación con email normalizado y reglas semanales antes de enviarla. La invitación y sus ocurrencias reservan plaza y sala sin crear identidad profesional ficticia. Series y ocurrencias tienen exactamente un destino: profesional o invitación; las ocurrencias pendientes siguen activas bajo la exclusión GiST. El cupo configurable cuenta perfiles activos distintos, incluida la titular, más invitaciones no vencidas, con bloqueo de la fila consultorio. Los valores iniciales son cuatro plazas y siete días.
 
 El token de alta entropía persiste sólo como hash; el enlace lo transporta en el fragmento del navegador. Reenvío rota el hash, revocación/vencimiento lo invalida y la aceptación exige JWT, perfil profesional existente y email verificado coincidente. La aceptación se ejecuta en transacción y puede repetirse por el mismo usuario sin duplicar el vínculo. El invitado sin cuenta sigue el registro individual en otra pestaña y vuelve a la invitación; no existe handoff server-side. El alta individual actual requiere matrícula y especialidad. No se transfieren cuentas ni permisos clínicos y la administradora no obtiene agendas/pacientes ajenos.
+
+## DEC-018 — Panel de ocupación sin información clínica
+
+Tipo: diseño de interfaz y autorización preparado en la rama `codex/consultorio-05-panel-administrativo`; no desplegado.
+
+El panel de administración usa la misma sesión profesional, conserva el shell de Turnelia y se muestra desde la navegación sólo cuando `GET /consultorios` devuelve consultorios administrados. La condición visual no concede autorización: backend vuelve a resolver `ConsultorioAdministrador` en cada lectura y mutación. Los endpoints mínimos de profesionales y reglas semanales devuelven campos allowlist para operar el panel. La agenda muestra únicamente sala, intervalo, estado y profesional asignado o el rótulo genérico “Invitación pendiente”; no propaga nombre/correo de la invitación ni datos clínicos. En modo Consultorio el shell omite notificaciones profesionales. La UI muestra sólo `turnos_afectados` ante un bloqueo y no modifica automáticamente turnos. No requiere migración ni cambia membresías o suscripciones.

@@ -6,6 +6,7 @@ from app.models.cuenta import Cuenta
 from app.models.cuenta_usuario import CuentaUsuario
 from app.models.sala import Sala
 from app.models.profesional import Profesional
+from app.models.consultorio_profesional import ConsultorioProfesional
 
 
 def listar_consultorios_administrados(db: Session, usuario_id: int) -> list[Consultorio]:
@@ -74,3 +75,17 @@ def agregar_sala(db: Session, consultorio_id: int, nombre: str, codigo: str) -> 
     sala = Sala(consultorio_id=consultorio_id, nombre=nombre, codigo=codigo)
     db.add(sala)
     return sala
+
+
+def listar_profesionales_vinculados(db: Session, consultorio_id: int) -> list[ConsultorioProfesional]:
+    return (
+        db.query(ConsultorioProfesional)
+        .join(Profesional, Profesional.id == ConsultorioProfesional.profesional_id)
+        .filter(
+            ConsultorioProfesional.consultorio_id == consultorio_id,
+            ConsultorioProfesional.estado.in_(("preparatorio", "activo")),
+            Profesional.activo.is_(True),
+        )
+        .order_by(Profesional.apellido, Profesional.nombre, Profesional.id)
+        .all()
+    )
