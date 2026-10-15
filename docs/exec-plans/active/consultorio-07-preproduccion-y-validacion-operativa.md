@@ -87,4 +87,4 @@ Preparar un stack de staging aislado, datos sintéticos y procedimientos para va
 - Las capturas de ayuda reescritas por el test documental Playwright se restauraron al estado previo.
 - Build frontend aprobado con warning preexistente de chunk JavaScript >500 KB; `npm ci` notificó 7 advisories de dependencias (1 low, 2 moderate, 4 high), sin aplicar upgrades fuera de alcance.
 - Verificación sintáctica Bash/Python y `git diff --check`: correctos; Git sólo avisó sobre normalización CRLF futura de documentos modificados.
-- Revisión de seguridad, git diff --check, commit, push, PR y CI: pendientes.
+- Revisión de seguridad, `git diff --check`, sintaxis Bash/Python, commit y push completados. PR [#93](https://github.com/luquemariano/mediturnos/pull/93), base `main`; CI del commit `231d972b93d1f3d91b3a244b80a0201ba8552e2d` pasó Backend, PostgreSQL, Frontend y Playwright E2E (run [38793049847](https://github.com/luquemariano/mediturnos/actions/runs/38793049847)). PR permanece abierto y sin merge.

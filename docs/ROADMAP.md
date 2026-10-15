@@ -56,4 +56,4 @@ Estados: **PENDIENTE**, **EN CURSO**, **COMPLETADO** y **NO DETERMINADO**. No se
 
 ## Entrega 07 — Preproducción aislada
 
-- **IMPLEMENTADA Y VALIDADA LOCALMENTE:** Compose separado, secretos externos, seed sintético, protecciones de correo/WhatsApp/analítica/indexación y procedimientos de backup/restore y cleanup. Staging remoto pendiente de acceso SSH de lectura, DNS staging y verificación de Caddy/recursos. Ver [`consultorio-07-preproduccion-y-validacion-operativa.md`](exec-plans/active/consultorio-07-preproduccion-y-validacion-operativa.md).
+- **IMPLEMENTADA Y VALIDADA LOCALMENTE; PR #93 CON CI VERDE:** Compose separado, secretos externos, seed sintético, protecciones de correo/WhatsApp/analítica/indexación y procedimientos de backup/restore y cleanup. Staging remoto pendiente de acceso SSH de lectura, DNS staging y verificación de Caddy/recursos. Ver [`consultorio-07-preproduccion-y-validacion-operativa.md`](exec-plans/active/consultorio-07-preproduccion-y-validacion-operativa.md).
