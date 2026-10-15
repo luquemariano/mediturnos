@@ -5,6 +5,7 @@ import pytest
 from sqlalchemy.exc import IntegrityError
 
 from app.models.cuenta import Cuenta
+from app.models.actividad_profesional import ActividadProfesional
 from app.models.cuenta_usuario import CuentaUsuario
 from app.models.profesional import Profesional
 from app.models.suscripcion import Suscripcion
@@ -18,10 +19,12 @@ def test_registro_crea_estructura_comercial_y_endpoint(client):
     from app.models.especialidad import Especialidad
     with SessionTest() as db:
         especialidad = Especialidad(nombre="Clínica", duracion_turno_minutos=30, activa=True)
-        db.add(especialidad); db.commit(); especialidad_id = especialidad.id
+        db.add(especialidad); db.flush()
+        actividad = ActividadProfesional(codigo="test_matriculable", nombre="Actividad test", requiere_matricula=True, requiere_especialidad=True)
+        db.add(actividad); db.commit(); especialidad_id = especialidad.id; actividad_id = actividad.id
     respuesta = client.post("/auth/register/profesional", json={
         "nombre": "Ana", "apellido": "Pérez", "email": "ana.cuenta@example.com",
-        "password": "secreto123", "matricula": "CTA-1", "especialidad_id": especialidad_id,
+        "password": "secreto123", "actividad_profesional_id": actividad_id, "matricula": "CTA-1", "especialidad_id": especialidad_id,
     })
     assert respuesta.status_code == 201
     with SessionTest() as db:
@@ -73,12 +76,14 @@ def test_error_comercial_revierte_registro_completo(client, monkeypatch):
     import app.services.registro_service as registro_service
     with SessionTest() as db:
         especialidad = Especialidad(nombre="Rollback", duracion_turno_minutos=30, activa=True)
-        db.add(especialidad); db.commit(); especialidad_id = especialidad.id
+        db.add(especialidad); db.flush()
+        actividad = ActividadProfesional(codigo="rollback_matriculable", nombre="Actividad test", requiere_matricula=True, requiere_especialidad=True)
+        db.add(actividad); db.commit(); especialidad_id = especialidad.id; actividad_id = actividad.id
     def fallar(*args, **kwargs):
         raise RuntimeError("fallo comercial")
     monkeypatch.setattr(registro_service, "crear_cuenta_individual_con_trial", fallar)
     with pytest.raises(RuntimeError):
-        client.post("/auth/register/profesional", json={"nombre":"Ana", "apellido":"Pérez", "email":"rollback@example.com", "password":"secreto123", "matricula":"ROLL-1", "especialidad_id":especialidad_id})
+        client.post("/auth/register/profesional", json={"nombre":"Ana", "apellido":"Pérez", "email":"rollback@example.com", "password":"secreto123", "actividad_profesional_id":actividad_id, "matricula":"ROLL-1", "especialidad_id":especialidad_id})
     with SessionTest() as db:
         assert db.query(Usuario).count() == 0
         assert db.query(Profesional).count() == 0

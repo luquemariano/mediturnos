@@ -37,6 +37,7 @@ def test_prestacion_inexistente_devuelve_404(client):
 
 
 def test_crear_prestacion_correctamente(client):
+    from app.models.actividad_profesional import ActividadProfesional
     respuesta_especialidad = client.post(
         "/especialidades/",
         json={
@@ -49,12 +50,17 @@ def test_crear_prestacion_correctamente(client):
     assert respuesta_especialidad.status_code == 201
 
     especialidad_id = respuesta_especialidad.json()["id"]
+    from tests.conftest import SessionTest
+    with SessionTest() as db:
+        actividad = ActividadProfesional(codigo="prestacion_matriculable", nombre="Actividad test", requiere_matricula=True, requiere_especialidad=True)
+        db.add(actividad); db.commit(); actividad_id = actividad.id
 
     respuesta_profesional = client.post(
         "/profesionales/",
         json={
             "nombre": "Ana",
             "apellido": "Gómez",
+            "actividad_profesional_id": actividad_id,
             "matricula": "MP-TEST-001",
             "telefono": "3515551234",
             "email": "ana.test@mediturnos.com",

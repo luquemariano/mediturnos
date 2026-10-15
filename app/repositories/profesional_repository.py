@@ -25,12 +25,14 @@ def guardar_profesional(
     db: Session,
     datos: ProfesionalCrear,
     especialidades: list[Especialidad],
+    actividad_profesional,
 ) -> Profesional:
 
     profesional = Profesional(
         nombre=datos.nombre,
         apellido=datos.apellido,
         matricula=datos.matricula,
+        actividad_profesional=actividad_profesional,
         telefono=datos.telefono,
         email=datos.email,
     )
@@ -42,11 +44,18 @@ def guardar_profesional(
         for e in especialidades
     }
 
-    for item in datos.especialidades:
+    duraciones_por_especialidad = {
+        item.especialidad_id: item.duracion_turno_minutos
+        for item in (datos.especialidades or [])
+    }
+
+    for especialidad in especialidades:
 
         relacion = ProfesionalEspecialidad(
-            especialidad=mapa[item.especialidad_id],
-            duracion_turno_minutos=item.duracion_turno_minutos,
+            especialidad=mapa[especialidad.id],
+            duracion_turno_minutos=duraciones_por_especialidad.get(
+                especialidad.id, especialidad.duracion_turno_minutos,
+            ),
         )
 
         profesional.especialidades_asignadas.append(relacion)

@@ -3,6 +3,8 @@ import pytest
 from app.core.dependencies import obtener_usuario_actual
 from app.main import app
 from app.models.usuario import Usuario
+from app.models.actividad_profesional import ActividadProfesional
+from tests.conftest import SessionTest
 
 
 ROLES_NO_ADMINISTRATIVOS = (
@@ -57,6 +59,24 @@ def crear_especialidad(
     return respuesta.json()["id"]
 
 
+def actividad_matriculable() -> int:
+    with SessionTest() as db:
+        item = db.query(ActividadProfesional).filter_by(
+            codigo="profesional_matriculable"
+        ).first()
+        if item is None:
+            item = ActividadProfesional(
+                codigo="profesional_matriculable",
+                nombre="Profesión o actividad con matrícula",
+                requiere_matricula=True,
+                requiere_especialidad=True,
+            )
+            db.add(item)
+            db.commit()
+            db.refresh(item)
+        return item.id
+
+
 def crear_profesional(
     client,
     especialidad_id: int,
@@ -69,6 +89,7 @@ def crear_profesional(
         json={
             "nombre": "Ana",
             "apellido": "Pérez",
+            "actividad_profesional_id": actividad_matriculable(),
             "matricula": matricula,
             "telefono": "+54 11 5555-1234",
             "email": email,

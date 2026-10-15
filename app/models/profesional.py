@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from app.models.profesional_paciente import ProfesionalPaciente
     from app.models.profesional_especialidad import ProfesionalEspecialidad
     from app.models.usuario import Usuario
+    from app.models.actividad_profesional import ActividadProfesional
 
 
 class Profesional(Base):
@@ -52,10 +53,16 @@ class Profesional(Base):
         nullable=False,
     )
 
-    matricula: Mapped[str] = mapped_column(
+    matricula: Mapped[str | None] = mapped_column(
         String(50),
         unique=True,
-        nullable=False,
+        nullable=True,
+    )
+
+    actividad_profesional_id: Mapped[int | None] = mapped_column(
+        ForeignKey("actividades_profesionales.id", ondelete="RESTRICT", name="fk_profesionales_actividad_id"),
+        nullable=True,
+        index=True,
     )
 
     telefono: Mapped[str | None] = mapped_column(
@@ -94,6 +101,8 @@ class Profesional(Base):
     )
 
     cuenta: Mapped["Cuenta"] = relationship(back_populates="profesionales")
+
+    actividad_profesional: Mapped["ActividadProfesional | None"] = relationship()
 
     onboarding_step: Mapped[str] = mapped_column(
         String(30), nullable=False, default="completado",

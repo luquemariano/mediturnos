@@ -5,6 +5,7 @@ from pydantic import (
     Field,
     field_validator,
 )
+from app.schemas.actividad_profesional import ActividadProfesionalRespuesta
 from typing import Literal
 
 OnboardingStep = Literal["perfil", "prestaciones", "disponibilidad", "listo", "completado"]
@@ -32,8 +33,10 @@ class ProfesionalCrear(BaseModel):
         max_length=100,
     )
 
-    matricula: str = Field(
-        min_length=3,
+    actividad_profesional_id: int = Field(gt=0)
+
+    matricula: str | None = Field(
+        default=None,
         max_length=50,
     )
 
@@ -47,9 +50,20 @@ class ProfesionalCrear(BaseModel):
         max_length=150,
     )
 
-    especialidades: list[EspecialidadProfesionalCrear] = Field(
-        min_length=1,
-    )
+    especialidad_id: int | None = Field(default=None, gt=0)
+    especialidades: list[EspecialidadProfesionalCrear] | None = Field(default=None, min_length=1)
+
+    @field_validator("matricula", mode="before")
+    @classmethod
+    def normalizar_matricula(cls, valor: str | None) -> str | None:
+        return valor.strip() or None if isinstance(valor, str) else valor
+
+    @field_validator("actividad_profesional_id")
+    @classmethod
+    def validar_actividad_no_anulable(cls, valor: int | None) -> int:
+        if valor is None:
+            raise ValueError("La actividad no se puede quitar de un perfil clasificado.")
+        return valor
 
 
 class ProfesionalActualizar(BaseModel):
@@ -72,6 +86,8 @@ class ProfesionalActualizar(BaseModel):
         max_length=50,
     )
 
+    actividad_profesional_id: int | None = Field(default=None, gt=0)
+
     telefono: str | None = Field(
         default=None,
         max_length=30,
@@ -89,11 +105,7 @@ class ProfesionalActualizar(BaseModel):
         min_length=1,
     )
 
-    @field_validator(
-        "nombre",
-        "apellido",
-        "matricula",
-    )
+    @field_validator("nombre", "apellido")
     @classmethod
     def validar_campos_requeridos(
         cls,
@@ -104,6 +116,18 @@ class ProfesionalActualizar(BaseModel):
                 "El campo no puede ser nulo."
             )
 
+        return valor
+
+    @field_validator("matricula", mode="before")
+    @classmethod
+    def normalizar_matricula(cls, valor: str | None) -> str | None:
+        return valor.strip() or None if isinstance(valor, str) else valor
+
+    @field_validator("actividad_profesional_id")
+    @classmethod
+    def validar_actividad_no_anulable(cls, valor: int | None) -> int:
+        if valor is None:
+            raise ValueError("La actividad no se puede quitar de un perfil clasificado.")
         return valor
 
     @field_validator("especialidades")
@@ -133,7 +157,9 @@ class ProfesionalRespuesta(BaseModel):
     id: int
     nombre: str
     apellido: str
-    matricula: str
+    matricula: str | None
+    actividad_profesional_id: int | None = None
+    actividad_profesional: ActividadProfesionalRespuesta | None = None
     telefono: str | None
     email: str | None
     activo: bool

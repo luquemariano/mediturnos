@@ -29,8 +29,9 @@ Este documento combina estado del repositorio con evidencia operativa validada d
 | E2E / Playwright | IMPLEMENTADO EN CÓDIGO | Suite y CI existentes |
 | Consultorio (fundación) | INTEGRADO EN `main` | Entrega 02 integrada como `f667cc1` (PR #88). Añade consultorio, salas y autorización administrativa; no opera membresías múltiples. |
 | Consultorio (módulos) | INTEGRADO EN `main`, NO DESPLEGADO | Entrega 03 integrada en `983f34f` (PR #89): reglas semanales, ocurrencias a 90 días, exclusión GiST, validación de turnos y consulta profesional propia. |
-| Consultorio (invitaciones) | INTEGRADO EN `main`, NO DESPLEGADO | Entrega 04 integra plazas y reservas recurrentes pendientes, aceptación autenticada, revocación y reenvío; PostgreSQL protege cupos y sala. No cambia ownership clínico ni suscripciones. El alta individual existente requiere matrícula y especialidad; no cubre todavía actividades que no las exijan. |
-| Consultorio (panel administrativo) | IMPLEMENTADO EN RAMA DE REVISIÓN, VALIDADO, NO DESPLEGADO | Entrega 05 añade acceso condicional, panel en el shell profesional, agenda semanal por sala, operación visual de módulos e invitaciones y dos lecturas administrativas allowlist. Suites locales y E2E sintético con PostgreSQL aislado aprobados; no altera membresías, pagos ni suscripciones. |
+| Consultorio (invitaciones) | INTEGRADO EN `main` | Entrega 04 integra plazas y reservas recurrentes pendientes, aceptación autenticada, revocación y reenvío; PostgreSQL protege cupos y sala. No cambia ownership clínico ni suscripciones. |
+| Consultorio (actividad/matrícula) | EN IMPLEMENTACIÓN EN RAMA | Entrega 06 agrega catálogo servidor, matrícula condicional, registro/onboarding y perfil propio. Migración aditiva `a7b8c9d0e1f2`. Validación local: pytest 912/39 skipped, Vitest 415/52 archivos, PostgreSQL migración/downgrade y Playwright 12/12; PR y CI remota pendientes. |
+| Consultorio (panel administrativo) | INTEGRADO EN `main` | Entrega 05 integrada por merge `40e8c36a77f59f7e7eb6c35b00bc61f74b4414cc`; añade acceso condicional, panel en el shell profesional, agenda semanal por sala, operación visual de módulos e invitaciones. Estado de despliegue no determinado. |
 
 ## Infraestructura productiva
 

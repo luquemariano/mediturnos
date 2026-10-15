@@ -64,6 +64,7 @@ jobs:
       TEST_POSTGRES_APPOINTMENT_ACTIONS_URL: postgresql+psycopg://turnelia_ci:turnelia-ci-only-postgres-password-2026@localhost:5432/turnelia_ci
       TEST_POSTGRES_OWNERSHIP_URL: postgresql+psycopg://turnelia_ci:turnelia-ci-only-postgres-password-2026@localhost:5432/turnelia_ci
       TEST_POSTGRES_CONSULTORIO_URL: postgresql+psycopg://turnelia_ci:turnelia-ci-only-postgres-password-2026@localhost:5432/turnelia_ci
+      TEST_POSTGRES_ACTIVIDAD_URL: postgresql+psycopg://turnelia_ci:turnelia-ci-only-postgres-password-2026@localhost:5432/turnelia_ci
       JWT_SECRET_KEY: turnelia-ci-only-synthetic-jwt-key-2026
     steps:
       - name: Checkout
@@ -122,6 +123,7 @@ jobs:
             tests/test_consultorio_postgresql.py \
             tests/test_consultorio_modulos_postgresql.py \
             tests/test_consultorio_migration_postgresql.py \
+            tests/test_actividad_profesional_postgresql.py \
             -ra --junitxml=postgresql-test-results.xml
           pytest_status=$?
           set -e
@@ -138,6 +140,7 @@ jobs:
               "tests/test_consultorio_postgresql.py",
               "tests/test_consultorio_modulos_postgresql.py",
               "tests/test_consultorio_migration_postgresql.py",
+              "tests/test_actividad_profesional_postgresql.py",
           }
           root = ET.parse("postgresql-test-results.xml").getroot()
           observed = set()
@@ -306,7 +309,7 @@ jobs:
 
       - name: Run Playwright E2E
         working-directory: frontend
-        run: npx playwright test e2e/smoke.spec.ts e2e/auth.spec.ts e2e/admin.spec.ts e2e/clinical-isolation.spec.ts
+        run: npx playwright test e2e/smoke.spec.ts e2e/auth.spec.ts e2e/admin.spec.ts e2e/clinical-isolation.spec.ts e2e/actividad-profesional.spec.ts
 
       - name: Capture and sanitize E2E logs
         if: always()

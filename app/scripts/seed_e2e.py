@@ -205,8 +205,9 @@ def main() -> None:
             db.add(room); db.flush()
         if not db.query(OcurrenciaModulo).filter_by(consultorio_id=clinic.id).first():
             now = datetime.now(UTC)
-            days_until_monday = (7 - now.weekday()) % 7 or 7
-            monday = (now + timedelta(days=days_until_monday)).astimezone(ZoneInfo(clinic.zona_horaria)).date()
+            local_now = now.astimezone(ZoneInfo(clinic.zona_horaria))
+            days_until_monday = (7 - local_now.weekday()) % 7 or 7
+            monday = local_now.date() + timedelta(days=days_until_monday)
             series = SerieModulo(consultorio_id=clinic.id, sala_id=room.id, profesional_id=consultorio_professional.id, creado_por_usuario_id=consultorio_user.id)
             db.add(series); db.flush()
             rule = ReglaRecurrenciaModulo(serie_id=series.id, version=1, dia_semana=0, hora_inicio=time(9), duracion_minutos=240, zona_horaria=clinic.zona_horaria, vigente_desde=monday, vigente_hasta=None, estado="activa")

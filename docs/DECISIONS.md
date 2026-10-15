@@ -157,3 +157,10 @@ El token de alta entropía persiste sólo como hash; el enlace lo transporta en 
 Tipo: diseño de interfaz y autorización preparado en la rama `codex/consultorio-05-panel-administrativo`; no desplegado.
 
 El panel de administración usa la misma sesión profesional, conserva el shell de Turnelia y se muestra desde la navegación sólo cuando `GET /consultorios` devuelve consultorios administrados. La condición visual no concede autorización: backend vuelve a resolver `ConsultorioAdministrador` en cada lectura y mutación. Los endpoints mínimos de profesionales y reglas semanales devuelven campos allowlist para operar el panel. La agenda muestra únicamente sala, intervalo, estado y profesional asignado o el rótulo genérico “Invitación pendiente”; no propaga nombre/correo de la invitación ni datos clínicos. En modo Consultorio el shell omite notificaciones profesionales. La UI muestra sólo `turnos_afectados` ante un bloqueo y no modifica automáticamente turnos. No requiere migración ni cambia membresías o suscripciones.
+
+
+## DEC-019 — Actividad profesional y matrícula condicional (Entrega 06)
+
+Tipo: decisión funcional aprobada e implementación en revisión.
+
+Las reglas de matrícula y especialidad provienen del catálogo servidor `ActividadProfesional`, nunca del rol ni de banderas enviadas por el cliente. El alta nueva debe elegir una actividad; perfiles anteriores mantienen `actividad_profesional_id=NULL` y conservan sus valores y relaciones sin inferencia. Servicios de estética usan la especialidad de servicio existente configurada en el catálogo para seguir siendo compatibles con prestaciones y turnos sin pedir matrícula. Clasificar un perfil heredado como actividad sin matrícula requiere borrar explícitamente su matrícula histórica. La migración Alembic `a7b8c9d0e1f2` es aditiva; el downgrade se detiene ante datos que no puede representar. No valida la autenticidad de matrícula contra registros externos.

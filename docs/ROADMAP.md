@@ -46,3 +46,10 @@ Estados: **PENDIENTE**, **EN CURSO**, **COMPLETADO** y **NO DETERMINADO**. No se
 - **COMPLETADA:** Fase 7A Playwright E2E CI; job separado informativo, sólo `workflow_dispatch`, PostgreSQL E2E, Chromium headless, smoke/auth/admin y artifacts limitados a logs sanitizados ante fallo. Run `32598856151` sobre `a2124ff`: `3 passed (4.2s)`, cleanup correcto.
 - **COMPLETADA:** Fase 7B Playwright E2E CI informativo en Pull Requests hacia `main`; conserva `workflow_dispatch`, no es required y no modifica el Ruleset. PR #6, reconciliado contra `main`, ejecutó el run `32600285274` por `pull_request`: cuatro jobs verdes y Playwright `3 passed (4.7s)`, con cleanup correcto. PR #5 quedó registrado como conflicto de merge.
 - **PENDIENTE DE EVIDENCIA DE ESTABILIDAD:** Fase 7C; antes de evaluarla se requieren cinco ejecuciones verdes, al menos tres PRs o actualizaciones, cero flakiness no explicada, cleanup/readiness estables y ningún skip inesperado.
+
+
+## Plan Consultorio
+
+- **INTEGRADAS EN `main`:** Entregas 02–05 (fundación, módulos recurrentes, invitaciones y panel administrativo); Entrega 05 fue integrada en `40e8c36a77f59f7e7eb6c35b00bc61f74b4414cc`. Estado de despliegue: NO DETERMINADO.
+- **EN CURSO:** Entrega 06 — catálogo de actividad profesional, matrícula condicional y experiencia condicional de alta/perfil. Rama `codex/consultorio-06-actividad-matricula`; PR pendiente.
+- **FUERA DE ALCANCE DE E06:** cambios a planes, precios, cobros, suscripciones, membresías múltiples y despliegue.
