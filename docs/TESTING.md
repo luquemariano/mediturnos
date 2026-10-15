@@ -150,7 +150,7 @@ Toda modificación relevante debe incluir tests proporcionales al riesgo. Cambio
 La configuración se valida sin imprimir secretos:
 
 ```bash
-python scripts/staging/generate_env.py /ruta/privada/.env.staging
+python3 scripts/staging/generate_env.py /ruta/privada/.env.staging
 STAGING_ENV_FILE=/ruta/privada/.env.staging scripts/staging/manage.sh validate
 STAGING_ENV_FILE=/ruta/privada/.env.staging scripts/staging/manage.sh up
 STAGING_ENV_FILE=/ruta/privada/.env.staging scripts/staging/manage.sh health

@@ -1,3 +1,5 @@
+import re
+
 import pytest
 from pydantic import SecretStr, ValidationError
 from pathlib import Path
@@ -7,6 +9,22 @@ from app.core.config import Settings
 from app.scripts import seed_staging
 from scripts.staging.generate_env import create_env_file
 from app.services.email_service import EmailDeliveryError, ResendEmailProvider, TransactionalEmail
+
+
+def test_scripts_staging_invocan_python_con_version_explicita():
+    scripts_dir = Path(__file__).resolve().parents[1] / "scripts" / "staging"
+    unversioned_invocations = []
+
+    for script in scripts_dir.glob("*.sh"):
+        for line_number, line in enumerate(script.read_text(encoding="utf-8").splitlines(), start=1):
+            command_text = line.split("#", maxsplit=1)[0]
+            if re.search(r"(?<![A-Za-z0-9_./-])python\s+(?=[^\s])", command_text):
+                unversioned_invocations.append(f"{script.name}:{line_number}")
+
+    assert not unversioned_invocations, (
+        "Los scripts de staging deben invocar Python como python3: "
+        + ", ".join(unversioned_invocations)
+    )
 
 
 def staging_settings(**overrides):

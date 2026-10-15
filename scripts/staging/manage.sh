@@ -9,7 +9,7 @@ compose() {
   docker compose --project-name turnelia-staging --env-file "$STAGING_ENV_FILE" -f "$COMPOSE_FILE" "$@"
 }
 
-python "$ROOT_DIR/scripts/staging/validate_compose.py" --env-file "$STAGING_ENV_FILE"
+python3 "$ROOT_DIR/scripts/staging/validate_compose.py" --env-file "$STAGING_ENV_FILE"
 
 case "${1:-}" in
   validate)
@@ -54,7 +54,7 @@ case "${1:-}" in
       echo "Para borrar sólo el staging aislado, exportá STAGING_REMOVE_CONFIRM=turnelia-staging." >&2
       exit 2
     fi
-    python "$ROOT_DIR/scripts/staging/validate_resources.py"
+    python3 "$ROOT_DIR/scripts/staging/validate_resources.py"
     compose down --volumes --remove-orphans
     ;;
   *)
