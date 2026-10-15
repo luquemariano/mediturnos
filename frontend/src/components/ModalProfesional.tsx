@@ -10,6 +10,7 @@ import type {
 import axios from "axios";
 
 import { obtenerEspecialidades } from "../services/especialidadService";
+import { obtenerActividadesProfesionales } from "../services/actividadProfesionalService";
 import {
   actualizarProfesional,
   crearProfesional,
@@ -20,6 +21,7 @@ import type {
   ProfesionalActualizar,
   ProfesionalCrear,
   EspecialidadProfesionalCrear,
+  ActividadProfesional,
 } from "../types/profesional";
 
 
@@ -37,6 +39,7 @@ type FormularioProfesional = {
   matricula: string;
   email: string;
   telefono: string;
+  actividadId: string;
   especialidadId: string;
   duracionTurnoMinutos: string;
 };
@@ -55,6 +58,7 @@ function crearFormularioInicial(
     matricula: profesional?.matricula ?? "",
     email: profesional?.email ?? "",
     telefono: profesional?.telefono ?? "",
+    actividadId: profesional?.actividad_profesional_id?.toString() ?? "",
     especialidadId: "",
     duracionTurnoMinutos: "",
   };
@@ -138,6 +142,7 @@ function ModalProfesional({
 
   const [especialidades, setEspecialidades] =
     useState<Especialidad[]>([]);
+  const [actividades, setActividades] = useState<ActividadProfesional[]>([]);
 
   const [especialidadesEditadas,
     setEspecialidadesEditadas] =
@@ -163,10 +168,12 @@ function ModalProfesional({
       setMensajeError("");
 
       try {
-        const datos =
-          await obtenerEspecialidades();
-
+        const [datos, opciones] = await Promise.all([
+          obtenerEspecialidades(),
+          obtenerActividadesProfesionales(),
+        ]);
         setEspecialidades(datos);
+        setActividades(opciones);
       } catch (error) {
         setMensajeError(
           obtenerMensajeError(
@@ -183,6 +190,10 @@ function ModalProfesional({
   useEffect(() => {
     cargarEspecialidades();
   }, [cargarEspecialidades]);
+
+  const actividadSeleccionada = actividades.find(
+    (item) => item.id === Number(formulario.actividadId),
+  ) ?? profesional?.actividad_profesional ?? null;
 
 
   function manejarCambio(
@@ -205,6 +216,16 @@ function ModalProfesional({
             especialidad.duracion_turno_minutos,
           )
           : "",
+      }));
+      return;
+    }
+
+    if (name === "actividadId") {
+      setFormulario((datosAnteriores) => ({
+        ...datosAnteriores,
+        actividadId: value,
+        matricula: "",
+        especialidadId: "",
       }));
       return;
     }
@@ -310,26 +331,31 @@ function ModalProfesional({
       formulario.duracionTurnoMinutos,
     );
 
-    if (
-      nombre.length < 2
-      || apellido.length < 2
-      || matricula.length < 3
-    ) {
+    if (nombre.length < 2 || apellido.length < 2) {
       setMensajeError(
         "Completá correctamente todos los campos obligatorios.",
       );
       return;
     }
 
+    if (!actividadSeleccionada && !esEdicion) {
+      setMensajeError("Seleccioná una actividad profesional.");
+      return;
+    }
+
+    if (actividadSeleccionada?.requiere_matricula && matricula.length < 3) {
+      setMensajeError("La actividad seleccionada requiere una matrícula válida.");
+      return;
+    }
+
     if (
       !esEdicion
-      && (
-        !Number.isInteger(especialidadId)
-        || especialidadId <= 0
-        || !Number.isInteger(duracionTurnoMinutos)
-        || duracionTurnoMinutos < 10
-        || duracionTurnoMinutos > 180
-      )
+        && actividadSeleccionada?.requiere_especialidad
+        && (!Number.isInteger(especialidadId)
+          || especialidadId <= 0
+          || !Number.isInteger(duracionTurnoMinutos)
+          || duracionTurnoMinutos < 10
+          || duracionTurnoMinutos > 180)
     ) {
       setMensajeError(
         "Completá correctamente todos los campos obligatorios.",
@@ -407,6 +433,11 @@ function ModalProfesional({
       if (profesional) {
         const cambios: ProfesionalActualizar = {};
 
+        if (actividadSeleccionada && actividadSeleccionada.id !== profesional.actividad_profesional_id) {
+          cambios.actividad_profesional_id = actividadSeleccionada.id;
+          if (!actividadSeleccionada.requiere_matricula) cambios.matricula = null;
+        }
+
         if (nombre !== profesional.nombre) {
           cambios.nombre = nombre;
         }
@@ -415,7 +446,7 @@ function ModalProfesional({
           cambios.apellido = apellido;
         }
 
-        if (matricula !== profesional.matricula) {
+        if (!cambios.actividad_profesional_id && (actividadSeleccionada?.requiere_matricula || !actividadSeleccionada) && matricula !== (profesional.matricula ?? "")) {
           cambios.matricula = matricula;
         }
 
@@ -440,19 +471,23 @@ function ModalProfesional({
             cambios,
           );
       } else {
+        if (!actividadSeleccionada) {
+          throw new Error("Seleccioná una actividad profesional.");
+        }
         const datos: ProfesionalCrear = {
           nombre,
           apellido,
-          matricula,
+          actividad_profesional_id: actividadSeleccionada.id,
+          ...(actividadSeleccionada.requiere_matricula ? { matricula } : {}),
           ...(telefono ? { telefono } : {}),
           ...(email ? { email } : {}),
-          especialidades: [
+          ...(actividadSeleccionada.requiere_especialidad ? { especialidades: [
             {
               especialidad_id: especialidadId,
               duracion_turno_minutos:
                 duracionTurnoMinutos,
             },
-          ],
+          ] } : {}),
         };
 
         profesionalGuardado =
@@ -561,8 +596,23 @@ function ModalProfesional({
             </div>
 
             <div className="campo-formulario">
+              <label htmlFor="profesional-actividad">Actividad profesional{!esEdicion ? " *" : ""}</label>
+              <select
+                id="profesional-actividad"
+                name="actividadId"
+                value={formulario.actividadId}
+                onChange={manejarCambio}
+                disabled={cargandoEspecialidades || guardando}
+                required={!esEdicion}
+              >
+                <option value="">{esEdicion ? "Sin clasificar" : "Seleccioná una actividad"}</option>
+                {actividades.map((item) => <option key={item.id} value={item.id}>{item.nombre}</option>)}
+              </select>
+            </div>
+
+            {(actividadSeleccionada?.requiere_matricula || (!actividadSeleccionada && esEdicion && formulario.matricula)) && <div className="campo-formulario">
               <label htmlFor="profesional-matricula">
-                Matrícula *
+                Matrícula {actividadSeleccionada?.requiere_matricula ? "*" : ""}
               </label>
 
               <input
@@ -573,11 +623,11 @@ function ModalProfesional({
                 onChange={manejarCambio}
                 minLength={3}
                 maxLength={50}
-                required
+                required={Boolean(actividadSeleccionada?.requiere_matricula)}
               />
-            </div>
+            </div>}
 
-            {!esEdicion && (
+            {!esEdicion && actividadSeleccionada?.requiere_especialidad && (
               <div className="campo-formulario">
                 <label htmlFor="profesional-especialidad">
                   Especialidad *
@@ -588,10 +638,7 @@ function ModalProfesional({
                   name="especialidadId"
                   value={formulario.especialidadId}
                   onChange={manejarCambio}
-                  disabled={
-                    cargandoEspecialidades
-                    || guardando
-                  }
+                  disabled={cargandoEspecialidades || guardando}
                   required
                 >
                   <option value="">
@@ -650,7 +697,7 @@ function ModalProfesional({
               />
             </div>
 
-            {!esEdicion && (
+            {!esEdicion && actividadSeleccionada?.requiere_especialidad && (
               <div className="campo-formulario">
                 <label htmlFor="profesional-duracion">
                   Duración del turno (minutos) *
@@ -671,6 +718,10 @@ function ModalProfesional({
                   required
                 />
               </div>
+            )}
+
+            {actividadSeleccionada && !actividadSeleccionada.requiere_matricula && (
+              <p className="ancho-completo" role="status">Esta actividad no requiere matrícula.</p>
             )}
 
             {esEdicion && (
@@ -858,8 +909,8 @@ function ModalProfesional({
                 guardando
                 || cargandoEspecialidades
                 || (esEdicion
-                  ? especialidades.length === 0
-                  : !especialidades.some(
+                  ? especialidades.length === 0 && Boolean(actividadSeleccionada?.requiere_especialidad)
+                  : Boolean(actividadSeleccionada?.requiere_especialidad) && !especialidades.some(
                     (especialidad) =>
                       especialidad.activa,
                   ))

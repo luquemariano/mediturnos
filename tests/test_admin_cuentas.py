@@ -142,6 +142,14 @@ def test_errores_acciones_y_solo_admin(client, escenario):
 
 
 def test_admin_global_lista_ordenado_con_total_y_anomalias(client, escenario):
+    with SessionTest() as db:
+        cuenta = db.get(Cuenta, escenario["trial_id"])
+        cuenta.profesionales.append(Profesional(
+            cuenta=cuenta,
+            nombre="Eva", apellido="Estética", matricula=None,
+            email="eva.estetica@test.com",
+        ))
+        db.commit()
     autenticar(usuario_db(escenario["admin_id"]))
     respuesta = client.get("/admin/cuentas")
     assert respuesta.status_code == 200
@@ -151,6 +159,9 @@ def test_admin_global_lista_ordenado_con_total_y_anomalias(client, escenario):
     anomala = next(item for item in datos["items"] if item["nombre"] == "Cuenta Anómala")
     assert anomala["estado"] == "sin_suscripcion" and anomala["plan"] is None
     assert anomala["profesional_principal"] is None
+    detalle = client.get(f"/admin/cuentas/{escenario['trial_id']}")
+    assert detalle.status_code == 200
+    assert any(item["matricula"] is None for item in detalle.json()["profesionales"])
 
 
 @pytest.mark.parametrize("rol", ["profesional", "paciente", "recepcionista"])

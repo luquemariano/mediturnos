@@ -18,7 +18,7 @@ class AdminProfesionalPrincipalRespuesta(BaseModel):
     profesional_id: int
     nombre: str
     apellido: str
-    matricula: str
+    matricula: str | None
     email: str | None
 
 
@@ -80,7 +80,7 @@ class AdminProfesionalCuentaRespuesta(BaseModel):
     id: int
     nombre: str
     apellido: str
-    matricula: str
+    matricula: str | None
     email: str | None
     activo: bool
 

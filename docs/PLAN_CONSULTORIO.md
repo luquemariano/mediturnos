@@ -1,6 +1,6 @@
 # Plan Consultorio — diseño técnico y planificación
 
-Estado: **DISEÑO FUNCIONAL APROBADO — implementación pendiente**
+Estado: **DISEÑO FUNCIONAL APROBADO — Entregas 02–05 integradas; Entrega 06 en implementación**
 Fecha: **2026-10-14**
 Alcance: piloto de Valentina y diseño extensible a varios consultorios, salas y profesionales. Este documento describe el estado objetivo; no implica que la funcionalidad esté implementada ni autoriza cambios de código, migraciones, cobros o despliegues.
 
@@ -28,7 +28,7 @@ Hallazgos relevantes del código y la documentación:
 - PostgreSQL ya protege turnos activos superpuestos para el mismo profesional con una exclusión GiST `[)` y el flujo serializa reservas por profesional. La exclusión no cubre una sala compartida entre profesionales.
 - `EvolucionClinica` guarda `profesional_id`, pero su lectura profesional consulta todas las evoluciones por paciente. `ClinicalProfile` tiene una fila por paciente. `PatientDocument` se lista por paciente tras comprobar el vínculo profesional–paciente. Hace falta cambiar consulta y modelo de ownership; los permisos de cuenta por sí solos no bastan.
 - `StudyRequest` y `StudyReview` guardan profesional; las cargas de paciente asociadas a solicitud deben heredar ese alcance y no convertirse en documentos visibles para todo el consultorio.
-- El catálogo actual de prestaciones exige especialidad. El alta exige matrícula. Hace falta modelar actividad y validar los requisitos de matrícula de esa actividad.
+- El catálogo de prestaciones sigue basado en especialidades. Entrega 06 modela actividad profesional y deriva de una configuración de servidor los requisitos de matrícula/especialidad; servicios de estética se vinculan a su categoría de prestación sin inventar matrícula.
 - La auditoría del 14/10/2026 registra como pendientes el equipo/invitaciones/cupos, sala y agenda consolidada; documenta además riesgos clínicos, WhatsApp/webhook, backups y validaciones fallidas.
 
 Referencias inspeccionadas: `AGENTS.md`, `docs/ARCHITECTURE.md`, `docs/PRODUCT.md`, `docs/CURRENT_STATE.md`, `docs/DECISIONS.md`, `docs/WORKFLOW.md`, `docs/TESTING.md`, `docs/DEPLOYMENT.md`, `docs/SECURITY.md`, `docs/ROADMAP.md`, `docs/audits/AUDITORIA_VALENTINA_2026-10.md`; modelos y servicios de cuentas, profesionales, pacientes, turnos, disponibilidad, evoluciones, documentos, estudios y suscripciones; pruebas de turnos concurrentes, permisos clínicos, cuentas y suscripciones.

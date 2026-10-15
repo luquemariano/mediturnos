@@ -19,13 +19,19 @@ class RegistroProfesionalDatos(BaseModel):
     email: EmailStr
     password: str = Field(min_length=8, max_length=128)
     telefono: str | None = Field(default=None, max_length=30)
-    matricula: str = Field(min_length=3, max_length=50)
-    especialidad_id: int = Field(gt=0)
+    actividad_profesional_id: int = Field(gt=0)
+    matricula: str | None = Field(default=None, max_length=50)
+    especialidad_id: int | None = Field(default=None, gt=0)
 
     @field_validator("email", mode="before")
     @classmethod
     def normalizar_email(cls, valor: str) -> str:
         return valor.strip().lower()
+
+    @field_validator("matricula", mode="before")
+    @classmethod
+    def normalizar_matricula(cls, valor: str | None) -> str | None:
+        return valor.strip() or None if isinstance(valor, str) else valor
 
 
 class RegistroProfesionalRespuesta(BaseModel):

@@ -4,14 +4,15 @@ from sqlalchemy.orm import Session
 
 from app.core.security import generar_hash_password
 from app.models.profesional import Profesional
-from app.models.profesional_especialidad import ProfesionalEspecialidad
 from app.models.usuario import Usuario
+from app.models.profesional_especialidad import ProfesionalEspecialidad
 from app.services.cuenta_service import crear_cuenta_individual_con_trial
-from app.repositories.especialidad_repository import buscar_por_id
 from app.repositories.usuario_repository import buscar_usuario_por_email
 from app.schemas.auth import RegistroProfesionalDatos, RegistroProfesionalRespuesta
 from app.services.email_verification_service import generar_token_verificacion
 from app.services.email_service import EmailDeliveryError, enviar_verificacion_email
+from app.services.actividad_profesional_service import validar_datos_de_actividad
+from app.repositories.profesional_repository import buscar_especialidades_por_ids
 
 
 def normalizar_email(email: str) -> str:
@@ -25,8 +26,16 @@ def registrar_profesional_publico(
     if buscar_usuario_por_email(db, email) is not None:
         raise HTTPException(status_code=409, detail="Ya existe una cuenta con ese email.")
 
-    especialidad = buscar_por_id(db, datos.especialidad_id)
-    if especialidad is None or not especialidad.activa:
+    actividad, especialidad_ids = validar_datos_de_actividad(
+        db,
+        datos.actividad_profesional_id,
+        datos.matricula,
+        None,
+        datos.especialidad_id,
+    )
+    especialidades = buscar_especialidades_por_ids(db, especialidad_ids)
+    por_id = {item.id: item for item in especialidades if item.activa}
+    if set(por_id) != set(especialidad_ids):
         raise HTTPException(status_code=400, detail="La especialidad seleccionada no está disponible.")
 
     usuario = Usuario(
@@ -45,17 +54,19 @@ def registrar_profesional_publico(
         cuenta=cuenta,
         nombre=datos.nombre.strip(),
         apellido=datos.apellido.strip(),
-        matricula=datos.matricula.strip(),
+        matricula=datos.matricula.strip() if datos.matricula else None,
+        actividad_profesional=actividad,
         telefono=datos.telefono.strip() if datos.telefono else None,
         email=email,
         onboarding_step="perfil",
     )
-    profesional.especialidades_asignadas.append(
-        ProfesionalEspecialidad(
-            especialidad=especialidad,
-            duracion_turno_minutos=especialidad.duracion_turno_minutos,
+    for especialidad in especialidades:
+        profesional.especialidades_asignadas.append(
+            ProfesionalEspecialidad(
+                especialidad=especialidad,
+                duracion_turno_minutos=especialidad.duracion_turno_minutos,
+            )
         )
-    )
     db.add(profesional)
     try:
         db.flush()

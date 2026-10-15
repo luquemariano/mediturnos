@@ -1,5 +1,6 @@
 from app.core.security import generar_hash_password
 from app.models.especialidad import Especialidad
+from app.models.actividad_profesional import ActividadProfesional
 from app.models.usuario import Usuario
 from tests.conftest import SessionTest
 from app.core import rate_limit
@@ -30,17 +31,22 @@ def crear_especialidad() -> int:
             activa=True,
         )
         db.add(especialidad)
+        db.flush()
+        actividad = ActividadProfesional(codigo="rate_matriculable", nombre="Actividad test", requiere_matricula=True, requiere_especialidad=True)
+        db.add(actividad)
         db.commit()
         db.refresh(especialidad)
-        return especialidad.id
+        db.refresh(actividad)
+        return especialidad.id, actividad.id
 
 
-def payload_registro(especialidad_id: int) -> dict:
+def payload_registro(especialidad_id: int, actividad_id: int) -> dict:
     return {
         "nombre": "Ana",
         "apellido": "Prueba",
         "email": "rate-register@example.com",
         "password": PASSWORD,
+        "actividad_profesional_id": actividad_id,
         "matricula": "RATE-001",
         "especialidad_id": especialidad_id,
     }
@@ -49,13 +55,13 @@ def payload_registro(especialidad_id: int) -> dict:
 def test_registro_dentro_del_limite_funciona(client):
     respuesta = client.post(
         "/auth/register/profesional",
-        json=payload_registro(crear_especialidad()),
+        json=payload_registro(*crear_especialidad()),
     )
     assert respuesta.status_code == 201
 
 
 def test_registro_excedido_devuelve_429_sanitizado(client):
-    payload = payload_registro(crear_especialidad())
+    payload = payload_registro(*crear_especialidad())
     for _ in range(5):
         client.post("/auth/register/profesional", json=payload)
     respuesta = client.post("/auth/register/profesional", json=payload)

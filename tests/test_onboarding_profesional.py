@@ -3,6 +3,7 @@ from urllib.parse import parse_qs, urlparse
 
 from app.core.security import verificar_password
 from app.models.especialidad import Especialidad
+from app.models.actividad_profesional import ActividadProfesional
 from app.models.profesional import Profesional
 from app.models.usuario import Usuario
 from tests.conftest import SessionTest
@@ -18,8 +19,32 @@ def especialidad(activa=True, nombre="Clínica"):
         db.add(item); db.commit(); db.refresh(item); return item.id
 
 
+def actividad(codigo="profesional_matriculable"):
+    with SessionTest() as db:
+        existente = db.query(ActividadProfesional).filter_by(codigo=codigo).first()
+        if existente is not None:
+            return existente.id
+        if codigo == "servicios_estetica":
+            especialidad_id = especialidad(True, "Estética")
+            item = ActividadProfesional(
+                codigo=codigo,
+                nombre="Servicios de estética",
+                requiere_matricula=False,
+                requiere_especialidad=False,
+                especialidad_predeterminada_id=especialidad_id,
+            )
+        else:
+            item = ActividadProfesional(
+                codigo=codigo,
+                nombre="Profesión o actividad con matrícula",
+                requiere_matricula=True,
+                requiere_especialidad=True,
+            )
+        db.add(item); db.commit(); db.refresh(item); return item.id
+
+
 def datos(especialidad_id, **cambios):
-    base = {"nombre":"Ana","apellido":"Pérez","email":" Ana@Ejemplo.com ","password":"secreto123","telefono":"11223344","matricula":"MP-100","especialidad_id":especialidad_id}
+    base = {"nombre":"Ana","apellido":"Pérez","email":" Ana@Ejemplo.com ","password":"secreto123","telefono":"11223344","actividad_profesional_id":actividad(),"matricula":"MP-100","especialidad_id":especialidad_id}
     base.update(cambios); return base
 
 
@@ -97,6 +122,58 @@ def test_catalogo_publico_ordena_alfabeticamente_sin_otro(client):
     especialidad(True, "Cardiología")
     nombres = [item["nombre"] for item in client.get("/catalogo/especialidades").json()]
     assert nombres == ["Cardiología", "Psicología"]
+
+
+def test_catalogo_actividad_expone_solo_requisitos_configurados(client):
+    actividad(); actividad("servicios_estetica")
+    items = client.get("/catalogo/actividades-profesionales").json()
+    matriculable = next(item for item in items if item["codigo"] == "profesional_matriculable")
+    estetica = next(item for item in items if item["codigo"] == "servicios_estetica")
+    assert matriculable["requiere_matricula"] is True
+    assert matriculable["requiere_especialidad"] is True
+    assert estetica["requiere_matricula"] is False
+    assert estetica["requiere_especialidad"] is False
+    assert "especialidad_predeterminada_id" not in estetica
+
+
+def test_registro_estetica_no_pide_matricula_ni_especialidad(client):
+    datos_registro = {
+        "nombre": "Elena", "apellido": "Paz", "email": "estetica@example.com",
+        "password": "secreto123", "actividad_profesional_id": actividad("servicios_estetica"),
+    }
+    respuesta = client.post("/auth/register/profesional", json=datos_registro)
+    assert respuesta.status_code == 201
+    with SessionTest() as db:
+        profesional = db.query(Profesional).one()
+        assert profesional.matricula is None
+        assert profesional.actividad_profesional.codigo == "servicios_estetica"
+        assert [r.especialidad.nombre for r in profesional.especialidades_asignadas] == ["Estética"]
+
+
+@pytest.mark.parametrize("cambios", [{"matricula": ""}, {"matricula": None}, {"especialidad_id": None}])
+def test_registro_matriculable_rechaza_datos_obligatorios_faltantes(client, cambios):
+    base = datos(especialidad())
+    base.update(cambios)
+    respuesta = client.post("/auth/register/profesional", json=base)
+    assert respuesta.status_code == 422
+    with SessionTest() as db:
+        assert db.query(Usuario).count() == 0
+
+
+def test_registro_matriculable_acepta_matricula_declarada(client):
+    respuesta = registrar(client, email="declarada@example.com", matricula="DECLARADA-123")
+    assert respuesta.status_code == 201
+
+
+def test_registro_estetica_rechaza_matricula_enviada(client):
+    respuesta = client.post("/auth/register/profesional", json={
+        "nombre": "Eva", "apellido": "Sol", "email": "eva@example.com",
+        "password": "secreto123", "actividad_profesional_id": actividad("servicios_estetica"),
+        "matricula": "MP-INVENTADA",
+    })
+    assert respuesta.status_code == 422
+    with SessionTest() as db:
+        assert db.query(Usuario).count() == 0
 
 
 def test_onboarding_avanza_sin_retroceder_y_completa_idempotente(client):

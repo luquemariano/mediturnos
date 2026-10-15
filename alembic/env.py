@@ -10,6 +10,7 @@ from app.models import (  # noqa: F401
     Disponibilidad,
     DisponibilidadExcepcion,
     Especialidad,
+    ActividadProfesional,
     EvolucionClinica,
     Paciente,
     Pago,

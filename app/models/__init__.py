@@ -1,6 +1,7 @@
 from app.models.disponibilidad import Disponibilidad
 from app.models.disponibilidad_excepcion import DisponibilidadExcepcion
 from app.models.especialidad import Especialidad
+from app.models.actividad_profesional import ActividadProfesional
 from app.models.evolucion_clinica import EvolucionClinica
 from app.models.clinical_profile import ClinicalProfile
 from app.models.patient_document import PatientDocument

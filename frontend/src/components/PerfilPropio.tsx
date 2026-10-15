@@ -193,7 +193,11 @@ function PerfilProfesional(props: PerfilProfesionalProps) {
           <div>
             <h2>{perfil.nombre} {perfil.apellido}</h2>
             <p className="perfil-profesional-rol">Profesional</p>
-            <p className="perfil-profesional-matricula"><span>Matrícula</span> · {perfil.matricula}</p>
+            <p className="perfil-profesional-matricula">
+              <span>Actividad</span> · {perfil.actividad_profesional?.nombre ?? "Pendiente de clasificación"}
+            </p>
+            {(perfil.actividad_profesional?.requiere_matricula || (!perfil.actividad_profesional && perfil.matricula)) &&
+              <p className="perfil-profesional-matricula"><span>Matrícula</span> · {perfil.matricula ?? "Pendiente de completar"}</p>}
           </div>
           <p className={`perfil-profesional-estado ${perfil.activo ? "activo" : "inactivo"}`}>
             <span aria-hidden="true" />{perfil.activo ? "Perfil activo" : "Perfil inactivo"}
