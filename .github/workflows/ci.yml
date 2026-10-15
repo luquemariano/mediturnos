@@ -63,6 +63,7 @@ jobs:
       TEST_POSTGRES_REMINDERS_URL: postgresql+psycopg://turnelia_ci:turnelia-ci-only-postgres-password-2026@localhost:5432/turnelia_ci
       TEST_POSTGRES_APPOINTMENT_ACTIONS_URL: postgresql+psycopg://turnelia_ci:turnelia-ci-only-postgres-password-2026@localhost:5432/turnelia_ci
       TEST_POSTGRES_OWNERSHIP_URL: postgresql+psycopg://turnelia_ci:turnelia-ci-only-postgres-password-2026@localhost:5432/turnelia_ci
+      TEST_POSTGRES_CONSULTORIO_URL: postgresql+psycopg://turnelia_ci:turnelia-ci-only-postgres-password-2026@localhost:5432/turnelia_ci
       JWT_SECRET_KEY: turnelia-ci-only-synthetic-jwt-key-2026
     steps:
       - name: Checkout
@@ -118,6 +119,8 @@ jobs:
             tests/test_appointment_actions_postgresql.py \
             tests/test_clinical_ownership_postgresql.py \
             tests/test_clinical_ownership_migration_postgresql.py \
+            tests/test_consultorio_postgresql.py \
+            tests/test_consultorio_migration_postgresql.py \
             -ra --junitxml=postgresql-test-results.xml
           pytest_status=$?
           set -e
@@ -131,6 +134,8 @@ jobs:
               "tests/test_appointment_actions_postgresql.py",
               "tests/test_clinical_ownership_postgresql.py",
               "tests/test_clinical_ownership_migration_postgresql.py",
+              "tests/test_consultorio_postgresql.py",
+              "tests/test_consultorio_migration_postgresql.py",
           }
           root = ET.parse("postgresql-test-results.xml").getroot()
           observed = set()

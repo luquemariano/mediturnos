@@ -4,7 +4,9 @@ Estados: **PENDIENTE**, **EN CURSO**, **COMPLETADO** y **NO DETERMINADO**. No se
 
 ## Producto
 
-- **FASE 0 CERRADA; ENTREGA 01 IMPLEMENTADA, CI VERDE Y ABIERTA A REVISIÓN:** línea base y aislamiento clínico de perfiles, evoluciones, documentos y estudios. Incluye migración aditiva, pruebas negativas, validación de backfill con PostgreSQL sintético y E2E autenticado. No habilita miembros múltiples ni cambia cobros. PR #87 abierto, sin merge; detalle y resultados en [`consultorio-01-baseline-y-aislamiento-clinico.md`](exec-plans/active/consultorio-01-baseline-y-aislamiento-clinico.md).
+- **FASE 0 CERRADA; ENTREGA 01 MERGEADA EN `main` (`c96c833`):** línea base y aislamiento clínico de perfiles, evoluciones, documentos y estudios. PR #87 mergeada. No habilita miembros múltiples ni cambia cobros. Evidencia en [`consultorio-01-baseline-y-aislamiento-clinico.md`](exec-plans/active/consultorio-01-baseline-y-aislamiento-clinico.md).
+
+- **EN REVISIÓN — ENTREGA 02, FUNDACIÓN DE CONSULTORIO:** PR #88 abierto hacia `main`; commit `5a9bd25` y run inicial `38659022259` con Backend, PostgreSQL, Frontend y Playwright CI verdes. La rama agrega entidades persistentes, APIs mínimas, migración aditiva y pruebas de aislamiento/ownership. No habilita miembros, invitaciones, módulos, agendas compartidas ni cobros. No mergeado ni desplegado. Plan: [`consultorio-02-foundation.md`](exec-plans/active/consultorio-02-foundation.md).
 
 - **EN CURSO:** F12 Lista de espera inteligente; F12.1 discovery, F12.2 base, F12.3 detección/matching, F12.4 ofertas, F12.5 automatización, F12.5.1 worker persistente y F12.6 UX profesional/pública implementados, pendientes de revalidación en el entorno objetivo. WhatsApp, push, SMS, IA y reporting siguen fuera de alcance.
 - **COMPLETADO:** F12.7 Waitlist discovery, release announcement and help content; novedades reutilizables, ayuda contextual, landing y notificación de producto idempotente.

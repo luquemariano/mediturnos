@@ -16,6 +16,10 @@ from app.models.password_reset_token import PasswordResetToken
 from app.models.usuario import Usuario
 from app.models.cuenta import Cuenta
 from app.models.cuenta_usuario import CuentaUsuario
+from app.models.consultorio import Consultorio
+from app.models.sala import Sala
+from app.models.consultorio_administrador import ConsultorioAdministrador
+from app.models.consultorio_profesional import ConsultorioProfesional
 from app.models.suscripcion import Suscripcion
 from app.models.evento_suscripcion import EventoSuscripcion
 from app.models.mercadopago_plan_suscripcion import MercadoPagoPlanSuscripcion
