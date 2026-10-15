@@ -323,6 +323,26 @@ def test_invitaciones_reservan_cupo_y_rechazan_administracion_ajena(client, cons
     assert client.get(f"/consultorios/{data['consultorio'].id}/invitaciones").status_code == 404
 
 
+def test_ocupacion_de_invitacion_no_revela_nombre_como_profesional_activo(client, consultorio_modulos):
+    data = consultorio_modulos
+    _autenticar(data["titular"])
+    start = ahora_utc().astimezone(ZoneInfo("America/Argentina/Buenos_Aires")).date() + timedelta(days=1)
+    while start.weekday() != 5:
+        start += timedelta(days=1)
+    created = client.post(f"/consultorios/{data['consultorio'].id}/invitaciones", json={
+        "email": "invitada-sintetica@example.com",
+        "nombre_visible": "Nombre privado de invitada",
+        "modulos": [{"sala_id": data["sala"].id, "dia_semana": 5, "hora_inicio": "14:00:00", "vigente_desde": start.isoformat()}],
+    })
+    assert created.status_code == 201, created.text
+    listado = client.get(f"/consultorios/{data['consultorio'].id}/modulos")
+    assert listado.status_code == 200
+    pendiente = next(item for item in listado.json() if item["profesional_id"] is None)
+    assert pendiente["profesional_nombre"] == "Invitación pendiente"
+    assert "Nombre privado de invitada" not in listado.text
+    assert "invitada-sintetica@example.com" not in listado.text
+
+
 def test_invitacion_vencida_invalida_token_y_libera_sala(client, consultorio_modulos, monkeypatch):
     from app.services import consultorio_invitacion_service as invitations
     from app.services.email_service import EmailDeliveryResult

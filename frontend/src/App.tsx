@@ -59,6 +59,7 @@ import WaitlistOfferPage from "./pages/WaitlistOfferPage";
 import CampaniasAdmin from "./pages/CampaniasAdmin";
 import BajaNovedades from "./pages/BajaNovedades";
 import ConsultorioInvitationPage from "./pages/ConsultorioInvitationPage";
+import ConsultorioAdminPanel from "./pages/ConsultorioAdminPanel";
 
 
 type Vista =
@@ -408,6 +409,10 @@ function App({ tokenBaja = null }: { tokenBaja?: string | null }) {
 
 
   if (usuario) {
+    if (ruta === "/app/consultorio") {
+      if (usuario.rol !== "profesional") return <main className="pagina-login"><section className="acceso-publico"><h1>Panel no disponible</h1><p>Esta sección no está disponible para tu cuenta.</p><button type="button" onClick={abrirDashboard}>Volver</button></section></main>;
+      return <ConsultorioAdminPanel nombre={usuario.nombre} onVolver={abrirDashboard} onCerrarSesion={cerrarSesion} />;
+    }
     if (ruta === "/app/suscripcion") {
       return <ActivarSuscripcion onVolver={abrirDashboard} />;
     }
@@ -421,6 +426,7 @@ function App({ tokenBaja = null }: { tokenBaja?: string | null }) {
           onAbrirPrestaciones={() => setVista("prestaciones")}
           onAbrirPerfil={() => setVista("perfil")}
           onAbrirListaEspera={() => { window.history.pushState({}, "", "/lista-espera"); setRuta("/lista-espera"); setVista("lista-espera"); }}
+          onAbrirConsultorio={() => navegar("/app/consultorio")}
           onAbrirSuscripcion={() => navegar("/app/suscripcion")}
           onCerrarSesion={cerrarSesion}
         />

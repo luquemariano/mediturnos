@@ -7,6 +7,7 @@ import * as profesionalService from "../src/services/profesionalService";
 import * as turnoService from "../src/services/turnoService";
 import * as cuentaService from "../src/services/cuentaService";
 import * as pacienteService from "../src/services/pacienteService";
+import * as consultorioService from "../src/services/consultorioService";
 import type { Turno } from "../src/types/turno";
 
 vi.mock("../src/api/api", () => ({ default: { get: vi.fn(), post: vi.fn() } }));
@@ -25,6 +26,7 @@ vi.mock("../src/services/turnoService", () => ({
 }));
 vi.mock("../src/services/cuentaService", () => ({ obtenerCuentaActual: vi.fn() }));
 vi.mock("../src/services/pacienteService", () => ({ listarEstudiosPendientesRevision: vi.fn() }));
+vi.mock("../src/services/consultorioService", () => ({ listarConsultoriosAdministrados: vi.fn() }));
 
 const perfil = {
   id: 7,
@@ -73,11 +75,12 @@ function prepararDatos(turnos: Turno[] = jornada) {
   ]);
   vi.mocked(turnoService.obtenerMiAgendaProfesional).mockResolvedValue(turnos);
   vi.mocked(pacienteService.listarEstudiosPendientesRevision).mockResolvedValue({ count: 0, items: [] });
+  vi.mocked(consultorioService.listarConsultoriosAdministrados).mockResolvedValue([]);
 }
 
 function renderizar() {
-  const acciones = { agenda: vi.fn(), pacientes: vi.fn(), disponibilidad: vi.fn(), perfil: vi.fn(), salir: vi.fn() };
-  render(<DashboardProfesional nombre="Sofía" onAbrirAgenda={acciones.agenda} onAbrirPacientes={acciones.pacientes} onAbrirDisponibilidad={acciones.disponibilidad} onAbrirPerfil={acciones.perfil} onCerrarSesion={acciones.salir} />);
+  const acciones = { agenda: vi.fn(), pacientes: vi.fn(), disponibilidad: vi.fn(), perfil: vi.fn(), consultorio: vi.fn(), salir: vi.fn() };
+  render(<DashboardProfesional nombre="Sofía" onAbrirAgenda={acciones.agenda} onAbrirPacientes={acciones.pacientes} onAbrirDisponibilidad={acciones.disponibilidad} onAbrirPerfil={acciones.perfil} onAbrirConsultorio={acciones.consultorio} onCerrarSesion={acciones.salir} />);
   return acciones;
 }
 
@@ -102,6 +105,20 @@ describe("dashboard profesional Signature", () => {
     expect(screen.getByText("Tu agenda está libre hoy")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /Juan Pérez/ }));
     expect(acciones.pacientes).toHaveBeenCalledWith(4);
+  });
+  it("muestra el acceso a Consultorio sólo cuando la cuenta administra uno", async () => {
+    prepararDatos([]);
+    vi.mocked(consultorioService.listarConsultoriosAdministrados).mockResolvedValue([{ id: 7, nombre: "Consultorio piloto", zona_horaria: "America/Argentina/Buenos_Aires", duracion_modulo_minutos: 240, horizonte_materializacion_dias: 90, estado: "activo" }]);
+    const acciones = renderizar();
+    fireEvent.click(await screen.findByRole("button", { name: /Abrir panel de Consultorio/i }));
+    expect(acciones.consultorio).toHaveBeenCalledTimes(1);
+  });
+
+  it("no muestra acceso a Consultorio a quien no administra espacios", async () => {
+    prepararDatos([]);
+    renderizar();
+    expect(await screen.findByRole("heading", { name: "Buen día, Sofía" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Abrir panel de Consultorio/i })).not.toBeInTheDocument();
   });
   it.each([
     ["2026-08-13T11:30:00Z", "Buen día, Sofía"],

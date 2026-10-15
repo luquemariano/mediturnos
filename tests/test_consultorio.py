@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 
 import pytest
 from sqlalchemy.exc import IntegrityError
@@ -113,6 +113,45 @@ def test_admin_consultorio_gestiona_configuracion_salas_sin_enumerar_ajenos(clie
     db.close()
 
 
+def test_lecturas_administrativas_minimas_exigen_admin_y_no_exponen_contactos(client, escenario_consultorio):
+    data = escenario_consultorio
+    clinic_id = data["consultorio"].id
+    autenticar(data["propietario"])
+
+    miembros = client.get(f"/consultorios/{clinic_id}/profesionales")
+    assert miembros.status_code == 200
+    assert miembros.json() == [{
+        "profesional_id": data["pro_b"].id,
+        "nombre": "Integrante Sintético",
+        "estado": "activo",
+    }]
+    assert not {"email", "telefono", "matricula", "pacientes", "turnos"}.intersection(miembros.json()[0])
+
+    db = SessionTest()
+    room_id = db.query(Sala.id).filter_by(consultorio_id=clinic_id).scalar()
+    db.close()
+    inicio = date.today() + timedelta(days=7)
+    inicio += timedelta(days=(0 - inicio.weekday()) % 7)
+    regla = client.post(f"/consultorios/{clinic_id}/reglas-modulo", json={
+        "sala_id": room_id,
+        "profesional_id": data["pro_b"].id,
+        "dia_semana": inicio.weekday(),
+        "hora_inicio": "09:00:00",
+        "vigente_desde": inicio.isoformat(),
+    })
+    assert regla.status_code == 201
+    lecturas = client.get(f"/consultorios/{clinic_id}/reglas-modulo")
+    assert lecturas.status_code == 200
+    assert lecturas.json()[0]["profesional_nombre"] == "Integrante Sintético"
+    assert lecturas.json()[0]["sala_nombre"] == "Sala uno"
+    assert not {"email", "pacientes", "turnos", "documentos", "evoluciones"}.intersection(lecturas.json()[0])
+
+    autenticar(data["profesional"])
+    assert client.get(f"/consultorios/{clinic_id}/profesionales").status_code == 404
+    assert client.get(f"/consultorios/{clinic_id}/reglas-modulo").status_code == 404
+    assert client.get(f"/consultorios/{clinic_id}/modulos").status_code == 404
+
+
 def test_crear_consultorio_exige_propiedad_organizacional_y_conserva_cuenta_profesional(client, escenario_consultorio):
     data = escenario_consultorio
     db = SessionTest()
@@ -178,7 +217,7 @@ def test_vinculo_profesional_no_concede_administracion_y_no_hay_rutas_de_alta(cl
     consultorio_id = data["consultorio"].id
     assert client.get(f"/consultorios/{consultorio_id}").status_code == 404
     assert client.post(f"/consultorios/{consultorio_id}/salas", json={"nombre": "No permitida", "codigo": "NO"}).status_code == 404
-    assert client.post(f"/consultorios/{consultorio_id}/profesionales", json={"profesional_id": data["pro_b"].id}).status_code == 404
+    assert client.post(f"/consultorios/{consultorio_id}/profesionales", json={"profesional_id": data["pro_b"].id}).status_code == 405
 
 
 def test_restricciones_de_unicidad_en_modelos_sinteticos(client, escenario_consultorio):

@@ -83,6 +83,23 @@ def consultorio_de_regla(db: Session, regla_id: int) -> tuple[ReglaRecurrenciaMo
     return fila
 
 
+def listar_reglas_consultorio(db: Session, consultorio_id: int) -> list[ReglaRecurrenciaModulo]:
+    return (
+        db.query(ReglaRecurrenciaModulo)
+        .join(SerieModulo, SerieModulo.id == ReglaRecurrenciaModulo.serie_id)
+        .options(
+            joinedload(ReglaRecurrenciaModulo.serie).joinedload(SerieModulo.sala),
+            joinedload(ReglaRecurrenciaModulo.serie).joinedload(SerieModulo.profesional),
+        )
+        .filter(
+            SerieModulo.consultorio_id == consultorio_id,
+            ReglaRecurrenciaModulo.estado == "activa",
+        )
+        .order_by(ReglaRecurrenciaModulo.dia_semana, ReglaRecurrenciaModulo.hora_inicio, ReglaRecurrenciaModulo.id)
+        .all()
+    )
+
+
 def listar_reglas_sala(db: Session, sala_id: int) -> list[ReglaRecurrenciaModulo]:
     return (
         db.query(ReglaRecurrenciaModulo)

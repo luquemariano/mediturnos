@@ -1,0 +1,110 @@
+.consultorio-denegado { padding: 32px; border: 1px solid #d9e0dc; border-radius: 14px; background: #fff; }
+.consultorio-denegado h1 { color: #153e3b; font-family: Manrope, sans-serif; }
+.consultorio-denegado button { min-height: 44px; margin-top: 16px; padding: 0 16px; border: 1px solid #176f6a; border-radius: 8px; background: #176f6a; color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
+.consultorio-admin { display: grid; gap: 18px; max-width: 1500px; margin: 0 auto; }
+.consultorio-admin__cabecera { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; padding: 4px 0 8px; }
+.consultorio-admin__cabecera h1 { margin: 0; color: var(--prof-primary-dark); font-family: Manrope, sans-serif; font-size: clamp(28px, 3vw, 36px); letter-spacing: -.035em; line-height: 1.15; }
+.consultorio-admin__cabecera p:not(.consultorio-admin__eyebrow) { max-width: 720px; margin: 8px 0 0; color: var(--prof-text-secondary); font-size: 15px; line-height: 1.5; }
+.consultorio-admin__eyebrow { margin: 0 0 5px; color: var(--prof-accent); font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.consultorio-admin__selector, .consultorio-admin__controles-agenda label { display: grid; gap: 5px; color: var(--prof-text-secondary); font-size: 13px; font-weight: 700; }
+.consultorio-admin select, .consultorio-admin input { min-height: 42px; padding: 8px 10px; border: 1px solid var(--prof-border); border-radius: 7px; background: #fff; color: var(--prof-text); font: inherit; }
+.consultorio-admin input:focus-visible, .consultorio-admin select:focus-visible, .consultorio-admin button:focus-visible { outline: 3px solid rgba(168,102,67,.3); outline-offset: 2px; }
+.consultorio-admin__tabs { display: flex; gap: 4px; overflow-x: auto; border-bottom: 1px solid var(--prof-border); }
+.consultorio-admin__tabs button { min-height: 45px; flex: 0 0 auto; padding: 0 17px; border: 0; border-bottom: 3px solid transparent; background: transparent; color: var(--prof-text-secondary); font: inherit; font-weight: 700; cursor: pointer; }
+.consultorio-admin__tabs button:hover { color: var(--prof-primary-dark); }
+.consultorio-admin__tabs button.activo { border-bottom-color: var(--prof-accent); color: var(--prof-primary-dark); }
+.consultorio-admin__panel { min-width: 0; padding: 22px 24px; border: 1px solid var(--prof-border); border-radius: 12px; background: var(--prof-surface); box-shadow: 0 6px 18px rgba(21,62,59,.035); }
+.consultorio-admin__agenda-toolbar, .consultorio-admin__seccion-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 18px; }
+.consultorio-admin__agenda-toolbar h2, .consultorio-admin__seccion-header h2 { margin: 0; color: var(--prof-primary-dark); font-family: Manrope, sans-serif; font-size: 21px; letter-spacing: -.02em; }
+.consultorio-admin__agenda-toolbar p, .consultorio-admin__seccion-header p { margin: 5px 0 0; color: var(--prof-text-secondary); font-size: 14px; line-height: 1.45; }
+.consultorio-admin__controles-agenda { display: flex; align-items: flex-end; gap: 14px; }
+.consultorio-admin__semana-controles { display: flex; gap: 5px; }
+.consultorio-admin__semana-controles button, .consultorio-admin button { min-height: 40px; padding: 0 12px; border: 1px solid var(--prof-primary); border-radius: 7px; background: var(--prof-primary); color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
+.consultorio-admin__semana-controles button { min-width: 40px; }
+.consultorio-admin__semana-controles button:nth-child(2), .consultorio-admin button.secundario { border-color: var(--prof-border); background: #fff; color: var(--prof-primary-dark); }
+.consultorio-admin button:hover:not(:disabled) { border-color: var(--prof-primary-hover); background: var(--prof-primary-hover); }
+.consultorio-admin button.secundario:hover:not(:disabled), .consultorio-admin__semana-controles button:nth-child(2):hover { border-color: #a9bbb5; background: #f7faf9; }
+.consultorio-admin button:disabled { opacity: .55; cursor: not-allowed; }
+.consultorio-admin__leyenda { display: flex; flex-wrap: wrap; gap: 14px 20px; margin: 18px 0 12px; padding: 0; list-style: none; color: var(--prof-text-secondary); font-size: 13px; }
+.consultorio-admin__leyenda li { display: flex; align-items: center; gap: 7px; }
+.consultorio-admin__leyenda i { width: 11px; height: 11px; display: inline-block; border-radius: 3px; background: #176f6a; }
+.consultorio-admin__leyenda i.pendiente { background: #a96e24; }
+.consultorio-admin__leyenda i.liberada { background: #7c8985; }
+.consultorio-admin__semana { display: grid; grid-template-columns: repeat(7, minmax(112px, 1fr)); gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+.consultorio-admin__dia { min-width: 0; min-height: 230px; border: 1px solid #e1e6e2; border-radius: 8px; background: #fcfcfa; }
+.consultorio-admin__dia > header { display: grid; gap: 2px; padding: 10px 9px 8px; border-bottom: 1px solid #e1e6e2; }
+.consultorio-admin__dia h3 { margin: 0; color: var(--prof-primary-dark); font-family: Manrope, sans-serif; font-size: 13px; }
+.consultorio-admin__dia time { color: var(--prof-text-secondary); font-size: 11px; }
+.consultorio-admin__dia ul { display: grid; gap: 7px; margin: 8px 6px; padding: 0; list-style: none; }
+.consultorio-admin__bloque { display: grid; gap: 3px; padding: 8px; border-left: 3px solid #176f6a; border-radius: 4px; background: #eaf3f0; color: var(--prof-text); font-size: 12px; line-height: 1.3; overflow-wrap: anywhere; }
+.consultorio-admin__bloque strong { color: var(--prof-primary-dark); font-size: 12px; font-variant-numeric: tabular-nums; }
+.consultorio-admin__bloque small { color: #536660; font-size: 11px; }
+.consultorio-admin__bloque.es-invitacion { border-left-color: #a96e24; background: #fbf2e5; }
+.consultorio-admin__bloque.estado-suspendida, .consultorio-admin__bloque.estado-cancelada { border-left-color: #7c8985; background: #f0f1ef; color: #5e6f78; }
+.consultorio-admin__sin-modulos { margin: 12px 8px; color: #7c8985; font-size: 12px; }
+.consultorio-admin__privacidad, .consultorio-admin__ayuda { margin: 16px 0 0; color: var(--prof-text-secondary); font-size: 13px; line-height: 1.45; }
+.consultorio-admin__modulos, .consultorio-admin__invitaciones { display: grid; gap: 16px; }
+.consultorio-admin__formulario { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: end; gap: 14px; margin-top: 18px; }
+.consultorio-admin__formulario > label { display: grid; gap: 6px; color: var(--prof-text); font-size: 13px; font-weight: 700; }
+.consultorio-admin__formulario > button[type="submit"] { min-height: 42px; }
+.consultorio-admin__formulario--edicion { padding: 16px; border: 1px solid #dfe8e4; border-radius: 9px; background: #f8fbfa; }
+.consultorio-admin__formulario--edicion h3 { grid-column: 1 / -1; margin: 0; color: var(--prof-primary-dark); font-family: Manrope, sans-serif; font-size: 17px; }
+.consultorio-admin__acciones-form { display: flex; flex-wrap: wrap; gap: 8px; }
+.consultorio-admin__acciones-fila { display: flex; flex-wrap: wrap; gap: 6px; }
+.consultorio-admin__lista-reglas { display: grid; gap: 0; margin: 16px 0 0; padding: 0; list-style: none; border-top: 1px solid #e4e9e6; }
+.consultorio-admin__lista-reglas > li { display: flex; justify-content: space-between; align-items: center; gap: 15px; padding: 13px 2px; border-bottom: 1px solid #e4e9e6; }
+.consultorio-admin__lista-reglas > li > div:first-child { display: grid; gap: 3px; min-width: 0; }
+.consultorio-admin__lista-reglas strong { color: var(--prof-primary-dark); font-size: 14px; }
+.consultorio-admin__lista-reglas span, .consultorio-admin__lista-reglas small { color: var(--prof-text-secondary); font-size: 13px; }
+.consultorio-admin__vacio { padding: 18px 0; color: var(--prof-text-secondary); }
+.consultorio-admin__vacio h3 { margin: 0; color: var(--prof-primary-dark); font-family: Manrope, sans-serif; }
+.consultorio-admin__modulos-invitacion { grid-column: 1 / -1; display: grid; gap: 12px; }
+.consultorio-admin__modulos-invitacion h3 { margin: 0; color: var(--prof-primary-dark); font-family: Manrope, sans-serif; font-size: 17px; }
+.consultorio-admin__modulo-invitacion { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; padding: 14px; border: 1px solid #e1e6e2; border-radius: 8px; }
+.consultorio-admin__modulo-invitacion legend { padding: 0 5px; color: var(--prof-primary-dark); font-size: 13px; font-weight: 700; }
+.consultorio-admin__modulo-invitacion label { display: grid; gap: 5px; color: var(--prof-text); font-size: 13px; font-weight: 700; }
+.consultorio-admin__agregar-modulo { justify-self: start; }
+.consultorio-admin__tabla-contenedor { overflow-x: auto; margin-top: 15px; }
+.consultorio-admin__tabla { width: 100%; border-collapse: collapse; font-size: 14px; text-align: left; }
+.consultorio-admin__tabla th, .consultorio-admin__tabla td { padding: 11px 10px; border-bottom: 1px solid #e4e9e6; vertical-align: middle; }
+.consultorio-admin__tabla thead th { color: var(--prof-text-secondary); font-size: 12px; font-weight: 700; }
+.consultorio-admin__tabla tbody th { min-width: 190px; color: var(--prof-primary-dark); font-weight: 700; }
+.consultorio-admin__tabla tbody th small { display: block; color: var(--prof-text-secondary); font-weight: 400; }
+.consultorio-admin__estado { display: inline-block; padding: 4px 8px; border-radius: 4px; background: #eaf3f0; color: #175e58; font-size: 12px; font-weight: 700; }
+.consultorio-admin__estado.estado-preparacion, .consultorio-admin__estado.estado-pendiente { background: #fbf2e5; color: #80531c; }
+.consultorio-admin__estado.estado-revocada, .consultorio-admin__estado.estado-expirada { background: #f0f1ef; color: #5e6f78; }
+.consultorio-admin__mensaje, .consultorio-admin__error, .consultorio-admin__cargando { margin: 0; padding: 11px 14px; border-radius: 7px; }
+.consultorio-admin__mensaje { border-left: 3px solid #287a5a; background: #eaf3f0; color: #175e58; }
+.consultorio-admin__error { display: flex; justify-content: space-between; align-items: center; gap: 12px; border-left: 3px solid #a94e49; background: #fbefed; color: #873b37; }
+.consultorio-admin__cargando { color: var(--prof-text-secondary); }
+.prof-consultorio-acceso { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin: 0 0 20px; padding: 15px 18px; border: 1px solid #d9e7e2; border-left: 3px solid #176f6a; border-radius: 9px; background: #fff; }
+.prof-consultorio-acceso > div { display: grid; gap: 3px; }
+.prof-consultorio-acceso strong { color: #153e3b; font-family: Manrope, sans-serif; font-size: 15px; }
+.prof-consultorio-acceso span { color: #65716d; font-size: 14px; }
+.prof-consultorio-acceso button { min-height: 42px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 0 14px; border: 1px solid #176f6a; border-radius: 7px; background: #176f6a; color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
+.prof-consultorio-acceso button:hover { background: #115a56; }
+.prof-consultorio-acceso svg { width: 18px; height: 18px; }
+
+@media (max-width: 1120px) {
+  .consultorio-admin__semana { grid-template-columns: repeat(4, minmax(130px, 1fr)); }
+  .consultorio-admin__formulario { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 720px) {
+  .consultorio-admin { gap: 14px; }
+  .consultorio-admin__cabecera { align-items: flex-start; flex-direction: column; gap: 12px; }
+  .consultorio-admin__cabecera h1 { font-size: 27px; }
+  .consultorio-admin__panel { padding: 17px 15px; }
+  .consultorio-admin__agenda-toolbar { flex-direction: column; }
+  .consultorio-admin__controles-agenda { width: 100%; align-items: flex-end; justify-content: space-between; gap: 8px; }
+  .consultorio-admin__semana { grid-template-columns: repeat(2, minmax(0, 1fr)); overflow: visible; }
+  .consultorio-admin__dia { min-height: 150px; }
+  .consultorio-admin__formulario, .consultorio-admin__modulo-invitacion { grid-template-columns: 1fr; }
+  .consultorio-admin__lista-reglas > li { align-items: flex-start; flex-direction: column; }
+  .consultorio-admin__acciones-fila { width: 100%; }
+  .consultorio-admin__acciones-fila button { flex: 1; }
+  .prof-consultorio-acceso { align-items: stretch; flex-direction: column; }
+  .consultorio-admin__tabla { min-width: 720px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .consultorio-admin *, .prof-consultorio-acceso * { scroll-behavior: auto !important; transition: none !important; }
+}

@@ -77,6 +77,19 @@ def listar_salas_consultorio(db: Session, usuario: Usuario, consultorio_id: int)
     return repository.listar_salas(db, consultorio_id)
 
 
+def listar_profesionales_consultorio(db: Session, usuario: Usuario, consultorio_id: int) -> list[dict]:
+    _consultorio_administrado(db, usuario, consultorio_id)
+    relaciones = repository.listar_profesionales_vinculados(db, consultorio_id)
+    return [
+        {
+            "profesional_id": relacion.profesional.id,
+            "nombre": f"{relacion.profesional.nombre} {relacion.profesional.apellido}",
+            "estado": relacion.estado,
+        }
+        for relacion in relaciones
+    ]
+
+
 def crear_sala(db: Session, usuario: Usuario, consultorio_id: int, datos: SalaCrear) -> Sala:
     _consultorio_administrado(db, usuario, consultorio_id)
     sala = repository.agregar_sala(db, consultorio_id, datos.nombre, datos.codigo)

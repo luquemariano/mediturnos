@@ -20,6 +20,8 @@ from app.schemas.consultorio_modulo import (
     ReglaModuloActualizacion,
     ReglaModuloCrear,
     ReglaModuloRespuesta,
+    ReglaModuloAdministrativaRespuesta,
+    ProfesionalConsultorioRespuesta,
 )
 from app.services import consultorio_service
 from app.services import consultorio_modulo_service
@@ -103,6 +105,15 @@ def listar_salas(
     return consultorio_service.listar_salas_consultorio(db, usuario, consultorio_id)
 
 
+@router.get("/{consultorio_id}/profesionales", response_model=list[ProfesionalConsultorioRespuesta])
+def listar_profesionales_consultorio(
+    consultorio_id: int,
+    db: Session = Depends(obtener_db),
+    usuario: Usuario = Depends(obtener_usuario_actual),
+):
+    return consultorio_service.listar_profesionales_consultorio(db, usuario, consultorio_id)
+
+
 @router.post("/{consultorio_id}/salas", response_model=SalaRespuesta, status_code=201)
 def crear_sala(
     consultorio_id: int,
@@ -143,6 +154,15 @@ def actualizar_regla_modulo(
     usuario: Usuario = Depends(obtener_usuario_actual),
 ):
     return consultorio_modulo_service.actualizar_regla_desde_fecha(db, usuario, consultorio_id, regla_id, datos)
+
+
+@router.get("/{consultorio_id}/reglas-modulo", response_model=list[ReglaModuloAdministrativaRespuesta])
+def listar_reglas_modulo(
+    consultorio_id: int,
+    db: Session = Depends(obtener_db),
+    usuario: Usuario = Depends(obtener_usuario_actual),
+):
+    return consultorio_modulo_service.listar_reglas(db, usuario, consultorio_id)
 
 
 @router.get("/{consultorio_id}/modulos", response_model=list[ModuloOcurrenciaRespuesta])

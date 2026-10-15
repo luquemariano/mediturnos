@@ -23,7 +23,7 @@ Estado: **ACTUAL**, basado en código, configuración, tests y documentación re
 
 La autorización se aplica mediante dependencias FastAPI y comprobaciones en routers/servicios. Los profesionales no deben asumir acceso global a pacientes o agendas. El acceso autenticado a documentos clínicos depende de roles y relaciones autorizadas.
 
-### Consultorio (fundación en rama; no desplegada)
+### Consultorio (fundación y dominio integrado en `main`; no desplegado)
 
 - El acceso administrativo se concede por `ConsultorioAdministrador`, independiente de roles globales y de `CuentaUsuario`.
 - La API resuelve la relación del usuario con el consultorio en cada petición; los IDs enviados por cliente no autorizan recursos. Los consultorios y salas ajenos responden 404.
@@ -31,7 +31,7 @@ La autorización se aplica mediante dependencias FastAPI y comprobaciones en rou
 - No hay acceso clínico compartido por pertenecer a un mismo consultorio. Las pruebas negativas HTTP usan IDs conocidos para verificar perfiles, evoluciones, documentos y solicitudes de estudios; también comprueban que el rol profesional no obtiene la lista general de pacientes ni la agenda administrativa.
 - No hay rutas para invitar, activar integrantes o ampliar la relación profesional; tampoco para editar agendas ajenas.
 
-### Consultorio (módulos e invitaciones en rama de Entrega 04)
+### Consultorio (módulos e invitaciones integrados en `main`; no desplegados)
 
 - Cada mutación/respuesta administrativa resuelve `ConsultorioAdministrador` por usuario autenticado; IDs de consultorio, sala, regla u ocurrencia no autorizan acceso y los recursos ajenos responden 404.
 - Las ocurrencias administrativas sólo devuelven sala, intervalo, estado y profesional asignado. No incluyen turno, paciente, prestación ni metadatos clínicos.
@@ -45,6 +45,16 @@ La autorización se aplica mediante dependencias FastAPI y comprobaciones en rou
 - El token se genera con entropía criptográfica, se guarda sólo como hash y no vuelve en respuestas administrativas. El enlace lo lleva en el fragmento `#` del navegador, que no se envía en la petición HTTP. El frontend conserva el token sólo en memoria; el reenvío rota el hash anterior y revocar/vencer lo invalida. El hash aceptado se conserva para permitir el reintento idempotente del mismo usuario autenticado.
 - Aceptar exige rol profesional, email autenticado/verificado coincidente y perfil existente. La aplicación bloquea consultorio e invitación y efectúa vínculo y reasignación en una transacción. Errores de token inválido, vencido, revocado o email distinto son genéricos. Cuenta nueva: registro individual en pestaña separada y retorno al enlace original, sin handoff server-side persistido. El formulario individual exige matrícula y especialidad; el alta de actividades que no las requieren queda fuera de esta entrega.
 - Al revocar o vencer se invalidan los tokens y las ocurrencias activas futuras dejan de ocupar sala; la exclusión GiST también protege frente a carreras. La administración sólo puede gestionar plazas y horarios: no obtiene agendas, pacientes ni registros clínicos de otros profesionales.
+
+### Panel administrativo de Consultorio (Entrega 05, rama de revisión)
+
+- `GET /consultorios` filtra por `ConsultorioAdministrador` del usuario autenticado. La navegación condicional del frontend mejora el acceso, pero no sustituye esta autorización.
+- `GET /consultorios/{id}/profesionales` y `GET /consultorios/{id}/reglas-modulo` vuelven a exigir administración y responden DTOs allowlist. Exponen sólo el nombre/estado profesional necesario para asignar módulos, sala, recurrencia y fechas; no incluyen emails, contactos, matrículas ni relaciones clínicas.
+- La agenda obtiene ocurrencias administrativas sin datos de pacientes, turnos, prestaciones o historias. Las reservas sin perfil asociado se representan siempre como “Invitación pendiente”; el nombre y correo configurados para una invitación no se propagan al DTO de ocurrencia ni a la agenda.
+- El panel usa exclusivamente APIs administrativas existentes para las mutaciones. Un profesional vinculado sin administración recibe 404 al consultar estas rutas y no obtiene acceso por conocer el ID; las operaciones de módulo/invitación continúan siendo verificadas por backend.
+- Cuando una operación responde un conflicto con `turnos_afectados`, la UI extrae y muestra sólo el conteo agregado y omite cualquier otra propiedad de la respuesta.
+- En modo Consultorio el shell no carga el centro de notificaciones profesionales, que puede contener mensajes relacionados con pacientes o turnos.
+- La revisión de UI usa fixtures sintéticos. La entrega no envía correo real ni altera membresías, datos clínicos, pagos o suscripciones.
 
 ## Endpoints y tokens públicos
 

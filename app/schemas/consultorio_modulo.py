@@ -132,3 +132,29 @@ class ReglaModuloRespuesta(BaseModel):
     vigente_desde: date
     vigente_hasta: date | None
     estado: str
+
+
+class ReglaModuloAdministrativaRespuesta(BaseModel):
+    """Allowlisted rule view for the administrative occupancy panel."""
+
+    id: int
+    sala_id: int
+    sala_nombre: str
+    profesional_id: int | None
+    profesional_nombre: str
+    invitacion_pendiente: bool
+    dia_semana: int
+    hora_inicio: time
+    duracion_minutos: int
+    zona_horaria: str
+    vigente_desde: date
+    vigente_hasta: date | None
+    estado: str
+
+
+class ProfesionalConsultorioRespuesta(BaseModel):
+    """Minimum information needed to assign room modules."""
+
+    profesional_id: int
+    nombre: str
+    estado: str
