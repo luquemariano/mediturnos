@@ -53,3 +53,7 @@ Estados: **PENDIENTE**, **EN CURSO**, **COMPLETADO** y **NO DETERMINADO**. No se
 - **INTEGRADAS EN `main`:** Entregas 02–05 (fundación, módulos recurrentes, invitaciones y panel administrativo); Entrega 05 fue integrada en `40e8c36a77f59f7e7eb6c35b00bc61f74b4414cc`. Estado de despliegue: NO DETERMINADO.
 - **EN CURSO:** Entrega 06 — catálogo de actividad profesional, matrícula condicional y experiencia condicional de alta/perfil. Rama `codex/consultorio-06-actividad-matricula`; PR pendiente.
 - **FUERA DE ALCANCE DE E06:** cambios a planes, precios, cobros, suscripciones, membresías múltiples y despliegue.
+
+## Entrega 07 — Preproducción aislada
+
+- **IMPLEMENTADA Y VALIDADA LOCALMENTE; PR #93 CON CI VERDE:** Compose separado, secretos externos, seed sintético, protecciones de correo/WhatsApp/analítica/indexación y procedimientos de backup/restore y cleanup. Staging remoto pendiente de acceso SSH de lectura, DNS staging y verificación de Caddy/recursos. Ver [`consultorio-07-preproduccion-y-validacion-operativa.md`](exec-plans/active/consultorio-07-preproduccion-y-validacion-operativa.md).

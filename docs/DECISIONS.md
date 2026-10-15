@@ -164,3 +164,7 @@ El panel de administración usa la misma sesión profesional, conserva el shell 
 Tipo: decisión funcional aprobada e implementación en revisión.
 
 Las reglas de matrícula y especialidad provienen del catálogo servidor `ActividadProfesional`, nunca del rol ni de banderas enviadas por el cliente. El alta nueva debe elegir una actividad; perfiles anteriores mantienen `actividad_profesional_id=NULL` y conservan sus valores y relaciones sin inferencia. Servicios de estética usan la especialidad de servicio existente configurada en el catálogo para seguir siendo compatibles con prestaciones y turnos sin pedir matrícula. Clasificar un perfil heredado como actividad sin matrícula requiere borrar explícitamente su matrícula histórica. La migración Alembic `a7b8c9d0e1f2` es aditiva; el downgrade se detiene ante datos que no puede representar. No valida la autenticidad de matrícula contra registros externos.
+
+## DEC-020 — Preproducción separada de producción
+
+La Entrega 07 prepara `docker-compose.staging.yml` como proyecto Compose `turnelia-staging`, con DB privada, redes y volúmenes propios, loopback para API/frontend, noindex y analítica desactivada. Secretos sintéticos se generan a un archivo externo que no se sobrescribe. El seed exige ambiente/base específicos y usa identidades sintéticas. Las pruebas de backup y restore usan exclusivamente la DB staging. No se añade Caddy/proxy ni se habilita correo/WhatsApp real por defecto. La preparación remota queda pendiente mientras no pueda inspeccionarse el VPS con acceso de sólo lectura.

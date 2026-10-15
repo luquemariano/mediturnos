@@ -60,3 +60,7 @@ Para volver a la imagen anterior, conservar el tag o digest desplegado y ejecuta
 ## Migración futura desde Render
 
 La migración de base debe planificarse como operación separada: backup probado, ventana de escritura, compatibilidad de migraciones Alembic, restauración en una base OVH aislada, validación de healthchecks y datos, y cambio de DNS/proxy sólo después de verificar. No existe actualmente una sincronización o replicación declarada entre Render/Aiven y OVH.
+
+### Riesgo de infraestructura Entrega 07
+
+No fue posible inspeccionar el VPS: SSH al IP productivo rechazó la autenticación, y `staging.turnelia.com.ar` aún no resuelve. Por ello no se creó recurso remoto ni se puede afirmar la disponibilidad de puertos, espacio, Caddy, backups o cron. Para continuar, el propietario debe habilitar acceso SSH de solo lectura para la identidad operativa acordada y crear/confirmar el registro DNS staging. Esto no autoriza despliegue ni cambios de producción.

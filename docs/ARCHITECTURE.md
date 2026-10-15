@@ -46,3 +46,9 @@ La Entrega 05 añade el panel `/app/consultorio` dentro de la sesión y el shell
 - Disponibilidad real de servicios externos y producción: **NO DETERMINADA**.
 - La cuenta organizacional debe existir y tener propietaria verificada para crear un Consultorio; la Entrega 05 no crea cuentas, membresías ni perfiles profesionales.
 - Entrega 05 está integrada en `main`; el estado de despliegue de Consultorio no se infiere de este checkout. La Entrega 06 está en implementación en la rama `codex/consultorio-06-actividad-matricula`; su migración es aditiva y el downgrade se protege cuando existan perfiles clasificados o matrículas nulas.
+
+## Preproducción aislada (Entrega 07, en preparación; no desplegada)
+
+`docker-compose.staging.yml` define un proyecto distinto (`turnelia-staging`) con PostgreSQL 18, API y Nginx, volúmenes y redes propias. DB permanece sin puerto publicado en red interna; frontend/API sólo publican en `127.0.0.1:18080/18081`. El Nginx de staging añade `noindex` y `robots.txt` con `Disallow: /`; el build omite analítica. Configuración sensible vive fuera del repositorio (`STAGING_ENV_FILE`). El API valida `APP_ENV=staging`, DB esperada, sandbox de pagos y proveedores de correo/WhatsApp permitidos.
+
+`python -m app.scripts.seed_staging` requiere `STAGING_SEED_ENABLED=true` y sólo admite la base `turnelia_staging` en host `db`; genera identidades `example.invalid` y datos ficticios. Migraciones se ejecutan explícitamente con `alembic upgrade head` en ese servicio. `scripts/staging/manage.sh` valida topología antes de operar; `remove` además inspecciona etiquetas de propiedad antes de retirar recursos. `scripts/staging/backup_restore_check.sh` prueba dump, checksum y restore temporal exclusivamente dentro de staging. No integra `proxy`/Caddy ni accede a backups productivos.

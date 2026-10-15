@@ -34,7 +34,7 @@ def main() -> None:
         "--port",
         puerto,
     ]
-    if os.getenv("APP_ENV", "development").lower() == "production":
+    if os.getenv("APP_ENV", "development").lower() in {"production", "staging"}:
         argumentos.append("--no-access-log")
 
     os.execvp(

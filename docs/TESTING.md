@@ -144,3 +144,26 @@ E2E requiere las variables locales `E2E_ADMIN_PASSWORD`, `E2E_JWT_SECRET` y `E2E
 ## Regla para nuevas features
 
 Toda modificación relevante debe incluir tests proporcionales al riesgo. Cambios de permisos deben cubrir casos permitidos y prohibidos; cambios de turnos, disponibilidad, estados, solapamientos y concurrencia cuando corresponda; cambios de pagos, ownership, idempotencia y webhooks.
+
+## Staging (Entrega 07)
+
+La configuración se valida sin imprimir secretos:
+
+```bash
+python scripts/staging/generate_env.py /ruta/privada/.env.staging
+STAGING_ENV_FILE=/ruta/privada/.env.staging scripts/staging/manage.sh validate
+STAGING_ENV_FILE=/ruta/privada/.env.staging scripts/staging/manage.sh up
+STAGING_ENV_FILE=/ruta/privada/.env.staging scripts/staging/manage.sh health
+```
+
+`update` construye imágenes etiquetadas con el SHA corto del checkout; para volver a una versión validada preservada localmente, establecer `STAGING_IMAGE_TAG=<tag-anterior>` y usar `scripts/staging/manage.sh rollback`. El rollback verifica que existan ambas imágenes y no construye nada. Sólo es seguro si el esquema de base conserva compatibilidad con la versión anterior; restaurar un dump es una operación aislada separada y nunca sobre producción.
+
+En Windows, usar Git Bash con `STAGING_ENV_FILE` apuntando al archivo externo. Ejecutar migraciones sólo sobre la base disposable staging y habilitar la semilla sintética sólo explícitamente (`STAGING_SEED_ENABLED=true`). Backup/restore: `scripts/staging/backup_restore_check.sh backup` y luego `restore-check`. La restauración crea y elimina una base temporal dentro del mismo PostgreSQL staging. Limpieza requiere `STAGING_REMOVE_CONFIRM=turnelia-staging`; verifica antes que los recursos Docker estén etiquetados como staging y tengan servicios, volúmenes y redes permitidos. Los procedimientos nunca leen una copia productiva.
+
+Validación local de la Entrega 07 en Docker Desktop: PostgreSQL 18 saludable; `alembic upgrade head` en vacío hasta `a7b8c9d0e1f2`; seed sintético idempotente dos veces; backup/checksum/restore correctos; API y frontend saludables; puertos sólo loopback; `robots.txt` bloqueado y `X-Robots-Tag: noindex, nofollow, noarchive`. Esta prueba local no acredita disponibilidad ni configuración del VPS.
+
+Pendiente de preproducción remota: acceso SSH autorizado para inspección, DNS `staging.turnelia.com.ar`, validación de espacio/puertos/containers/backups/cron y revisión de Caddy antes de configurar proxy/TLS. No desplegar ni recargar Caddy como parte de la Entrega 07.
+
+Para correo real de prueba (aún apagado): `STAGING_EMAIL_SEND_ENABLED=true`, `EMAIL_PROVIDER=resend`, `RESEND_API_KEY`, `EMAIL_FROM` verificado y `STAGING_EMAIL_ALLOWLIST` con la única dirección previamente autorizada. El owner debe entregar esa dirección y credenciales Resend de staging; no hubo envíos reales.
+
+WhatsApp fake se valida mediante las suites backend existentes de recordatorios, proveedor, configuración y webhook. Meta staging queda apagada; al habilitarla requiere `STAGING_WHATSAPP_META_ENABLED=true`, `STAGING_WHATSAPP_META_TEST_NUMBER_CONFIRMED=true`, `STAGING_WHATSAPP_PROVIDER=meta`, IDs Meta de test incluidos literalmente en las allowlists `STAGING_WHATSAPP_PHONE_NUMBER_ID_ALLOWLIST` y `STAGING_WHATSAPP_BUSINESS_ACCOUNT_ID_ALLOWLIST`, credenciales dedicadas y `PUBLIC_API_URL=https://api.staging.turnelia.com.ar`. Callback: `https://api.staging.turnelia.com.ar/webhooks/whatsapp`. No se verificó la existencia de Meta App/número de prueba y no se envió WhatsApp.

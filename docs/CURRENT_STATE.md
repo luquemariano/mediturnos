@@ -238,3 +238,9 @@ Ante una contingencia grave se debe preservar primero la base actual OVH y luego
 - `docs/DEPLOYMENT.md`: arquitectura y operación productiva actual.
 - `docs/VPS_DEPLOY_CHECKLIST.md`: checklist para despliegues y verificaciones.
 - `.env.vps.example`: contrato de variables productivas sin secretos.
+
+## Staging (preparación Entrega 07)
+
+Se agregó un Compose separado con proyecto/redes/volúmenes staging, sin `container_name`, sin red externa `proxy`, PostgreSQL privado y puertos API/frontend sólo en loopback. El primer arranque local confirmó PostgreSQL 18 con su directorio de datos en `/var/lib/postgresql`, migración completa y seed sintético idempotente. Se verificó dump + SHA256 + restauración en base temporal. Se desactivaron analítica y robots/indexación en la imagen de staging; producción conserva su configuración de build predeterminada.
+
+La configuración local y documentación están listas; **NO se ha provisionado staging remoto**. `staging.turnelia.com.ar` no resolvió y SSH de lectura al VPS fue rechazado. Estado vivo de Caddy, puertos, volúmenes, espacio, backups, cron e integraciones no pudo verificarse. Producción sólo recibió consultas DNS/HTTP GET de salud, sin cambios.

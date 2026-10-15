@@ -1,12 +1,13 @@
 type Gtag = (...args: unknown[]) => void;
 declare global { interface Window { dataLayer?: unknown[]; gtag?: Gtag; } }
 const MEASUREMENT_ID = "G-7Y07NRSBZE";
+const ANALYTICS_ENABLED = import.meta.env.VITE_ANALYTICS_ENABLED !== "false";
 const EVENTOS_PERMITIDOS = new Set(["sign_up_click", "sign_up_start", "sign_up_complete", "login_success", "subscription_start", "subscription_complete", "help_article_click", "public_booking_view", "public_booking_availability_view", "public_booking_attempt", "public_booking_success", "public_booking_error", "public_booking_cancel", "public_booking_reschedule"]);
 const RUTAS_PUBLICAS = ["/", "/login", "/registro", "/ayuda", "/software-para-consultorios", "/sistema-de-turnos", "/para-psicopedagogos", "/terminos", "/privacidad", "/invitacion-consultorio"];
 let inicializando: Promise<void> | undefined;
 export function esRutaPublica(path: string): boolean { return RUTAS_PUBLICAS.includes(path) || path.startsWith("/ayuda/"); }
 function cargarAnalytics(): Promise<void> {
-  if (!import.meta.env.PROD || window.gtag) return Promise.resolve();
+  if (!ANALYTICS_ENABLED || !import.meta.env.PROD || window.gtag) return Promise.resolve();
   if (inicializando) return inicializando;
   inicializando = new Promise((resolve) => {
     window.dataLayer = window.dataLayer || [];
@@ -20,11 +21,11 @@ function cargarAnalytics(): Promise<void> {
   return inicializando;
 }
 export function trackEvent(name: string, params?: Record<string, string>): void {
-  if (window.location.pathname === "/baja-novedades" || !EVENTOS_PERMITIDOS.has(name)) return;
+  if (!ANALYTICS_ENABLED || window.location.pathname === "/baja-novedades" || !EVENTOS_PERMITIDOS.has(name)) return;
   const parametrosSeguros = params ? Object.fromEntries(Object.entries(params).filter(([key]) => ["source", "plan", "resultado", "error_type", "modalidad", "duracion"].includes(key))) : undefined;
   void cargarAnalytics().then(() => window.gtag?.("event", name, parametrosSeguros ?? {}));
 }
 export function trackPageView(path: string): void {
-  if (window.location.pathname === "/baja-novedades" || path === "/baja-novedades" || !esRutaPublica(path)) return;
+  if (!ANALYTICS_ENABLED || window.location.pathname === "/baja-novedades" || path === "/baja-novedades" || !esRutaPublica(path)) return;
   void cargarAnalytics().then(() => window.gtag?.("event", "page_view", { page_path: path }));
 }

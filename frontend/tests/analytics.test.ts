@@ -58,4 +58,14 @@ describe("analytics", () => {
     expect(Array.from(entradas[0])).toEqual(["js", expect.any(Date)]);
     expect(Array.from(entradas[1])).toEqual(["config", "G-7Y07NRSBZE", { send_page_view: false }]);
   });
+
+  it("deshabilita toda analítica cuando el build es de staging", async () => {
+    vi.stubEnv("PROD", true);
+    vi.stubEnv("VITE_ANALYTICS_ENABLED", "false");
+    trackEvent("sign_up_click", { source: "staging" });
+    trackPageView("/");
+    await Promise.resolve();
+    expect(window.gtag).toBeUndefined();
+    expect(window.dataLayer).toEqual([]);
+  });
 });

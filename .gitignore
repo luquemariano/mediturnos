@@ -117,6 +117,7 @@ celerybeat.pid
 .env.vps
 .env.local
 .env.*.local
+.env.staging
 !.env.example
 !.env.vps.example
 private/

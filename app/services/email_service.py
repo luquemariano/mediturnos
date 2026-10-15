@@ -62,11 +62,22 @@ development_email_reply_to: dict[str, str | None] = {}
 
 
 class ResendEmailProvider:
-    def __init__(self, api_key: str, remitente: str) -> None:
+    def __init__(
+        self,
+        api_key: str,
+        remitente: str,
+        destinatarios_permitidos: frozenset[str] | None = None,
+    ) -> None:
         self._api_key = api_key
         self._remitente = remitente
+        self._destinatarios_permitidos = destinatarios_permitidos
 
     def enviar(self, email: TransactionalEmail) -> EmailDeliveryResult:
+        if (
+            self._destinatarios_permitidos is not None
+            and email.destinatario.strip().lower() not in self._destinatarios_permitidos
+        ):
+            raise EmailDeliveryError("El destinatario no está autorizado para el email de staging.")
         payload = {
             "from": self._remitente,
             "to": [email.destinatario],
@@ -106,6 +117,17 @@ def obtener_email_provider(config=None) -> EmailProvider:
     if config is None:
         from app.core.config import settings
         config = settings
+    if getattr(config, "app_env", None) == "staging":
+        if not config.staging_email_send_enabled:
+            return InMemoryEmailProvider()
+        if config.email_provider != "resend":
+            raise EmailServiceUnavailable("El email real de staging requiere Resend dedicado.")
+        permitidos = config.obtener_staging_email_allowlist()
+        return ResendEmailProvider(
+            config.resend_api_key.get_secret_value(),
+            config.email_from,
+            destinatarios_permitidos=permitidos,
+        )
     if config.email_provider == "resend":
         if config.resend_api_key is None or not config.email_from:
             raise EmailServiceUnavailable(
