@@ -27,7 +27,7 @@ Este documento combina estado del repositorio con evidencia operativa validada d
 | Backups PostgreSQL | VERIFICADO EN PRODUCCIÓN | Dump manual, SHA256 y programación diaria validados |
 | R2 | DECLARADO EN CONFIGURACIÓN | Producción actual mantiene `OBJECT_STORAGE_PROVIDER=fake`; no hay uso productivo real validado |
 | E2E / Playwright | IMPLEMENTADO EN CÓDIGO | Suite y CI existentes |
-| Consultorio (fundación) | IMPLEMENTADO EN RAMA | Entrega 02 agrega consultorios, salas y autorización administrativa aislada; pendiente de PR/CI, no integrado ni desplegado. No hay módulos, invitaciones, membresías operativas ni agenda compartida. No se modifican cuentas profesionales existentes. |
+| Consultorio (fundación) | EN REVISIÓN | PR #88 abierto; el commit inicial `5a9bd25` pasó Backend, PostgreSQL, Frontend y Playwright CI. No integrado ni desplegado. No hay módulos, invitaciones, membresías operativas ni agenda compartida. No se modifican cuentas profesionales existentes. |
 
 ## Infraestructura productiva
 

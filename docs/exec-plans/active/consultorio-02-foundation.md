@@ -1,6 +1,6 @@
 # Entrega 02 — Fundación de Consultorio, salas y frontera de permisos
 
-Estado: **IMPLEMENTACIÓN VALIDADA LOCALMENTE — PR/CI pendiente**
+Estado: **PR #88 abierto — validación CI inicial verde; revisión pendiente**
 Depende de: Entrega 01, mergeada en `main` como `c96c833`.
 Alcance: fundación persistente y autorización del dominio Consultorio. No habilita miembros múltiples ni modifica producción.
 
@@ -96,7 +96,7 @@ Mantener `router → service → repository`.
 1. **Completado localmente:** pytest `883 passed, 30 skipped, 9 warnings`; PostgreSQL 17 con migración completa desde una base vacía y pruebas concurrentes de sala/vínculo `2 passed`; Vitest `407 passed`; lint y build correctos; Playwright `8 passed` con cleanup. La primera pasada completa de Vitest tuvo un fallo transitorio en paginación comercial; el test aislado (`11/11`) y la suite completa repetida (`407/407`) pasaron. Los 30 skips de pytest son módulos PostgreSQL sin URL en la ejecución SQLite; los dos nuevos módulos se ejecutaron por separado contra PostgreSQL real.
 2. **Completado:** `git diff --check` limpio y revisión de seguridad del cambio. No se hallaron permisos clínicos derivados ni cambios de ownership. Un diagnóstico adicional `alembic check` reportó drift de metadatos preexistente en tablas ajenas a Consultorio; la cadena de migración y las cuatro tablas nuevas pasaron su validación PostgreSQL.
 3. **Completado:** `ROADMAP.md`, `CURRENT_STATE.md`, `ARCHITECTURE.md`, `SECURITY.md`, `TESTING.md`, `DECISIONS.md` y este plan actualizados. Sin landing ni ayuda pública: no hay UX de producción y la feature no está desplegada.
-4. **Pendiente:** commit, push, PR a `main` y espera de CI. No desplegar ni mergear.
+4. **Completado para el commit `5a9bd25`:** commit, push y PR #88 hacia `main`; run `38659022259` con Backend CI, PostgreSQL CI, Frontend CI y Playwright E2E CI en verde. La actualización documental genera una nueva revisión CI. No desplegar ni mergear.
 
 ## Criterio de cierre
 
