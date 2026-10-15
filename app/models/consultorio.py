@@ -19,6 +19,9 @@ class Consultorio(Base):
     __table_args__ = (
         CheckConstraint("duracion_modulo_minutos > 0", name="ck_consultorios_duracion_modulo_positiva"),
         CheckConstraint("horizonte_materializacion_dias > 0", name="ck_consultorios_horizonte_positivo"),
+        CheckConstraint("cupo_profesionales >= 1", name="ck_consultorios_cupo_profesionales"),
+        CheckConstraint("invitacion_expiracion_dias BETWEEN 1 AND 30", name="ck_consultorios_invitacion_expiracion"),
+        CheckConstraint("cupo_profesionales >= 1", name="ck_consultorios_cupo_profesionales"),
         CheckConstraint("estado IN ('activo', 'suspendido')", name="ck_consultorios_estado"),
         UniqueConstraint("cuenta_id", name="uq_consultorios_cuenta_id"),
     )
@@ -31,6 +34,9 @@ class Consultorio(Base):
     zona_horaria: Mapped[str] = mapped_column(String(64), nullable=False, default="America/Argentina/Buenos_Aires")
     duracion_modulo_minutos: Mapped[int] = mapped_column(Integer, nullable=False, default=240, server_default="240")
     horizonte_materializacion_dias: Mapped[int] = mapped_column(Integer, nullable=False, default=90, server_default="90")
+    cupo_profesionales: Mapped[int] = mapped_column(Integer, nullable=False, default=4, server_default="4")
+    invitacion_expiracion_dias: Mapped[int] = mapped_column(Integer, nullable=False, default=7, server_default="7")
+    cupo_profesionales: Mapped[int] = mapped_column(Integer, nullable=False, default=4, server_default="4")
     estado: Mapped[str] = mapped_column(String(20), nullable=False, default="activo", server_default="activo")
     creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=ahora_utc)
 

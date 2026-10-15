@@ -82,6 +82,7 @@ def _crear_ocurrencias_regla(
                     regla_id=regla.id,
                     sala_id=regla.serie.sala_id,
                     profesional_id=regla.serie.profesional_id,
+                    invitacion_id=regla.serie.invitacion_id,
                     fecha_inicio=inicio,
                     fecha_fin=inicio + timedelta(minutes=regla.duracion_minutos),
                     fecha_origen=fecha,

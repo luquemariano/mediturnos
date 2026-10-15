@@ -98,7 +98,7 @@ class ModuloOcurrenciaRespuesta(BaseModel):
     id: int
     sala_id: int
     sala_nombre: str
-    profesional_id: int
+    profesional_id: int | None
     profesional_nombre: str
     fecha_inicio: datetime
     fecha_fin: datetime
@@ -123,7 +123,7 @@ class ReglaModuloRespuesta(BaseModel):
     id: int
     serie_id: int
     sala_id: int
-    profesional_id: int
+    profesional_id: int | None
     version: int
     dia_semana: int
     hora_inicio: time

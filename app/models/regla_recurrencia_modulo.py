@@ -41,5 +41,5 @@ class ReglaRecurrenciaModulo(Base):
         return self.serie.sala_id
 
     @property
-    def profesional_id(self) -> int:
+    def profesional_id(self) -> int | None:
         return self.serie.profesional_id

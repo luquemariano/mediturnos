@@ -2,7 +2,7 @@ type Gtag = (...args: unknown[]) => void;
 declare global { interface Window { dataLayer?: unknown[]; gtag?: Gtag; } }
 const MEASUREMENT_ID = "G-7Y07NRSBZE";
 const EVENTOS_PERMITIDOS = new Set(["sign_up_click", "sign_up_start", "sign_up_complete", "login_success", "subscription_start", "subscription_complete", "help_article_click", "public_booking_view", "public_booking_availability_view", "public_booking_attempt", "public_booking_success", "public_booking_error", "public_booking_cancel", "public_booking_reschedule"]);
-const RUTAS_PUBLICAS = ["/", "/login", "/registro", "/ayuda", "/software-para-consultorios", "/sistema-de-turnos", "/para-psicopedagogos", "/terminos", "/privacidad"];
+const RUTAS_PUBLICAS = ["/", "/login", "/registro", "/ayuda", "/software-para-consultorios", "/sistema-de-turnos", "/para-psicopedagogos", "/terminos", "/privacidad", "/invitacion-consultorio"];
 let inicializando: Promise<void> | undefined;
 export function esRutaPublica(path: string): boolean { return RUTAS_PUBLICAS.includes(path) || path.startsWith("/ayuda/"); }
 function cargarAnalytics(): Promise<void> {

@@ -20,9 +20,9 @@ Ninguna de las dos formas es universalmente superior: la primera usa explícitam
 
 `tests/conftest.py` contiene fixtures compartidos. La mayoría de pruebas usa SQLite, incluidas bases in-memory. Hay suites PostgreSQL selectivas para concurrencia, pagos, recordatorios y acciones relacionadas.
 
-La colección cubre autenticación, recuperación, roles/ownership, profesionales, pacientes, turnos, disponibilidad, excepciones, feriados, solapamientos, concurrencia, pagos, webhooks, suscripciones, recordatorios, emails, documentos, estudios, evoluciones, perfiles clínicos, notificaciones, storage, rate limiting, health checks, seed y bootstrap.
+La colección cubre autenticación, recuperación, roles/ownership, profesionales, pacientes, turnos, disponibilidad, excepciones, feriados, solapamientos, concurrencia, invitaciones de Consultorio, pagos, webhooks, suscripciones, recordatorios, emails, documentos, estudios, evoluciones, perfiles clínicos, notificaciones, storage, rate limiting, health checks, seed y bootstrap.
 
-La profundidad de cobertura varía por módulo. Consultar `tests/` para el detalle. Sólo algunos flujos cuentan con validación PostgreSQL explícita.
+La profundidad de cobertura varía por módulo. Consultar `tests/` para el detalle. Invitaciones: pruebas SQLite de hash/rotación, expiración/revocación, email coincidente, aceptación idempotente, cupo y autorización; PostgreSQL prueba cupo concurrente y exclusión GiST para ocurrencias pendientes.
 
 ## Frontend
 
@@ -55,8 +55,8 @@ GitHub Actions incluye un job separado llamado `PostgreSQL CI`.
 Usa `postgres:17-alpine` como service container efímero, ejecuta Alembic sobre
 una base PostgreSQL vacía y después valida secuencialmente los módulos de
 concurrencia de turnos, recordatorios, acciones de turnos, ownership clínico,
-fundación de Consultorio y módulos recurrentes. Los módulos comprueban exclusión
-GiST concurrente, idempotencia del generador y adyacencia en PostgreSQL. El módulo
+fundación de Consultorio, módulos recurrentes e invitaciones. Los módulos comprueban exclusión
+GiST concurrente (incluida la reserva pendiente), cupo concurrente, idempotencia del generador y adyacencia en PostgreSQL. El módulo
 de migración comprueba además la cadena
 Alembic en una base desechable creada desde cero y carreras concurrentes de
 unicidad. El job genera

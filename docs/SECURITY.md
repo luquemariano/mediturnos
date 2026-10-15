@@ -31,7 +31,7 @@ La autorización se aplica mediante dependencias FastAPI y comprobaciones en rou
 - No hay acceso clínico compartido por pertenecer a un mismo consultorio. Las pruebas negativas HTTP usan IDs conocidos para verificar perfiles, evoluciones, documentos y solicitudes de estudios; también comprueban que el rol profesional no obtiene la lista general de pacientes ni la agenda administrativa.
 - No hay rutas para invitar, activar integrantes o ampliar la relación profesional; tampoco para editar agendas ajenas.
 
-### Consultorio (módulos en rama de Entrega 03)
+### Consultorio (módulos e invitaciones en rama de Entrega 04)
 
 - Cada mutación/respuesta administrativa resuelve `ConsultorioAdministrador` por usuario autenticado; IDs de consultorio, sala, regla u ocurrencia no autorizan acceso y los recursos ajenos responden 404.
 - Las ocurrencias administrativas sólo devuelven sala, intervalo, estado y profesional asignado. No incluyen turno, paciente, prestación ni metadatos clínicos.
@@ -40,6 +40,11 @@ La autorización se aplica mediante dependencias FastAPI y comprobaciones en rou
 - Si un cambio afecta turnos `reservado`/`confirmado`, la operación se rechaza y sólo revela un conteo agregado; la auditoría no guarda IDs de turnos ni pacientes. La revisión de tests cubre negativas HTTP y concurrencia PostgreSQL con datos sintéticos.
 - La expansión del horizonte ocurre al consultar módulos o al reservar/reprogramar. No existe worker de materialización; la reserva extiende el horizonte transaccionalmente antes de validar.
 - `/profesionales/me/consultorio/modulos` deriva la identidad desde el JWT y el perfil profesional asociado; el repositorio vuelve a filtrar por `usuario_id`, vínculo `preparatorio`/`activo`, consultorio/sala activos y ocurrencia activa, sin aceptar IDs de pertenencia enviados por el cliente. Respuesta allowlist: sala, inicio, fin y estado; la ruta no escribe ni expande recurrencias. Los profesionales no autorizados a administrar reciben 404 en endpoints del consultorio y el endpoint profesional no define verbos de mutación.
+- La preparación y gestión de invitaciones exige `ConsultorioAdministrador`; el backend no crea usuarios, perfiles profesionales, matrículas, pacientes ni datos clínicos para la persona invitada sin cuenta.
+- El cupo se serializa bloqueando la fila `consultorios`; cuenta perfiles activos distintos (incluida la titular) y las invitaciones en preparación/pendientes no vencidas. Un índice parcial evita duplicar email invitado activo en el consultorio. Las ocurrencias pendientes siguen `activas` y participan de la misma exclusión GiST de sala.
+- El token se genera con entropía criptográfica, se guarda sólo como hash y no vuelve en respuestas administrativas. El enlace lo lleva en el fragmento `#` del navegador, que no se envía en la petición HTTP. El frontend conserva el token sólo en memoria; el reenvío rota el hash anterior y revocar/vencer lo invalida. El hash aceptado se conserva para permitir el reintento idempotente del mismo usuario autenticado.
+- Aceptar exige rol profesional, email autenticado/verificado coincidente y perfil existente. La aplicación bloquea consultorio e invitación y efectúa vínculo y reasignación en una transacción. Errores de token inválido, vencido, revocado o email distinto son genéricos. Cuenta nueva: registro individual en pestaña separada y retorno al enlace original, sin handoff server-side persistido. El formulario individual exige matrícula y especialidad; el alta de actividades que no las requieren queda fuera de esta entrega.
+- Al revocar o vencer se invalidan los tokens y las ocurrencias activas futuras dejan de ocupar sala; la exclusión GiST también protege frente a carreras. La administración sólo puede gestionar plazas y horarios: no obtiene agendas, pacientes ni registros clínicos de otros profesionales.
 
 ## Endpoints y tokens públicos
 

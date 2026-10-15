@@ -14,11 +14,13 @@ if TYPE_CHECKING:
     from app.models.sala import Sala
     from app.models.profesional import Profesional
     from app.models.usuario import Usuario
+    from app.models.invitacion_consultorio import InvitacionConsultorio
 
 
 class OcurrenciaModulo(Base):
     __tablename__ = "consultorio_ocurrencias_modulo"
     __table_args__ = (
+        CheckConstraint("(profesional_id IS NOT NULL) <> (invitacion_id IS NOT NULL)", name="ck_consultorio_ocurrencia_destino_unico"),
         CheckConstraint("fecha_fin > fecha_inicio", name="ck_consultorio_ocurrencia_intervalo"),
         CheckConstraint("estado IN ('activa', 'suspendida', 'cancelada')", name="ck_consultorio_ocurrencia_estado"),
         CheckConstraint("origen IN ('recurrente', 'extraordinaria', 'excepcion')", name="ck_consultorio_ocurrencia_origen"),
@@ -31,7 +33,8 @@ class OcurrenciaModulo(Base):
     serie_id: Mapped[int | None] = mapped_column(ForeignKey("consultorio_series_modulo.id", ondelete="RESTRICT"), nullable=True, index=True)
     regla_id: Mapped[int | None] = mapped_column(ForeignKey("consultorio_reglas_modulo.id", ondelete="RESTRICT"), nullable=True, index=True)
     sala_id: Mapped[int] = mapped_column(ForeignKey("consultorio_salas.id", ondelete="RESTRICT"), nullable=False, index=True)
-    profesional_id: Mapped[int] = mapped_column(ForeignKey("profesionales.id", ondelete="RESTRICT"), nullable=False, index=True)
+    profesional_id: Mapped[int | None] = mapped_column(ForeignKey("profesionales.id", ondelete="RESTRICT"), nullable=True, index=True)
+    invitacion_id: Mapped[int | None] = mapped_column(ForeignKey("consultorio_invitaciones.id", ondelete="RESTRICT"), nullable=True, index=True)
     fecha_inicio: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     fecha_fin: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     fecha_origen: Mapped[date | None] = mapped_column(Date(), nullable=True)
@@ -44,7 +47,8 @@ class OcurrenciaModulo(Base):
     serie: Mapped["SerieModulo | None"] = relationship()
     regla: Mapped["ReglaRecurrenciaModulo | None"] = relationship()
     sala: Mapped["Sala"] = relationship()
-    profesional: Mapped["Profesional"] = relationship()
+    profesional: Mapped["Profesional | None"] = relationship()
+    invitacion: Mapped["InvitacionConsultorio | None"] = relationship()
     creado_por: Mapped["Usuario | None"] = relationship()
 
     @property
@@ -53,4 +57,6 @@ class OcurrenciaModulo(Base):
 
     @property
     def profesional_nombre(self) -> str:
-        return f"{self.profesional.nombre} {self.profesional.apellido}"
+        if self.profesional is not None:
+            return f"{self.profesional.nombre} {self.profesional.apellido}"
+        return self.invitacion.nombre_visible if self.invitacion and self.invitacion.nombre_visible else "Invitación pendiente"
