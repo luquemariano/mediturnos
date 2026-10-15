@@ -107,6 +107,17 @@ class ModuloOcurrenciaRespuesta(BaseModel):
     origen: str
 
 
+class MiModuloConsultorioRespuesta(BaseModel):
+    """Safe, read-only view of modules assigned to the authenticated professional."""
+
+    model_config = ConfigDict(from_attributes=True)
+    sala_id: int
+    sala_nombre: str
+    fecha_inicio: datetime
+    fecha_fin: datetime
+    estado: str
+
+
 class ReglaModuloRespuesta(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int

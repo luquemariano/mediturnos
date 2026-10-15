@@ -128,6 +128,33 @@ def listar_ocurrencias(db: Session, consultorio_id: int, desde: datetime, hasta:
     )
 
 
+def listar_mis_ocurrencias_activas(db: Session, usuario_id: int, ahora: datetime) -> list[OcurrenciaModulo]:
+    """List only current/future modules authorized for this professional account."""
+    return (
+        db.query(OcurrenciaModulo)
+        .options(joinedload(OcurrenciaModulo.sala))
+        .join(Profesional, Profesional.id == OcurrenciaModulo.profesional_id)
+        .join(
+            ConsultorioProfesional,
+            (ConsultorioProfesional.profesional_id == Profesional.id)
+            & (ConsultorioProfesional.consultorio_id == OcurrenciaModulo.consultorio_id),
+        )
+        .join(Consultorio, Consultorio.id == OcurrenciaModulo.consultorio_id)
+        .join(Sala, Sala.id == OcurrenciaModulo.sala_id)
+        .filter(
+            Profesional.usuario_id == usuario_id,
+            Profesional.activo.is_(True),
+            ConsultorioProfesional.estado.in_(("preparatorio", "activo")),
+            Consultorio.estado == "activo",
+            Sala.estado == "activa",
+            OcurrenciaModulo.estado == "activa",
+            OcurrenciaModulo.fecha_fin > ahora,
+        )
+        .order_by(OcurrenciaModulo.fecha_inicio, OcurrenciaModulo.sala_id)
+        .all()
+    )
+
+
 def contar_turnos_afectados(db: Session, ocurrencia: OcurrenciaModulo) -> int:
     return (
         db.query(func.count(Turno.id))

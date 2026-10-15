@@ -63,6 +63,21 @@ def _autenticar(usuario):
     app.dependency_overrides[obtener_usuario_actual] = lambda: usuario
 
 
+def _agregar_ocurrencia(db, datos, profesional, inicio, *, estado="activa"):
+    ocurrencia = OcurrenciaModulo(
+        consultorio_id=datos["consultorio"].id,
+        sala_id=datos["sala"].id,
+        profesional_id=profesional.id,
+        fecha_inicio=inicio,
+        fecha_fin=inicio + timedelta(hours=4),
+        estado=estado,
+        origen="extraordinaria",
+    )
+    db.add(ocurrencia)
+    db.flush()
+    return ocurrencia
+
+
 def _proxima_fecha(dia: int, *, dias_minimos: int = 1) -> date:
     hoy = ahora_utc().astimezone(ZoneInfo("America/Argentina/Buenos_Aires")).date()
     fecha = hoy + timedelta(days=dias_minimos)
@@ -286,3 +301,79 @@ def test_conversion_dst_salta_hora_inexistente_y_elige_primer_fold():
     assert _instante_local_utc(date(2027, 3, 14), time(2, 30), zona) is None
     primer_fold = _instante_local_utc(date(2027, 11, 7), time(1, 30), zona)
     assert primer_fold == datetime(2027, 11, 7, 5, 30, tzinfo=UTC)
+
+
+def test_profesional_consulta_solo_sus_modulos_activos_en_estados_preparatorio_y_activo(client, consultorio_modulos):
+    data = consultorio_modulos
+    inicio = ahora_utc() + timedelta(days=8)
+    db = SessionTest()
+    _agregar_ocurrencia(db, data, data["pro_a"], inicio)
+    ajeno = _agregar_ocurrencia(db, data, data["pro_a"], inicio + timedelta(hours=5))
+    propio_activo = _agregar_ocurrencia(db, data, data["pro_b"], inicio + timedelta(hours=10))
+    suspendido = _agregar_ocurrencia(db, data, data["pro_b"], inicio + timedelta(hours=15), estado="suspendida")
+    inicio_ajeno = desde_base_utc(ajeno.fecha_inicio)
+    inicio_propio_activo = desde_base_utc(propio_activo.fecha_inicio)
+    suspendido_id = suspendido.id
+    db.commit()
+    total_antes = db.query(OcurrenciaModulo).count()
+    db.close()
+
+    _autenticar(data["titular"])
+    titular = client.get("/profesionales/me/consultorio/modulos")
+    assert titular.status_code == 200, titular.text
+    assert len(titular.json()) == 2
+    assert all(set(row) == {"sala_id", "sala_nombre", "fecha_inicio", "fecha_fin", "estado"} for row in titular.json())
+    assert all(row["sala_nombre"] == "Sala piloto" and row["estado"] == "activa" for row in titular.json())
+    assert all(not {"profesional_id", "profesional_nombre", "paciente_id", "turno_id", "historia_clinica", "regla_id", "consultorio_id"} & row.keys() for row in titular.json())
+
+    _autenticar(data["miembro"])
+    miembro = client.get("/profesionales/me/consultorio/modulos")
+    assert miembro.status_code == 200, miembro.text
+    assert len(miembro.json()) == 1
+    inicio_respuesta = datetime.fromisoformat(miembro.json()[0]["fecha_inicio"]).replace(tzinfo=UTC)
+    assert inicio_respuesta == inicio_propio_activo
+    assert inicio_respuesta != inicio_ajeno
+    assert all(row["estado"] == "activa" for row in miembro.json())
+    db = SessionTest()
+    assert db.query(OcurrenciaModulo).count() == total_antes  # GET did not materialize or modify rows.
+    assert db.get(OcurrenciaModulo, suspendido_id).estado == "suspendida"
+    db.close()
+
+
+def test_endpoint_profesional_requiere_autenticacion_y_rol_profesional(client, consultorio_modulos):
+    app.dependency_overrides.pop(obtener_usuario_actual, None)
+    assert client.get("/profesionales/me/consultorio/modulos").status_code == 401
+
+    db = SessionTest()
+    usuario_paciente = Usuario(nombre="Paciente", email="paciente-modulos@test.invalid", password_hash="fixture", rol="paciente")
+    db.add(usuario_paciente)
+    db.commit()
+    db.refresh(usuario_paciente)
+    _autenticar(usuario_paciente)
+    respuesta = client.get("/profesionales/me/consultorio/modulos")
+    assert respuesta.status_code == 403
+    assert "módulos" not in respuesta.text.lower()
+    db.close()
+
+
+def test_profesional_no_accede_a_rutas_administrativas_ni_puede_mutar_sus_modulos(client, consultorio_modulos):
+    data = consultorio_modulos
+    _autenticar(data["miembro"])
+    consultorio_id = data["consultorio"].id
+    ahora = ahora_utc()
+    inicio = (ahora + timedelta(days=10)).replace(minute=0, second=0, microsecond=0)
+    payload_regla = {"sala_id": data["sala"].id, "profesional_id": data["pro_b"].id, "dia_semana": inicio.weekday(), "hora_inicio": "10:00:00", "vigente_desde": inicio.date().isoformat()}
+    payload_extra = {"sala_id": data["sala"].id, "profesional_id": data["pro_b"].id, "fecha_inicio": inicio.isoformat(), "fecha_fin": (inicio + timedelta(hours=4)).isoformat()}
+
+    assert client.get(f"/consultorios/{consultorio_id}/modulos").status_code == 404
+    assert client.post(f"/consultorios/{consultorio_id}/reglas-modulo", json=payload_regla).status_code == 404
+    assert client.patch(f"/consultorios/{consultorio_id}/reglas-modulo/999", json={"vigente_desde": inicio.date().isoformat(), "hora_inicio": "11:00:00"}).status_code == 404
+    assert client.post(f"/consultorios/{consultorio_id}/modulos-extraordinarios", json=payload_extra).status_code == 404
+    assert client.patch(f"/consultorios/{consultorio_id}/modulos/999", json={"fecha_inicio": (inicio + timedelta(hours=1)).isoformat()}).status_code == 404
+    assert client.post(f"/consultorios/{consultorio_id}/modulos/999/suspender").status_code == 404
+    assert client.post("/profesionales/me/consultorio/modulos").status_code == 405
+
+    db = SessionTest()
+    assert db.query(ReglaRecurrenciaModulo).count() == 0
+    assert db.query(OcurrenciaModulo).count() == 0
+    db.close()

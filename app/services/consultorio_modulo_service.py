@@ -20,6 +20,7 @@ from app.schemas.consultorio_modulo import (
     ReglaModuloCrear,
 )
 from app.models.usuario import Usuario
+from app.services.profesional_service import obtener_mi_profesional
 
 
 MENSAJE_SOLAPAMIENTO_SALA = "El horario de la sala ya no está disponible."
@@ -389,6 +390,16 @@ def listar_modulos(db: Session, usuario: Usuario, consultorio_id: int, desde: da
         raise HTTPException(status_code=422, detail="El final debe ser posterior al inicio.")
     _commit(db)
     return repository.listar_ocurrencias(db, consultorio_id, inicio, fin)
+
+
+def listar_mis_modulos(db: Session, usuario: Usuario) -> list[OcurrenciaModulo]:
+    """Read-only list; deliberately does not extend/materialize the recurrence horizon."""
+    if usuario.rol != "profesional":
+        raise HTTPException(status_code=403, detail="El usuario autenticado no es un profesional.")
+    profesional = obtener_mi_profesional(db, usuario.id)
+    if not profesional.activo:
+        raise HTTPException(status_code=400, detail="El profesional está inactivo.")
+    return repository.listar_mis_ocurrencias_activas(db, usuario.id, ahora_utc())
 
 
 def validar_turno_en_modulo(db: Session, profesional_id: int, inicio: datetime, fin: datetime) -> None:

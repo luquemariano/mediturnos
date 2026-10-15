@@ -1,6 +1,6 @@
 # Entrega 03 — Módulos recurrentes y exclusión de sala
 
-Estado: **IMPLEMENTADO EN RAMA — validación y PR en curso**
+Estado: **IMPLEMENTADO EN PR — complemento de revisión con CI en curso**
 Depende de: Entrega 02, mergeada en `main` como `f667cc1`.
 Alcance: motor de módulos semanales, ocurrencias materializadas y protección de la sala compartida. No habilita invitaciones ni cambios productivos.
 
@@ -64,12 +64,13 @@ Mantener `router → service → repository`.
 2. **Completado:** expansión idempotente desde la fecha local hasta 90 días; GET administrativo y reserva/reprogramación extienden el horizonte transaccionalmente. Los generadores concurrentes serializan por fila de regla; `(regla_id, fecha_origen)` es la clave idempotente.
 3. **Completado:** cambios de ocurrencia/regla con turnos activos devuelven HTTP 409 con sólo `turnos_afectados`, registran auditoría sin referencias clínicas y no alteran la ocurrencia/regla. No se modifican automáticamente turnos.
 4. **Completado:** alta común, reserva pública y reprogramación validan ocurrencia activa, profesional, límites completos y disponibilidad propia. Profesionales no vinculados siguen el flujo previo.
+5. **Completado en actualización de revisión:** `GET /profesionales/me/consultorio/modulos` lista en modo sólo lectura las ocurrencias activas futuras/vigentes del perfil profesional autenticado y sus asociaciones `preparatorio`/`activo`. Devuelve sala, intervalo y estado; no acepta IDs de profesional/consultorio ni incluye identidades profesionales, pacientes o campos clínicos. No extiende el horizonte ni materializa ocurrencias.
 
 ### 03D — Gate
 
-1. **Local aprobado:** pytest completo `893 passed, 33 skipped, 9 warnings`; Vitest `407 passed`; lint/build aprobados; Playwright `8 passed`; suite PostgreSQL CI `30 passed`; `git diff --check` limpio. Se registran avisos/deprecaciones preexistentes.
-2. **Completado:** revisión de IDs ajenos, ownership administrativo, serialización de sala/regla/ocurrencia, exclusión GiST, conteos agregados y ausencia de consultas/devoluciones clínicas administrativas.
-3. **En curso:** documentación, commit, push, PR y espera de CI.
+1. **Local aprobado para el complemento:** pytest completo `896 passed, 34 skipped, 9 warnings`; Vitest `407 passed`; lint/build aprobados mediante `verify.ps1 -Full`; Playwright E2E `8 passed`; suite PostgreSQL 17 equivalente a CI `31 passed, 1 warning`; prueba del módulo focal `13 passed`; `git diff --check` limpio. Una ejecución Vitest concurrente con pytest tuvo un timeout de 5 s en un test de agenda preexistente; pasó aislado y la repetición completa secuencial pasó `407/407`.
+2. **Completado:** revisión de IDs ajenos, ownership administrativo, serialización de sala/regla/ocurrencia, exclusión GiST, conteos agregados y ausencia de consultas/devoluciones clínicas administrativas. El endpoint profesional se filtra en repositorio por cuenta autenticada, vínculo y estados autorizados; sus pruebas niegan datos ajenos y mutaciones administrativas.
+3. **En curso:** complemento comprometido y enviado al PR existente; esperando los checks actualizados de CI.
 4. **Respetado:** sin merge, despliegue, migración productiva, datos reales, emails ni cambios de agenda de miembros múltiples.
 
 ## Pruebas requeridas

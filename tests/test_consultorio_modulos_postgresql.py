@@ -8,7 +8,7 @@ from uuid import uuid4
 
 import pytest
 from fastapi import HTTPException
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.exc import IntegrityError, OperationalError
 from sqlalchemy.orm import sessionmaker
 
@@ -21,6 +21,7 @@ from app.models.regla_recurrencia_modulo import ReglaRecurrenciaModulo
 from app.models.profesional import Profesional
 from app.models.sala import Sala
 from app.models.usuario import Usuario
+from app.repositories.consultorio_modulo_repository import listar_mis_ocurrencias_activas
 from app.schemas.consultorio_modulo import ReglaModuloCrear
 from app.services.consultorio_modulo_service import _crear_ocurrencias_regla, crear_regla
 
@@ -181,5 +182,39 @@ def test_dos_generadores_concurrentes_materializan_una_vez_por_fecha_civil():
         assert sum(results) == count
         assert count >= 4
     finally:
+        _limpiar(engine, ids)
+        engine.dispose()
+
+
+def test_consulta_postgresql_filtra_modulos_por_cuenta_y_vinculo():
+    engine, Sessions, key, ids = _escenario()
+    user_a_id, professional_a_id, clinic_id, room_id, *_ = ids
+    user_b_id = professional_b_id = account_b_id = None
+    try:
+        with Sessions() as db:
+            account_b = Cuenta(nombre=f"Individual B {key}", tipo="individual")
+            user_b = Usuario(nombre="Profesional B", email=f"profesional-b-{key}@consultorio.test", password_hash="test-only", rol="profesional")
+            db.add_all([account_b, user_b]); db.flush()
+            professional_b = Profesional(usuario_id=user_b.id, cuenta_id=account_b.id, nombre="Profesional", apellido="B", matricula=f"PGB-{key[:10]}")
+            db.add(professional_b); db.flush()
+            db.add(ConsultorioProfesional(consultorio_id=clinic_id, profesional_id=professional_b.id, estado="preparatorio"))
+            inicio = datetime.now(UTC) + timedelta(days=12)
+            a = OcurrenciaModulo(consultorio_id=clinic_id, sala_id=room_id, profesional_id=professional_a_id, fecha_inicio=inicio, fecha_fin=inicio + timedelta(hours=4), estado="activa", origen="extraordinaria")
+            b = OcurrenciaModulo(consultorio_id=clinic_id, sala_id=room_id, profesional_id=professional_b.id, fecha_inicio=inicio + timedelta(hours=5), fecha_fin=inicio + timedelta(hours=9), estado="activa", origen="extraordinaria")
+            b_suspendida = OcurrenciaModulo(consultorio_id=clinic_id, sala_id=room_id, profesional_id=professional_b.id, fecha_inicio=inicio + timedelta(hours=10), fecha_fin=inicio + timedelta(hours=14), estado="suspendida", origen="extraordinaria")
+            db.add_all([a, b, b_suspendida]); db.commit()
+            user_b_id, professional_b_id, account_b_id = user_b.id, professional_b.id, account_b.id
+            resultados_a = listar_mis_ocurrencias_activas(db, user_a_id, datetime.now(UTC))
+            resultados_b = listar_mis_ocurrencias_activas(db, user_b_id, datetime.now(UTC))
+            assert [item.profesional_id for item in resultados_a] == [professional_a_id]
+            assert [item.profesional_id for item in resultados_b] == [professional_b_id]
+            assert [item.estado for item in resultados_b] == ["activa"]
+    finally:
+        with engine.begin() as connection:
+            connection.execute(text("DELETE FROM consultorio_ocurrencias_modulo WHERE consultorio_id=:id"), {"id": clinic_id})
+            connection.execute(text("DELETE FROM consultorio_profesionales WHERE profesional_id=:id"), {"id": professional_b_id}) if professional_b_id else None
+            connection.execute(text("DELETE FROM profesionales WHERE id=:id"), {"id": professional_b_id}) if professional_b_id else None
+            connection.execute(text("DELETE FROM usuarios WHERE id=:id"), {"id": user_b_id}) if user_b_id else None
+            connection.execute(text("DELETE FROM cuentas WHERE id=:id"), {"id": account_b_id}) if account_b_id else None
         _limpiar(engine, ids)
         engine.dispose()

@@ -39,6 +39,7 @@ La autorización se aplica mediante dependencias FastAPI y comprobaciones en rou
 - Alta y reprogramación comparten la verificación de módulo para profesionales vinculados. La reserva bloquea la ocurrencia validada; suspensión/cambio bloquean esa misma fila antes del conteo y no cancelan ni reprograman turnos automáticamente.
 - Si un cambio afecta turnos `reservado`/`confirmado`, la operación se rechaza y sólo revela un conteo agregado; la auditoría no guarda IDs de turnos ni pacientes. La revisión de tests cubre negativas HTTP y concurrencia PostgreSQL con datos sintéticos.
 - La expansión del horizonte ocurre al consultar módulos o al reservar/reprogramar. No existe worker de materialización; la reserva extiende el horizonte transaccionalmente antes de validar.
+- `/profesionales/me/consultorio/modulos` deriva la identidad desde el JWT y el perfil profesional asociado; el repositorio vuelve a filtrar por `usuario_id`, vínculo `preparatorio`/`activo`, consultorio/sala activos y ocurrencia activa, sin aceptar IDs de pertenencia enviados por el cliente. Respuesta allowlist: sala, inicio, fin y estado; la ruta no escribe ni expande recurrencias. Los profesionales no autorizados a administrar reciben 404 en endpoints del consultorio y el endpoint profesional no define verbos de mutación.
 
 ## Endpoints y tokens públicos
 
