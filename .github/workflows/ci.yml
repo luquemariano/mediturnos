@@ -120,6 +120,7 @@ jobs:
             tests/test_clinical_ownership_postgresql.py \
             tests/test_clinical_ownership_migration_postgresql.py \
             tests/test_consultorio_postgresql.py \
+            tests/test_consultorio_modulos_postgresql.py \
             tests/test_consultorio_migration_postgresql.py \
             -ra --junitxml=postgresql-test-results.xml
           pytest_status=$?
@@ -135,6 +136,7 @@ jobs:
               "tests/test_clinical_ownership_postgresql.py",
               "tests/test_clinical_ownership_migration_postgresql.py",
               "tests/test_consultorio_postgresql.py",
+              "tests/test_consultorio_modulos_postgresql.py",
               "tests/test_consultorio_migration_postgresql.py",
           }
           root = ET.parse("postgresql-test-results.xml").getroot()

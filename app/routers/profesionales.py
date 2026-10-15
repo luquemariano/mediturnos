@@ -40,6 +40,7 @@ from app.schemas.disponibilidad_excepcion import (
     DisponibilidadExcepcionRangoReabiertoRespuesta,
     FeriadoCrear,
 )
+from app.schemas.consultorio_modulo import MiModuloConsultorioRespuesta
 from app.services.paciente_service import (obtener_pacientes_profesional,
     crear_paciente_profesional, actualizar_paciente_profesional,
     desactivar_paciente_profesional, obtener_turnos_paciente_profesional)
@@ -64,6 +65,7 @@ from app.services.turno_service import (
     obtener_agenda_de_profesional,
     reprogramar_turno_profesional,
 )
+from app.services.consultorio_modulo_service import listar_mis_modulos
 from app.services.disponibilidad_service import (
     actualizar_disponibilidad_profesional,
     crear_disponibilidad,
@@ -86,6 +88,14 @@ router = APIRouter(
     prefix="/profesionales",
     tags=["Profesionales"],
 )
+
+
+@router.get("/me/consultorio/modulos", response_model=list[MiModuloConsultorioRespuesta])
+def listar_mis_modulos_de_consultorio(
+    db: Session = Depends(obtener_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual),
+):
+    return listar_mis_modulos(db, usuario_actual)
 
 @router.get("/me/reserva-online", response_model=ReservaOnlineRespuesta)
 def obtener_reserva_online(db: Session = Depends(obtener_db), usuario_actual: Usuario = Depends(obtener_usuario_actual)):

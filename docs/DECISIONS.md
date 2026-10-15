@@ -137,3 +137,9 @@ precio ni oferta estructurada sin datos verificables.
 Tipo: diseño de seguridad implementado en la rama `codex/consultorio-02-foundation`; pendiente de revisión e integración.
 
 `ConsultorioAdministrador` concede administración sólo del dominio de espacios del Consultorio y no deriva permisos desde `CuentaUsuario`, del rol de propietaria ni de `ConsultorioProfesional`. La relación profesional-consultorio conserva el `Profesional.cuenta_id` individual. No crea permisos clínicos compartidos ni rutas de alta/invitación de integrantes. La migración es aditiva; su downgrade se rehúsa mientras haya configuración de Consultorio persistida para evitar pérdida silenciosa.
+
+## DEC-016 — Recurrencias de módulos y reserva exclusiva de sala
+
+Tipo: decisión funcional aprobada e implementada en la rama de Entrega 03; pendiente de revisión/integración.
+
+Una regla semanal define hora civil en la zona IANA del consultorio y una versión efectiva desde fecha futura. La expansión genera ocurrencias idempotentes en horizonte móvil de 90 días; la consulta administrativa o una reserva extiende el horizonte en su propia transacción. PostgreSQL es la autoridad final para excluir intervalos activos superpuestos por sala con rango `[inicio, fin)` y mantener adyacencias válidas. Las reglas concurrentes se serializan bloqueando la sala; la generación se serializa por regla y fecha civil es clave única. El cambio de profesional o sala desde una fecha crea una serie nueva y preserva la anterior. Cambios/suspensiones con turnos reservados/confirmados se bloquean con conteo agregado, sin datos de paciente ni cambios automáticos. Alta/reprogramación de turnos vinculados deben caber íntegramente en módulo vigente y disponibilidad propia; el profesional sin vínculo conserva el flujo individual.

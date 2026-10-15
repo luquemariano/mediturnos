@@ -27,7 +27,8 @@ Este documento combina estado del repositorio con evidencia operativa validada d
 | Backups PostgreSQL | VERIFICADO EN PRODUCCIÓN | Dump manual, SHA256 y programación diaria validados |
 | R2 | DECLARADO EN CONFIGURACIÓN | Producción actual mantiene `OBJECT_STORAGE_PROVIDER=fake`; no hay uso productivo real validado |
 | E2E / Playwright | IMPLEMENTADO EN CÓDIGO | Suite y CI existentes |
-| Consultorio (fundación) | EN REVISIÓN | PR #88 abierto; el commit inicial `5a9bd25` pasó Backend, PostgreSQL, Frontend y Playwright CI. No integrado ni desplegado. No hay módulos, invitaciones, membresías operativas ni agenda compartida. No se modifican cuentas profesionales existentes. |
+| Consultorio (fundación) | INTEGRADO EN `main` | Entrega 02 mergeada como `f667cc1` (PR #88). Añade consultorio, salas y autorización administrativa; no opera membresías múltiples. |
+| Consultorio (módulos) | EN IMPLEMENTACIÓN, NO DESPLEGADO | Entrega 03 en `codex/consultorio-03-modulos-recurrentes`: reglas semanales, ocurrencias a 90 días, excepciones, validación de turnos y consulta profesional autenticada de sólo lectura con aislamiento por cuenta. Sin invitaciones, miembros activados, agenda consolidada ni cobros. |
 
 ## Infraestructura productiva
 

@@ -92,6 +92,7 @@ def preparar_reprogramacion(monkeypatch, actual):
     monkeypatch.setattr(turno_service, "buscar_turno_de_profesional", lambda *args: actual)
     monkeypatch.setattr(turno_service, "bloquear_agenda_profesional", lambda *args: None)
     monkeypatch.setattr(turno_service, "validar_turno_dentro_disponibilidad", lambda *args: None)
+    monkeypatch.setattr(turno_service, "validar_turno_en_modulo", lambda *args: None)
     monkeypatch.setattr(turno_service, "buscar_conflicto_horario", lambda *args, **kwargs: None)
 
 

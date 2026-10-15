@@ -31,6 +31,16 @@ La autorización se aplica mediante dependencias FastAPI y comprobaciones en rou
 - No hay acceso clínico compartido por pertenecer a un mismo consultorio. Las pruebas negativas HTTP usan IDs conocidos para verificar perfiles, evoluciones, documentos y solicitudes de estudios; también comprueban que el rol profesional no obtiene la lista general de pacientes ni la agenda administrativa.
 - No hay rutas para invitar, activar integrantes o ampliar la relación profesional; tampoco para editar agendas ajenas.
 
+### Consultorio (módulos en rama de Entrega 03)
+
+- Cada mutación/respuesta administrativa resuelve `ConsultorioAdministrador` por usuario autenticado; IDs de consultorio, sala, regla u ocurrencia no autorizan acceso y los recursos ajenos responden 404.
+- Las ocurrencias administrativas sólo devuelven sala, intervalo, estado y profesional asignado. No incluyen turno, paciente, prestación ni metadatos clínicos.
+- Reglas de sala se serializan bloqueando la fila de sala; expansión recurrente serializa por fila de regla y clave única regla/fecha. La exclusión GiST PostgreSQL `[)` protege los intervalos activos ante carreras y conserva adyacencia válida.
+- Alta y reprogramación comparten la verificación de módulo para profesionales vinculados. La reserva bloquea la ocurrencia validada; suspensión/cambio bloquean esa misma fila antes del conteo y no cancelan ni reprograman turnos automáticamente.
+- Si un cambio afecta turnos `reservado`/`confirmado`, la operación se rechaza y sólo revela un conteo agregado; la auditoría no guarda IDs de turnos ni pacientes. La revisión de tests cubre negativas HTTP y concurrencia PostgreSQL con datos sintéticos.
+- La expansión del horizonte ocurre al consultar módulos o al reservar/reprogramar. No existe worker de materialización; la reserva extiende el horizonte transaccionalmente antes de validar.
+- `/profesionales/me/consultorio/modulos` deriva la identidad desde el JWT y el perfil profesional asociado; el repositorio vuelve a filtrar por `usuario_id`, vínculo `preparatorio`/`activo`, consultorio/sala activos y ocurrencia activa, sin aceptar IDs de pertenencia enviados por el cliente. Respuesta allowlist: sala, inicio, fin y estado; la ruta no escribe ni expande recurrencias. Los profesionales no autorizados a administrar reciben 404 en endpoints del consultorio y el endpoint profesional no define verbos de mutación.
+
 ## Endpoints y tokens públicos
 
 Health checks, login, registro, recuperación, webhooks de Mercado Pago, acciones de confirmar/cancelar turnos y carga pública de estudios pueden ser públicos o no requerir sesión convencional. Usan validaciones propias: los tokens públicos no sustituyen autorización autenticada y los webhooks deben validar firma y referencias.

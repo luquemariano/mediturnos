@@ -26,6 +26,10 @@ from app.models import (  # noqa: F401
     Sala,
     ConsultorioAdministrador,
     ConsultorioProfesional,
+    SerieModulo,
+    ReglaRecurrenciaModulo,
+    OcurrenciaModulo,
+    SolicitudCambioModulo,
 )
 
 # this is the Alembic Config object, which provides
