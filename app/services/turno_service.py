@@ -33,6 +33,7 @@ from app.services.disponibilidad_service import (
     validar_turno_dentro_disponibilidad,
 )
 from app.services.paciente_service import paciente_pertenece_a_profesional
+from app.services.consultorio_modulo_service import validar_turno_en_modulo
 
 logger = logging.getLogger("mediturnos.turnos")
 
@@ -240,6 +241,13 @@ def crear_turno(
         prestacion.duracion_minutos,
     )
 
+    validar_turno_en_modulo(
+        db,
+        prestacion.profesional_id,
+        datos.fecha_hora,
+        datos.fecha_hora + timedelta(minutes=prestacion.duracion_minutos),
+    )
+
     conflicto = buscar_conflicto_horario(
         db,
         prestacion.profesional_id,
@@ -403,6 +411,13 @@ def reprogramar_turno(
         turno.profesional_id,
         datos.fecha_hora,
         turno.prestacion.duracion_minutos,
+    )
+
+    validar_turno_en_modulo(
+        db,
+        turno.profesional_id,
+        datos.fecha_hora,
+        datos.fecha_hora + timedelta(minutes=turno.prestacion.duracion_minutos),
     )
 
     conflicto = buscar_conflicto_horario(

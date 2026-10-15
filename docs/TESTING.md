@@ -54,8 +54,10 @@ La cobertura no es uniforme entre módulos. Consultar `frontend/tests/` para el 
 GitHub Actions incluye un job separado llamado `PostgreSQL CI`.
 Usa `postgres:17-alpine` como service container efímero, ejecuta Alembic sobre
 una base PostgreSQL vacía y después valida secuencialmente los módulos de
-concurrencia de turnos, recordatorios, acciones de turnos, ownership clínico
-y fundación de Consultorio. El módulo de Consultorio comprueba además la cadena
+concurrencia de turnos, recordatorios, acciones de turnos, ownership clínico,
+fundación de Consultorio y módulos recurrentes. Los módulos comprueban exclusión
+GiST concurrente, idempotencia del generador y adyacencia en PostgreSQL. El módulo
+de migración comprueba además la cadena
 Alembic en una base desechable creada desde cero y carreras concurrentes de
 unicidad. El job genera
 `postgresql-test-results.xml` y falla si alguno de esos módulos queda

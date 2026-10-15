@@ -33,6 +33,7 @@ def preparar(monkeypatch, *, profesional_id=10, profesional_activo=True,
     monkeypatch.setattr(turno_service, "buscar_paciente_por_id", lambda db, paciente_id: paciente)
     monkeypatch.setattr(turno_service, "paciente_pertenece_a_profesional", lambda db, profesional_id, paciente_id: True)
     monkeypatch.setattr(turno_service, "buscar_prestacion_por_id", lambda db, prestacion_id: prestacion)
+    monkeypatch.setattr(turno_service, "validar_turno_en_modulo", lambda *args: None)
     return paciente, prestacion
 
 

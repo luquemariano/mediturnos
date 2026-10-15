@@ -37,10 +37,17 @@ def test_migracion_completa_crea_fronteras_y_restricciones_en_base_vacia():
         assert result.returncode == 0, f"La cadena Alembic falló en base vacía: {result.stderr[-2000:]}"
 
         inspector = inspect(engine)
-        assert {"consultorios", "consultorio_salas", "consultorio_administradores", "consultorio_profesionales"}.issubset(set(inspector.get_table_names()))
+        assert {
+            "consultorios", "consultorio_salas", "consultorio_administradores", "consultorio_profesionales",
+            "consultorio_series_modulo", "consultorio_reglas_modulo", "consultorio_ocurrencias_modulo",
+            "consultorio_solicitudes_cambio_modulo",
+        }.issubset(set(inspector.get_table_names()))
         assert "uq_consultorio_salas_codigo" in {item["name"] for item in inspector.get_unique_constraints("consultorio_salas")}
         assert "uq_consultorio_profesionales_par" in {item["name"] for item in inspector.get_unique_constraints("consultorio_profesionales")}
         assert "uq_consultorio_administradores_propietaria" in {item["name"] for item in inspector.get_indexes("consultorio_administradores")}
+        with engine.connect() as connection:
+            assert connection.execute(text("SELECT 1 FROM pg_extension WHERE extname='btree_gist'")).scalar_one_or_none() == 1
+            assert connection.execute(text("SELECT 1 FROM pg_constraint WHERE conname='ex_consultorio_sala_intervalo_activo'")).scalar_one_or_none() == 1
 
         with engine.begin() as connection:
             individual_id = connection.execute(text(
@@ -61,18 +68,40 @@ def test_migracion_completa_crea_fronteras_y_restricciones_en_base_vacia():
             connection.execute(text(
                 "INSERT INTO consultorio_administradores (consultorio_id, usuario_id, rol, creado_en) VALUES (:clinic, :uid, 'propietaria', now())"
             ), {"clinic": clinic_id, "uid": user_id})
-            connection.execute(text(
-                "INSERT INTO consultorio_salas (consultorio_id, nombre, codigo, estado) VALUES (:clinic, 'Sala sintética', 'A', 'activa')"
-            ), {"clinic": clinic_id})
+            room_id = connection.execute(text(
+                "INSERT INTO consultorio_salas (consultorio_id, nombre, codigo, estado) VALUES (:clinic, 'Sala sintética', 'A', 'activa') RETURNING id"
+            ), {"clinic": clinic_id}).scalar_one()
             connection.execute(text(
                 "INSERT INTO consultorio_profesionales (consultorio_id, profesional_id, estado, fecha_alta) VALUES (:clinic, :pid, 'preparatorio', now())"
             ), {"clinic": clinic_id, "pid": professional_id})
+            series_id = connection.execute(text(
+                "INSERT INTO consultorio_series_modulo (consultorio_id, sala_id, profesional_id, creado_por_usuario_id, creado_en) VALUES (:clinic, :room, :pid, :uid, now()) RETURNING id"
+            ), {"clinic": clinic_id, "room": room_id, "pid": professional_id, "uid": user_id}).scalar_one()
             assert connection.execute(text("SELECT cuenta_id FROM profesionales WHERE id = :id"), {"id": professional_id}).scalar_one() == individual_id
         with pytest.raises(IntegrityError):
             with engine.begin() as connection:
                 connection.execute(text(
                     "INSERT INTO consultorio_salas (consultorio_id, nombre, codigo, estado) VALUES (:clinic, 'Duplicada', 'A', 'activa')"
                 ), {"clinic": clinic_id})
+        result = subprocess.run(
+            [sys.executable, "-m", "alembic", "downgrade", "y4z5a6b7c8d9"],
+            env=environment,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        assert result.returncode != 0
+        assert "módulos con reglas u ocurrencias persistidas" in result.stderr
+        with engine.begin() as connection:
+            connection.execute(text("DELETE FROM consultorio_series_modulo WHERE id=:id"), {"id": series_id})
+        result = subprocess.run(
+            [sys.executable, "-m", "alembic", "downgrade", "y4z5a6b7c8d9"],
+            env=environment,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        assert result.returncode == 0, result.stderr[-2000:]
         result = subprocess.run(
             [sys.executable, "-m", "alembic", "downgrade", "x3y4z5a6b7c8"],
             env=environment,

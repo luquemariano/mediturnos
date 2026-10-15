@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends
+from datetime import datetime
 from sqlalchemy.orm import Session
 
 from app.core.dependencies import obtener_usuario_actual
@@ -12,7 +13,16 @@ from app.schemas.consultorio import (
     SalaCrear,
     SalaRespuesta,
 )
+from app.schemas.consultorio_modulo import (
+    ModuloExtraordinarioCrear,
+    ModuloOcurrenciaActualizar,
+    ModuloOcurrenciaRespuesta,
+    ReglaModuloActualizacion,
+    ReglaModuloCrear,
+    ReglaModuloRespuesta,
+)
 from app.services import consultorio_service
+from app.services import consultorio_modulo_service
 
 router = APIRouter(prefix="/consultorios", tags=["Consultorios"])
 
@@ -80,3 +90,66 @@ def actualizar_sala(
     usuario: Usuario = Depends(obtener_usuario_actual),
 ):
     return consultorio_service.actualizar_sala(db, usuario, consultorio_id, sala_id, datos)
+
+
+@router.post("/{consultorio_id}/reglas-modulo", response_model=ReglaModuloRespuesta, status_code=201)
+def crear_regla_modulo(
+    consultorio_id: int,
+    datos: ReglaModuloCrear,
+    db: Session = Depends(obtener_db),
+    usuario: Usuario = Depends(obtener_usuario_actual),
+):
+    return consultorio_modulo_service.crear_regla(db, usuario, consultorio_id, datos)
+
+
+@router.patch("/{consultorio_id}/reglas-modulo/{regla_id}", response_model=ReglaModuloRespuesta)
+def actualizar_regla_modulo(
+    consultorio_id: int,
+    regla_id: int,
+    datos: ReglaModuloActualizacion,
+    db: Session = Depends(obtener_db),
+    usuario: Usuario = Depends(obtener_usuario_actual),
+):
+    return consultorio_modulo_service.actualizar_regla_desde_fecha(db, usuario, consultorio_id, regla_id, datos)
+
+
+@router.get("/{consultorio_id}/modulos", response_model=list[ModuloOcurrenciaRespuesta])
+def listar_modulos(
+    consultorio_id: int,
+    desde: datetime | None = None,
+    hasta: datetime | None = None,
+    db: Session = Depends(obtener_db),
+    usuario: Usuario = Depends(obtener_usuario_actual),
+):
+    return consultorio_modulo_service.listar_modulos(db, usuario, consultorio_id, desde, hasta)
+
+
+@router.post("/{consultorio_id}/modulos-extraordinarios", response_model=ModuloOcurrenciaRespuesta, status_code=201)
+def crear_modulo_extraordinario(
+    consultorio_id: int,
+    datos: ModuloExtraordinarioCrear,
+    db: Session = Depends(obtener_db),
+    usuario: Usuario = Depends(obtener_usuario_actual),
+):
+    return consultorio_modulo_service.crear_modulo_extraordinario(db, usuario, consultorio_id, datos)
+
+
+@router.patch("/{consultorio_id}/modulos/{ocurrencia_id}", response_model=ModuloOcurrenciaRespuesta)
+def actualizar_modulo(
+    consultorio_id: int,
+    ocurrencia_id: int,
+    datos: ModuloOcurrenciaActualizar,
+    db: Session = Depends(obtener_db),
+    usuario: Usuario = Depends(obtener_usuario_actual),
+):
+    return consultorio_modulo_service.actualizar_ocurrencia(db, usuario, consultorio_id, ocurrencia_id, datos)
+
+
+@router.post("/{consultorio_id}/modulos/{ocurrencia_id}/suspender")
+def suspender_modulo(
+    consultorio_id: int,
+    ocurrencia_id: int,
+    db: Session = Depends(obtener_db),
+    usuario: Usuario = Depends(obtener_usuario_actual),
+):
+    return consultorio_modulo_service.suspender_ocurrencia(db, usuario, consultorio_id, ocurrencia_id)
