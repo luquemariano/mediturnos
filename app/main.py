@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import Settings, settings
 from app.routers import pagos
+from app.routers.consultorios import router as consultorios_router
 from app.routers.auth import router as auth_router
 from app.routers.catalogo import router as catalogo_router
 from app.routers.onboarding import router as onboarding_router
@@ -90,6 +91,7 @@ def crear_app(configuracion: Settings = settings) -> FastAPI:
     app.include_router(catalogo_router)
     app.include_router(onboarding_router)
     app.include_router(cuentas_router)
+    app.include_router(consultorios_router)
     app.include_router(admin_cuentas_router)
     app.include_router(suscripciones_router)
     app.include_router(suscripciones_webhook_router)

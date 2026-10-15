@@ -131,3 +131,9 @@ Las landings comerciales agregan SoftwareApplication; las breadcrumbs y
 FAQPage se limitan a rutas/contenido donde existen. Las respuestas FAQ
 reutilizan los datos de sus acordeones. No se agrega Product, rating, review,
 precio ni oferta estructurada sin datos verificables.
+
+## DEC-015 — Autorización administrativa separada para Consultorio
+
+Tipo: diseño de seguridad implementado en la rama `codex/consultorio-02-foundation`; pendiente de revisión e integración.
+
+`ConsultorioAdministrador` concede administración sólo del dominio de espacios del Consultorio y no deriva permisos desde `CuentaUsuario`, del rol de propietaria ni de `ConsultorioProfesional`. La relación profesional-consultorio conserva el `Profesional.cuenta_id` individual. No crea permisos clínicos compartidos ni rutas de alta/invitación de integrantes. La migración es aditiva; su downgrade se rehúsa mientras haya configuración de Consultorio persistida para evitar pérdida silenciosa.

@@ -1,6 +1,6 @@
 # Arquitectura de Turnelia
 
-Estado: **ACTUAL**, basado en el repositorio inspeccionado el 2026-08-22.
+Estado: **ACTUAL**, basado en el repositorio inspeccionado el 2026-10-14.
 
 ```text
 Browser → React + TypeScript + Axios + JWT
@@ -22,7 +22,9 @@ El JWT se conserva en `localStorage` como `access_token`; una respuesta `401` pr
 
 ## Datos y seguridad
 
-SQLAlchemy usa PostgreSQL con `psycopg`; PostgreSQL es el motor configurado/declarado para producción. PostgreSQL de producción: Aiven, según la configuración/historia operativa documentada. El estado operativo actual no fue verificado en esta fase. SQLite aparece principalmente en tests. Alembic mantiene el esquema y la cadena visible termina en `m3b4c5d6e7f8_create_notifications.py`. La API usa Bearer JWT y roles `administrador`, `recepcionista`, `profesional` y `paciente`, con ownership adicional.
+SQLAlchemy usa PostgreSQL con `psycopg`; PostgreSQL es el motor configurado/declarado para producción. PostgreSQL de producción: Aiven, según la configuración/historia operativa documentada. El estado operativo actual no fue verificado en esta fase. SQLite aparece principalmente en tests. Alembic mantiene el esquema; en esta rama la revisión actual es `y4z5a6b7c8d9_consultorio_foundation.py`. La API usa Bearer JWT y roles `administrador`, `recepcionista`, `profesional` y `paciente`, con ownership adicional.
+
+La fundación de Consultorio agrega `Consultorio`, `Sala`, `ConsultorioAdministrador` y `ConsultorioProfesional`. La API administrativa usa `router → service → repository` y autoriza cada consultorio mediante `ConsultorioAdministrador`; la pertenencia de una persona a una cuenta o a `ConsultorioProfesional` no concede administración. La administración de espacios no participa en las consultas clínicas existentes y no modifica `Profesional.cuenta_id` ni los vínculos clínicos. Esta entrega está en una rama de implementación y no está habilitada en producción. No incluye módulos, invitaciones utilizables, membresía múltiple operativa, agenda consolidada ni suscripción de consultorio.
 
 ## Integraciones y workers
 
@@ -40,3 +42,4 @@ SQLAlchemy usa PostgreSQL con `psycopg`; PostgreSQL es el motor configurado/decl
 - No hay router dedicado en frontend.
 - SQLite en tests no equivale automáticamente a PostgreSQL.
 - Disponibilidad real de servicios externos y producción: **NO DETERMINADA**.
+- La cuenta organizacional debe existir y tener propietaria verificada para crear un Consultorio; esta entrega no crea cuentas, membresías, invitaciones ni perfiles profesionales.

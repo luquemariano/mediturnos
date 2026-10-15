@@ -22,6 +22,10 @@ from app.models import (  # noqa: F401
     AppointmentReminder,
     EmailVerificationToken,
     UserActivityEvent,
+    Consultorio,
+    Sala,
+    ConsultorioAdministrador,
+    ConsultorioProfesional,
 )
 
 # this is the Alembic Config object, which provides

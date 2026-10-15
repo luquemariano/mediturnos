@@ -23,6 +23,14 @@ Estado: **ACTUAL**, basado en código, configuración, tests y documentación re
 
 La autorización se aplica mediante dependencias FastAPI y comprobaciones en routers/servicios. Los profesionales no deben asumir acceso global a pacientes o agendas. El acceso autenticado a documentos clínicos depende de roles y relaciones autorizadas.
 
+### Consultorio (fundación en rama; no desplegada)
+
+- El acceso administrativo se concede por `ConsultorioAdministrador`, independiente de roles globales y de `CuentaUsuario`.
+- La API resuelve la relación del usuario con el consultorio en cada petición; los IDs enviados por cliente no autorizan recursos. Los consultorios y salas ajenos responden 404.
+- `ConsultorioProfesional` no cambia la cuenta individual, el ownership profesional ni las rutas clínicas. La propietaria de un consultorio conserva únicamente el alcance clínico de su propio perfil profesional.
+- No hay acceso clínico compartido por pertenecer a un mismo consultorio. Las pruebas negativas HTTP usan IDs conocidos para verificar perfiles, evoluciones, documentos y solicitudes de estudios; también comprueban que el rol profesional no obtiene la lista general de pacientes ni la agenda administrativa.
+- No hay rutas para invitar, activar integrantes o ampliar la relación profesional; tampoco para editar agendas ajenas.
+
 ## Endpoints y tokens públicos
 
 Health checks, login, registro, recuperación, webhooks de Mercado Pago, acciones de confirmar/cancelar turnos y carga pública de estudios pueden ser públicos o no requerir sesión convencional. Usan validaciones propias: los tokens públicos no sustituyen autorización autenticada y los webhooks deben validar firma y referencias.
