@@ -56,6 +56,7 @@ class Settings(BaseSettings):
         "development",
         "demo",
         "test",
+        "staging",
         "production",
     ] = "development"
     database_url: str = "sqlite:///./mediturnos.db"
@@ -83,6 +84,12 @@ class Settings(BaseSettings):
     email_provider: Literal["in_memory", "resend"] = "in_memory"
     resend_api_key: SecretStr | None = None
     email_from: str | None = None
+    staging_email_send_enabled: bool = False
+    staging_email_allowlist: str = ""
+    staging_whatsapp_meta_enabled: bool = False
+    staging_whatsapp_meta_test_number_confirmed: bool = False
+    staging_whatsapp_phone_number_id_allowlist: str = ""
+    staging_whatsapp_business_account_id_allowlist: str = ""
     engagement_email_reply_to: str | None = None
     whatsapp_enabled: bool = False
     whatsapp_provider: Literal["fake", "meta"] = "fake"
@@ -268,6 +275,8 @@ class Settings(BaseSettings):
                 raise ValueError("R2_ENDPOINT debe ser una URL HTTP o HTTPS válida.") from error
 
         if self.app_env != "production":
+            if self.app_env == "staging":
+                self._validar_configuracion_staging()
             return self
 
         try:
@@ -353,6 +362,111 @@ class Settings(BaseSettings):
             )
 
         return self
+
+    def _validar_configuracion_staging(self) -> None:
+        try:
+            database = make_url(self.database_url)
+        except ArgumentError as error:
+            raise ValueError("En staging, DATABASE_URL debe apuntar a su PostgreSQL aislado.") from error
+        if (
+            database.get_backend_name() != "postgresql"
+            or database.drivername not in {"postgresql", "postgresql+psycopg"}
+            or database.host != "db"
+            or database.database != "turnelia_staging"
+        ):
+            raise ValueError(
+                "En staging, DATABASE_URL debe usar el servicio aislado db y la base turnelia_staging."
+            )
+        self.database_url = database.set(drivername="postgresql+psycopg").render_as_string(hide_password=False)
+
+        for nombre, valor, hosts in (
+            ("FRONTEND_URL", self.frontend_url, {"127.0.0.1", "localhost", "staging.turnelia.com.ar"}),
+            ("PUBLIC_API_URL", self.public_api_url, {"127.0.0.1", "localhost", "api.staging.turnelia.com.ar"}),
+        ):
+            url = adaptador_origen_http.validate_python(valor)
+            if url.host not in hosts:
+                raise ValueError(f"En staging, {nombre} debe usar localhost o el subdominio staging dedicado.")
+            if url.host.endswith("turnelia.com.ar") and url.scheme != "https":
+                raise ValueError(f"En staging, {nombre} público debe usar HTTPS.")
+
+        if any(
+            adaptador_origen_http.validate_python(origen).host
+            not in {"127.0.0.1", "localhost", "staging.turnelia.com.ar"}
+            for origen in self.cors_allowed_origins
+        ):
+            raise ValueError("En staging, CORS_ALLOWED_ORIGINS no puede incluir dominios ajenos al staging.")
+
+        if len(self.jwt_secret_key.strip()) < LONGITUD_MINIMA_JWT_PRODUCCION:
+            raise ValueError("En staging, JWT_SECRET_KEY debe tener al menos 32 caracteres aleatorios.")
+        for nombre, secreto in (
+            ("APPOINTMENT_ACTION_SECRET", self.appointment_action_secret),
+            ("STUDY_ACCESS_SECRET", self.study_access_secret),
+        ):
+            if secreto is None or len(secreto.get_secret_value().strip()) < 32:
+                raise ValueError(f"En staging, {nombre} debe tener al menos 32 caracteres aleatorios.")
+
+        if self.mercadopago_env != "sandbox":
+            raise ValueError("En staging, MERCADOPAGO_ENV debe ser sandbox.")
+        for nombre, secreto in (
+            ("MERCADOPAGO_ACCESS_TOKEN", self.mercadopago_access_token),
+            ("MERCADOPAGO_WEBHOOK_SECRET", self.mercadopago_webhook_secret),
+        ):
+            if secreto is not None and secreto.get_secret_value().strip() and not secreto.get_secret_value().startswith("TEST-"):
+                raise ValueError(f"En staging, {nombre} sólo puede contener credenciales de prueba TEST-.")
+
+        whatsapp_secrets = (
+            self.whatsapp_access_token,
+            self.whatsapp_verify_token,
+            self.whatsapp_app_secret,
+        )
+        if self.staging_whatsapp_meta_enabled:
+            if not self.whatsapp_enabled or self.whatsapp_provider != "meta":
+                raise ValueError("WhatsApp Meta staging requiere habilitación explícita y proveedor meta.")
+            if not self.staging_whatsapp_meta_test_number_confirmed:
+                raise ValueError("Confirmá que los IDs allowlisted pertenecen a un número y una app de prueba Meta.")
+            if self.public_api_url != "https://api.staging.turnelia.com.ar":
+                raise ValueError("WhatsApp Meta staging requiere el webhook HTTPS dedicado de api.staging.turnelia.com.ar.")
+            if not all(secreto is not None and secreto.get_secret_value().strip() for secreto in whatsapp_secrets):
+                raise ValueError("WhatsApp Meta staging requiere token, verify token y app secret dedicados.")
+            if not self.whatsapp_phone_number_id or self.whatsapp_phone_number_id not in self._lista_ids_staging(
+                self.staging_whatsapp_phone_number_id_allowlist
+            ):
+                raise ValueError("WHATSAPP_PHONE_NUMBER_ID debe coincidir con su allowlist de staging.")
+            if not self.whatsapp_business_account_id or self.whatsapp_business_account_id not in self._lista_ids_staging(
+                self.staging_whatsapp_business_account_id_allowlist
+            ):
+                raise ValueError("WHATSAPP_BUSINESS_ACCOUNT_ID debe coincidir con su allowlist de staging.")
+            if not self.whatsapp_api_version:
+                raise ValueError("WhatsApp Meta staging requiere WHATSAPP_API_VERSION explícita.")
+        else:
+            if self.whatsapp_enabled or self.whatsapp_provider != "fake":
+                raise ValueError("En staging, WhatsApp debe permanecer deshabilitado con proveedor fake.")
+            if any(secreto is not None and secreto.get_secret_value().strip() for secreto in whatsapp_secrets):
+                raise ValueError("En staging no se admiten credenciales Meta de WhatsApp sin habilitación explícita.")
+
+        allowlist = self.obtener_staging_email_allowlist()
+        if self.staging_email_send_enabled:
+            if self.email_provider != "resend" or not self.resend_api_key or not self.resend_api_key.get_secret_value().strip() or not self.email_from:
+                raise ValueError("El envío de email staging exige Resend dedicado, remitente y allowlist.")
+            if not allowlist:
+                raise ValueError("STAGING_EMAIL_ALLOWLIST debe tener al menos un destinatario autorizado.")
+        elif self.email_provider != "in_memory":
+            raise ValueError("En staging EMAIL_PROVIDER debe ser in_memory mientras el envío esté deshabilitado.")
+
+    def obtener_staging_email_allowlist(self) -> frozenset[str]:
+        from pydantic import TypeAdapter
+
+        adapter = TypeAdapter(EmailStr)
+        direcciones: set[str] = set()
+        for valor in self.staging_email_allowlist.split(","):
+            direccion = valor.strip()
+            if direccion:
+                direcciones.add(str(adapter.validate_python(direccion)).lower())
+        return frozenset(direcciones)
+
+    @staticmethod
+    def _lista_ids_staging(valor: str) -> frozenset[str]:
+        return frozenset(item.strip() for item in valor.split(",") if item.strip())
 
     model_config = SettingsConfigDict(
         env_file=".env",

@@ -270,3 +270,9 @@ Render API y Render Cron están suspendidos. Aiven está fuera del circuito prod
 Después de que OVH comenzó a aceptar nuevas escrituras, volver simplemente a Render + Aiven dejó de ser un rollback seguro. Cualquier recuperación posterior al cutover debe preservar o sincronizar primero los datos nuevos de PostgreSQL OVH.
 
 Consultar `docs/MIGRATION_RENDER_AIVEN_TO_OVH.md` para el procedimiento y las evidencias del cutover.
+
+## Preproducción aislada — Entrega 07
+
+El stack de staging local se define en `docker-compose.staging.yml`; usa su propio proyecto/DB/volúmenes/redes, sin la red productiva `proxy`. No publicar los puertos loopback salvo tras aprobar y verificar explícitamente una configuración externa aislada. El archivo de entorno privado se genera con `scripts/staging/generate_env.py` fuera del repositorio. Consultar [`TESTING.md`](TESTING.md) para iniciar, validar salud, ejecutar seed y verificar backup/restore.
+
+**Estado remoto:** sin acceso SSH de solo lectura y sin DNS staging, no se inspeccionó ni provisionó el VPS. No se modificaron producción, Caddy, DNS, backups, cron o integraciones.

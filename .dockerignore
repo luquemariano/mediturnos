@@ -3,6 +3,8 @@ __pycache__/
 *.pyc
 .pytest_cache/
 .git/
+.env.staging
+docs/audits/
 .gitignore
 *.db
 *.db-journal
