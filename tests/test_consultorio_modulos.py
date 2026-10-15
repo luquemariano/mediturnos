@@ -20,6 +20,7 @@ from app.models.profesional_paciente import ProfesionalPaciente
 from app.models.serie_modulo import SerieModulo
 from app.models.turno import Turno
 from app.models.usuario import Usuario
+from app.models.invitacion_consultorio import InvitacionConsultorio
 from app.repositories import consultorio_modulo_repository
 from app.services.consultorio_modulo_service import (
     _fechas_solapan_reglas,
@@ -208,6 +209,146 @@ def test_version_de_regla_bloquea_turnos_y_revela_solo_conteo(client, consultori
     actual = db.get(ReglaRecurrenciaModulo, rule_id)
     assert actual.estado == "activa" and actual.hora_inicio == time(9)
     assert db.query(ReglaRecurrenciaModulo).count() == 1
+    db.close()
+
+
+def test_invitacion_prepara_modulos_token_hash_acepta_idempotente_y_no_filtra_token(client, consultorio_modulos, monkeypatch):
+    from app.services import consultorio_invitacion_service as invitations
+    from app.services.email_service import EmailDeliveryResult
+
+    data = consultorio_modulos
+    now = ahora_utc().astimezone(ZoneInfo("America/Argentina/Buenos_Aires")).date()
+    start = now + timedelta(days=1)
+    while start.weekday() != 1:
+        start += timedelta(days=1)
+    user = Usuario(nombre="Invitada", email="invitada@example.com", password_hash="synthetic", rol="profesional", email_verificado=True)
+    db = SessionTest(); db.add(user); db.flush()
+    professional = Profesional(usuario_id=user.id, nombre="Invitada", apellido="Sintética", matricula=f"INV-{user.id}", email=user.email)
+    db.add(professional); db.commit(); db.refresh(user); db.refresh(professional); db.close()
+
+    sent = {}
+    class CaptureProvider:
+        def enviar(self, email):
+            sent["text"] = email.texto
+            return EmailDeliveryResult(provider="test")
+    monkeypatch.setattr(invitations, "obtener_email_provider", lambda: CaptureProvider())
+    _autenticar(data["titular"])
+    payload = {
+        "email": user.email,
+        "nombre_visible": "Invitada Sintética",
+        "modulos": [{"sala_id": data["sala"].id, "dia_semana": 1, "hora_inicio": "09:00:00", "vigente_desde": start.isoformat()}],
+    }
+    created = client.post(f"/consultorios/{data['consultorio'].id}/invitaciones", json=payload)
+    assert created.status_code == 201, created.text
+    assert created.json()["estado"] == "preparacion"
+    assert created.json()["modulos_reservados"] >= 12
+    invite_id = created.json()["id"]
+    listed = client.get(f"/consultorios/{data['consultorio'].id}/invitaciones")
+    assert listed.status_code == 200
+    assert "token" not in listed.text.lower()
+    assert "token_hash" not in listed.text.lower()
+    assert client.post(f"/consultorios/{data['consultorio'].id}/invitaciones/{invite_id}/enviar").status_code == 200
+    assert "#token=" in sent["text"]
+    previous_token = sent["text"].split("#token=", 1)[1].split()[0]
+    assert client.post(f"/consultorios/{data['consultorio'].id}/invitaciones/{invite_id}/reenviar").status_code == 200
+    token = sent["text"].split("#token=", 1)[1].split()[0]
+    assert previous_token != token
+    db = SessionTest(); invitation = db.get(InvitacionConsultorio, invite_id)
+    assert invitation.token_hash != token
+    assert invitation.token_hash == invitations._hash(token)
+    db.close()
+    _autenticar(user)
+    assert client.post("/consultorios/aceptar-invitacion", json={"token": previous_token}).status_code == 400
+    accepted = client.post("/consultorios/aceptar-invitacion", json={"token": token})
+    assert accepted.status_code == 200, accepted.text
+    assert accepted.json()["profesional_vinculado"] is True
+    assert client.get("/pacientes").status_code in {403, 404}
+    assert client.get(f"/pacientes/{data['paciente'].id}").status_code in {403, 404}
+    again = client.post("/consultorios/aceptar-invitacion", json={"token": token})
+    assert again.status_code == 200
+    db = SessionTest()
+    invite = db.get(InvitacionConsultorio, invite_id)
+    assert invite.estado == "aceptada" and invite.token_hash == invitations._hash(token)
+    assert db.query(ConsultorioProfesional).filter_by(consultorio_id=data["consultorio"].id, profesional_id=professional.id, estado="activo").count() == 1
+    assert db.query(OcurrenciaModulo).filter_by(invitacion_id=None, profesional_id=professional.id, estado="activa").count() >= 12
+    db.close()
+
+
+def test_invitacion_no_acepta_email_ajeno_y_revocar_invalida_token(client, consultorio_modulos, monkeypatch):
+    from app.services import consultorio_invitacion_service as invitations
+    from app.services.email_service import EmailDeliveryResult
+    data = consultorio_modulos
+    now = ahora_utc().astimezone(ZoneInfo("America/Argentina/Buenos_Aires")).date()
+    start = now + timedelta(days=1)
+    while start.weekday() != 4:
+        start += timedelta(days=1)
+    sent = {}
+    class CaptureProvider:
+        def enviar(self, email):
+            sent["text"] = email.texto
+            return EmailDeliveryResult(provider="test")
+    monkeypatch.setattr(invitations, "obtener_email_provider", lambda: CaptureProvider())
+    _autenticar(data["titular"])
+    result = client.post(f"/consultorios/{data['consultorio'].id}/invitaciones", json={"email": "ajeno@example.com", "modulos": [{"sala_id": data["sala"].id, "dia_semana": 4, "hora_inicio": "09:00:00", "vigente_desde": start.isoformat()}]})
+    assert result.status_code == 201, result.text
+    invite_id = result.json()["id"]
+    assert client.post(f"/consultorios/{data['consultorio'].id}/invitaciones/{invite_id}/enviar").status_code == 200
+    token = sent["text"].split("#token=", 1)[1].split()[0]
+    _autenticar(data["miembro"])
+    wrong = client.post("/consultorios/aceptar-invitacion", json={"token": token})
+    assert wrong.status_code == 400
+    _autenticar(data["titular"])
+    revoked = client.post(f"/consultorios/{data['consultorio'].id}/invitaciones/{invite_id}/revocar")
+    assert revoked.status_code == 200
+    _autenticar(data["miembro"])
+    assert client.post("/consultorios/aceptar-invitacion", json={"token": token}).status_code == 400
+
+
+def test_invitaciones_reservan_cupo_y_rechazan_administracion_ajena(client, consultorio_modulos):
+    data = consultorio_modulos
+    db = SessionTest(); clinic = db.get(Consultorio, data["consultorio"].id); clinic.cupo_profesionales = 2
+    db.query(ConsultorioProfesional).filter_by(consultorio_id=clinic.id, profesional_id=data["pro_b"].id).one().estado = "preparatorio"
+    db.commit(); db.close()
+    _autenticar(data["titular"])
+    start = ahora_utc().astimezone(ZoneInfo("America/Argentina/Buenos_Aires")).date() + timedelta(days=1)
+    while start.weekday() != 0:
+        start += timedelta(days=1)
+    payload = {"email": "cupo@example.com", "modulos": [{"sala_id": data["sala"].id, "dia_semana": 0, "hora_inicio": "14:00:00", "vigente_desde": start.isoformat()}]}
+    first = client.post(f"/consultorios/{data['consultorio'].id}/invitaciones", json=payload)
+    assert first.status_code == 201, first.text
+    payload["email"] = "siguiente@example.com"
+    second = client.post(f"/consultorios/{data['consultorio'].id}/invitaciones", json=payload)
+    assert second.status_code == 409
+    _autenticar(data["miembro"])
+    assert client.get(f"/consultorios/{data['consultorio'].id}/invitaciones").status_code == 404
+
+
+def test_invitacion_vencida_invalida_token_y_libera_sala(client, consultorio_modulos, monkeypatch):
+    from app.services import consultorio_invitacion_service as invitations
+    from app.services.email_service import EmailDeliveryResult
+    data = consultorio_modulos
+    sent = {}
+    class CaptureProvider:
+        def enviar(self, email):
+            sent["text"] = email.texto
+            return EmailDeliveryResult(provider="test")
+    monkeypatch.setattr(invitations, "obtener_email_provider", lambda: CaptureProvider())
+    start = ahora_utc().astimezone(ZoneInfo("America/Argentina/Buenos_Aires")).date() + timedelta(days=1)
+    while start.weekday() != 2:
+        start += timedelta(days=1)
+    _autenticar(data["titular"])
+    created = client.post(f"/consultorios/{data['consultorio'].id}/invitaciones", json={"email": "vence@example.com", "modulos": [{"sala_id": data["sala"].id, "dia_semana": 2, "hora_inicio": "09:00:00", "vigente_desde": start.isoformat()}]})
+    assert created.status_code == 201, created.text
+    invite_id = created.json()["id"]
+    assert client.post(f"/consultorios/{data['consultorio'].id}/invitaciones/{invite_id}/enviar").status_code == 200
+    token = sent["text"].split("#token=", 1)[1].split()[0]
+    db = SessionTest(); invite = db.get(InvitacionConsultorio, invite_id); invite.vence_en = ahora_utc() - timedelta(seconds=1); db.commit(); db.close()
+    _autenticar(data["miembro"])
+    assert client.post("/consultorios/aceptar-invitacion", json={"token": token}).status_code == 400
+    db = SessionTest()
+    invite = db.get(InvitacionConsultorio, invite_id)
+    assert invite.estado == "expirada" and invite.token_hash is None
+    assert db.query(OcurrenciaModulo).filter_by(invitacion_id=invite_id, estado="activa").count() == 0
     db.close()
 
 

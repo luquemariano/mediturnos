@@ -26,6 +26,7 @@ from app.models import (  # noqa: F401
     Sala,
     ConsultorioAdministrador,
     ConsultorioProfesional,
+    InvitacionConsultorio,
     SerieModulo,
     ReglaRecurrenciaModulo,
     OcurrenciaModulo,

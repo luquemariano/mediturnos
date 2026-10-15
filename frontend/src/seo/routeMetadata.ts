@@ -78,6 +78,9 @@ export function obtenerMetadatosRuta(pathname: string): RouteMetadata {
   if (pathname === "/reset-password") {
     return metadata("Restablecer contraseña | Turnelia", "Restablecé la contraseña de tu cuenta de Turnelia.", "noindex, nofollow", undefined, { referrer: "no-referrer" });
   }
+  if (pathname === "/invitacion-consultorio") {
+    return metadata("Invitación a un consultorio | Turnelia", "Aceptá una invitación profesional de Turnelia.", "noindex, nofollow");
+  }
 
   if (pathname === "/suscripcion/retorno") {
     return metadata("Retorno de suscripción | Turnelia", "Verificá el estado de tu suscripción de Turnelia.", "noindex, nofollow");

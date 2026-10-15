@@ -134,12 +134,20 @@ precio ni oferta estructurada sin datos verificables.
 
 ## DEC-015 — Autorización administrativa separada para Consultorio
 
-Tipo: diseño de seguridad implementado en la rama `codex/consultorio-02-foundation`; pendiente de revisión e integración.
+Tipo: diseño de seguridad integrado en `main`.
 
-`ConsultorioAdministrador` concede administración sólo del dominio de espacios del Consultorio y no deriva permisos desde `CuentaUsuario`, del rol de propietaria ni de `ConsultorioProfesional`. La relación profesional-consultorio conserva el `Profesional.cuenta_id` individual. No crea permisos clínicos compartidos ni rutas de alta/invitación de integrantes. La migración es aditiva; su downgrade se rehúsa mientras haya configuración de Consultorio persistida para evitar pérdida silenciosa.
+`ConsultorioAdministrador` concede administración sólo del dominio de espacios del Consultorio y no deriva permisos desde `CuentaUsuario`, del rol de propietaria ni de `ConsultorioProfesional`. La relación profesional-consultorio conserva el `Profesional.cuenta_id` individual. No crea permisos clínicos compartidos. La migración es aditiva; su downgrade se rehúsa mientras haya configuración de Consultorio persistida para evitar pérdida silenciosa.
 
 ## DEC-016 — Recurrencias de módulos y reserva exclusiva de sala
 
-Tipo: decisión funcional aprobada e implementada en la rama de Entrega 03; pendiente de revisión/integración.
+Tipo: decisión funcional aprobada e integrada en `main` mediante Entrega 03.
 
 Una regla semanal define hora civil en la zona IANA del consultorio y una versión efectiva desde fecha futura. La expansión genera ocurrencias idempotentes en horizonte móvil de 90 días; la consulta administrativa o una reserva extiende el horizonte en su propia transacción. PostgreSQL es la autoridad final para excluir intervalos activos superpuestos por sala con rango `[inicio, fin)` y mantener adyacencias válidas. Las reglas concurrentes se serializan bloqueando la sala; la generación se serializa por regla y fecha civil es clave única. El cambio de profesional o sala desde una fecha crea una serie nueva y preserva la anterior. Cambios/suspensiones con turnos reservados/confirmados se bloquean con conteo agregado, sin datos de paciente ni cambios automáticos. Alta/reprogramación de turnos vinculados deben caber íntegramente en módulo vigente y disponibilidad propia; el profesional sin vínculo conserva el flujo individual.
+
+## DEC-017 — Invitación previa a cuenta, plaza y módulos
+
+Tipo: diseño funcional y de seguridad implementado en la rama `codex/consultorio-04-invitaciones`; no desplegado.
+
+La propietaria prepara una invitación con email normalizado y reglas semanales antes de enviarla. La invitación y sus ocurrencias reservan plaza y sala sin crear identidad profesional ficticia. Series y ocurrencias tienen exactamente un destino: profesional o invitación; las ocurrencias pendientes siguen activas bajo la exclusión GiST. El cupo configurable cuenta perfiles activos distintos, incluida la titular, más invitaciones no vencidas, con bloqueo de la fila consultorio. Los valores iniciales son cuatro plazas y siete días.
+
+El token de alta entropía persiste sólo como hash; el enlace lo transporta en el fragmento del navegador. Reenvío rota el hash, revocación/vencimiento lo invalida y la aceptación exige JWT, perfil profesional existente y email verificado coincidente. La aceptación se ejecuta en transacción y puede repetirse por el mismo usuario sin duplicar el vínculo. El invitado sin cuenta sigue el registro individual en otra pestaña y vuelve a la invitación; no existe handoff server-side. El alta individual actual requiere matrícula y especialidad. No se transfieren cuentas ni permisos clínicos y la administradora no obtiene agendas/pacientes ajenos.

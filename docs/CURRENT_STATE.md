@@ -1,6 +1,6 @@
 # Estado actual de Turnelia
 
-Fecha de referencia: **2026-10-14**.
+Fecha de referencia: **2026-10-15**.
 
 Este documento combina estado del repositorio con evidencia operativa validada durante la migración productiva a OVH.
 
@@ -28,7 +28,8 @@ Este documento combina estado del repositorio con evidencia operativa validada d
 | R2 | DECLARADO EN CONFIGURACIÓN | Producción actual mantiene `OBJECT_STORAGE_PROVIDER=fake`; no hay uso productivo real validado |
 | E2E / Playwright | IMPLEMENTADO EN CÓDIGO | Suite y CI existentes |
 | Consultorio (fundación) | INTEGRADO EN `main` | Entrega 02 mergeada como `f667cc1` (PR #88). Añade consultorio, salas y autorización administrativa; no opera membresías múltiples. |
-| Consultorio (módulos) | EN IMPLEMENTACIÓN, NO DESPLEGADO | Entrega 03 en `codex/consultorio-03-modulos-recurrentes`: reglas semanales, ocurrencias a 90 días, excepciones, validación de turnos y consulta profesional autenticada de sólo lectura con aislamiento por cuenta. Sin invitaciones, miembros activados, agenda consolidada ni cobros. |
+| Consultorio (módulos) | INTEGRADO EN `main`, NO DESPLEGADO | Entrega 03 integrada en `983f34f` (PR #89): reglas semanales, ocurrencias a 90 días, exclusión GiST, validación de turnos y consulta profesional propia. |
+| Consultorio (invitaciones) | EN IMPLEMENTACIÓN, NO DESPLEGADO | Entrega 04 en `codex/consultorio-04-invitaciones`: plazas y reservas recurrentes pendientes, aceptación autenticada, revocación y reenvío; PostgreSQL protege cupos y sala. No cambia ownership clínico ni suscripciones. El alta individual existente requiere matrícula y especialidad; no cubre todavía actividades que no las exijan. |
 
 ## Infraestructura productiva
 

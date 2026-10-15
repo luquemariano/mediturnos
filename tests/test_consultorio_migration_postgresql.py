@@ -40,7 +40,7 @@ def test_migracion_completa_crea_fronteras_y_restricciones_en_base_vacia():
         assert {
             "consultorios", "consultorio_salas", "consultorio_administradores", "consultorio_profesionales",
             "consultorio_series_modulo", "consultorio_reglas_modulo", "consultorio_ocurrencias_modulo",
-            "consultorio_solicitudes_cambio_modulo",
+            "consultorio_solicitudes_cambio_modulo", "consultorio_invitaciones",
         }.issubset(set(inspector.get_table_names()))
         assert "uq_consultorio_salas_codigo" in {item["name"] for item in inspector.get_unique_constraints("consultorio_salas")}
         assert "uq_consultorio_profesionales_par" in {item["name"] for item in inspector.get_unique_constraints("consultorio_profesionales")}
@@ -94,6 +94,28 @@ def test_migracion_completa_crea_fronteras_y_restricciones_en_base_vacia():
         assert "módulos con reglas u ocurrencias persistidas" in result.stderr
         with engine.begin() as connection:
             connection.execute(text("DELETE FROM consultorio_series_modulo WHERE id=:id"), {"id": series_id})
+            invite_id = connection.execute(text(
+                "INSERT INTO consultorio_invitaciones (consultorio_id, email_normalizado, estado, invitante_usuario_id, vence_en, creada_en) VALUES (:clinic, 'invitee@example.com', 'preparacion', :uid, now() + interval '7 days', now()) RETURNING id"
+            ), {"clinic": clinic_id, "uid": user_id}).scalar_one()
+            pending_series = connection.execute(text(
+                "INSERT INTO consultorio_series_modulo (consultorio_id, sala_id, profesional_id, invitacion_id, creado_por_usuario_id, creado_en) VALUES (:clinic, :room, NULL, :invite, :uid, now()) RETURNING id"
+            ), {"clinic": clinic_id, "room": room_id, "invite": invite_id, "uid": user_id}).scalar_one()
+            connection.execute(text(
+                "INSERT INTO consultorio_ocurrencias_modulo (consultorio_id, sala_id, profesional_id, invitacion_id, fecha_inicio, fecha_fin, estado, origen, creado_en) VALUES (:clinic, :room, NULL, :invite, now() + interval '20 days', now() + interval '20 days 4 hours', 'activa', 'extraordinaria', now())"
+            ), {"clinic": clinic_id, "room": room_id, "invite": invite_id})
+        result = subprocess.run(
+            [sys.executable, "-m", "alembic", "downgrade", "y4z5a6b7c8d9"],
+            env=environment,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        assert result.returncode != 0
+        assert "No se revierte" in result.stderr
+        with engine.begin() as connection:
+            connection.execute(text("DELETE FROM consultorio_ocurrencias_modulo WHERE invitacion_id=:id"), {"id": invite_id})
+            connection.execute(text("DELETE FROM consultorio_series_modulo WHERE id=:id"), {"id": pending_series})
+            connection.execute(text("DELETE FROM consultorio_invitaciones WHERE id=:id"), {"id": invite_id})
         result = subprocess.run(
             [sys.executable, "-m", "alembic", "downgrade", "y4z5a6b7c8d9"],
             env=environment,

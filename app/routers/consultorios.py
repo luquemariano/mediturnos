@@ -23,8 +23,40 @@ from app.schemas.consultorio_modulo import (
 )
 from app.services import consultorio_service
 from app.services import consultorio_modulo_service
+from app.schemas.consultorio_invitacion import InvitacionCrear, InvitacionAceptacion
+from app.services import consultorio_invitacion_service
 
 router = APIRouter(prefix="/consultorios", tags=["Consultorios"])
+
+
+@router.post("/{consultorio_id}/invitaciones", status_code=201)
+def preparar_invitacion(consultorio_id: int, datos: InvitacionCrear, db: Session = Depends(obtener_db), usuario: Usuario = Depends(obtener_usuario_actual)):
+    return consultorio_invitacion_service.crear_invitacion(db, usuario, consultorio_id, datos)
+
+
+@router.get("/{consultorio_id}/invitaciones")
+def listar_invitaciones(consultorio_id: int, db: Session = Depends(obtener_db), usuario: Usuario = Depends(obtener_usuario_actual)):
+    return consultorio_invitacion_service.listar_invitaciones(db, usuario, consultorio_id)
+
+
+@router.post("/{consultorio_id}/invitaciones/{invitacion_id}/enviar")
+def enviar_invitacion(consultorio_id: int, invitacion_id: int, db: Session = Depends(obtener_db), usuario: Usuario = Depends(obtener_usuario_actual)):
+    return consultorio_invitacion_service.enviar_invitacion(db, usuario, consultorio_id, invitacion_id)
+
+
+@router.post("/{consultorio_id}/invitaciones/{invitacion_id}/reenviar")
+def reenviar_invitacion(consultorio_id: int, invitacion_id: int, db: Session = Depends(obtener_db), usuario: Usuario = Depends(obtener_usuario_actual)):
+    return consultorio_invitacion_service.enviar_invitacion(db, usuario, consultorio_id, invitacion_id, reenvio=True)
+
+
+@router.post("/{consultorio_id}/invitaciones/{invitacion_id}/revocar")
+def revocar_invitacion(consultorio_id: int, invitacion_id: int, db: Session = Depends(obtener_db), usuario: Usuario = Depends(obtener_usuario_actual)):
+    return consultorio_invitacion_service.revocar_invitacion(db, usuario, consultorio_id, invitacion_id)
+
+
+@router.post("/aceptar-invitacion")
+def aceptar_invitacion(datos: InvitacionAceptacion, db: Session = Depends(obtener_db), usuario: Usuario = Depends(obtener_usuario_actual)):
+    return consultorio_invitacion_service.aceptar_invitacion(db, usuario, datos.token)
 
 
 @router.post("", response_model=ConsultorioRespuesta, status_code=201)

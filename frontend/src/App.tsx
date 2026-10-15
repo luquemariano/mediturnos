@@ -58,6 +58,7 @@ import ListaEsperaProfesional from "./components/ListaEsperaProfesional";
 import WaitlistOfferPage from "./pages/WaitlistOfferPage";
 import CampaniasAdmin from "./pages/CampaniasAdmin";
 import BajaNovedades from "./pages/BajaNovedades";
+import ConsultorioInvitationPage from "./pages/ConsultorioInvitationPage";
 
 
 type Vista =
@@ -347,6 +348,7 @@ function App({ tokenBaja = null }: { tokenBaja?: string | null }) {
   if (ruta.startsWith("/waitlist/oferta/")) return <WaitlistOfferPage token={ruta.slice("/waitlist/oferta/".length)} />;
   if (ruta.startsWith("/reservar/")) return <PublicBooking slug={ruta.slice("/reservar/".length)} />;
   if (ruta.startsWith("/reserva/")) return <SelfService token={ruta.slice("/reserva/".length)} />;
+  if (ruta === "/invitacion-consultorio") return <ConsultorioInvitationPage usuario={usuario} onAutenticado={setUsuario} />;
 
   if (ruta === "/ayuda" || ruta.startsWith("/ayuda/")) {
     const slug = ruta.slice("/ayuda/".length);

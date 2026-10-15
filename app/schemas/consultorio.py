@@ -9,6 +9,8 @@ class ConsultorioCrear(BaseModel):
     zona_horaria: str = Field(default="America/Argentina/Buenos_Aires", min_length=1, max_length=64)
     duracion_modulo_minutos: int = Field(default=240, gt=0, le=1440)
     horizonte_materializacion_dias: int = Field(default=90, gt=0, le=730)
+    cupo_profesionales: int = Field(default=4, ge=1, le=100)
+    invitacion_expiracion_dias: int = Field(default=7, ge=1, le=30)
 
     @field_validator("nombre", "zona_horaria")
     @classmethod
@@ -27,6 +29,8 @@ class ConsultorioRespuesta(BaseModel):
     zona_horaria: str
     duracion_modulo_minutos: int
     horizonte_materializacion_dias: int
+    cupo_profesionales: int
+    invitacion_expiracion_dias: int
     estado: str
 
 
@@ -37,6 +41,8 @@ class ConsultorioActualizacion(BaseModel):
     zona_horaria: str | None = Field(default=None, min_length=1, max_length=64)
     duracion_modulo_minutos: int | None = Field(default=None, gt=0, le=1440)
     horizonte_materializacion_dias: int | None = Field(default=None, gt=0, le=730)
+    cupo_profesionales: int | None = Field(default=None, ge=1, le=100)
+    invitacion_expiracion_dias: int | None = Field(default=None, ge=1, le=30)
     estado: str | None = None
 
     @field_validator("nombre", "zona_horaria")

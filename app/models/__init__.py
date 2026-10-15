@@ -20,6 +20,7 @@ from app.models.consultorio import Consultorio
 from app.models.sala import Sala
 from app.models.consultorio_administrador import ConsultorioAdministrador
 from app.models.consultorio_profesional import ConsultorioProfesional
+from app.models.invitacion_consultorio import InvitacionConsultorio
 from app.models.serie_modulo import SerieModulo
 from app.models.regla_recurrencia_modulo import ReglaRecurrenciaModulo
 from app.models.ocurrencia_modulo import OcurrenciaModulo

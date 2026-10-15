@@ -12,6 +12,7 @@ const RUTAS_PUBLICAS_EXACTAS = new Set([
   "/para-psicopedagogos",
   "/terminos",
   "/privacidad",
+  "/invitacion-consultorio",
 ]);
 
 export function esRutaPublica(pathname: string): boolean {
