@@ -1,6 +1,6 @@
 # Entrega 06 — Actividad profesional y matrícula condicional
 
-Estado: **IMPLEMENTACIÓN EN CURSO — VALIDACIÓN LOCAL**
+Estado: **IMPLEMENTACIÓN COMPLETA — PR ABIERTO, CI VERDE**
 Base: `origin/main` en `40e8c36a77f59f7e7eb6c35b00bc61f74b4414cc`
 Rama: `codex/consultorio-06-actividad-matricula`
 
@@ -73,3 +73,5 @@ Permitir alta y mantenimiento del perfil según un catálogo controlado de activ
 - Implementado: modelo y catálogo persistente; migración `a7b8c9d0e1f2`; alta pública, alta administrativa, edición propia, onboarding y presentación del perfil; UI condicional; pruebas backend y Vitest; E2E sintético; CI incluye el módulo PostgreSQL y el spec Playwright.
 - Pruebas focalizadas: 37 backend aprobadas; 17 Vitest aprobadas; lint/build aprobados.
 - Validación final: `verify.ps1 -Full` verde (backend, Vitest, lint y build; E2E omitido por el propio modo Full). Pytest directo: 912 passed, 39 skipped, 9 warnings. Vitest directo: 415 passed en 52 archivos. PostgreSQL 17 desechable: Alembic upgrade → downgrade a `c04inv202610` → upgrade head pasó; prueba del catálogo, FK y nulabilidad pasó 1/1. Playwright aislado con PostgreSQL y datos sintéticos: 12 passed, cleanup correcto. Se amplió el timeout de test de 5 a 15 segundos y de consultas Testing Library a 3 segundos para evitar expiraciones intermitentes preexistentes; no se debilitó ninguna assertion funcional.
+- Primer CI del PR #92 detectó que la prueba PostgreSQL de actividad dependía de filas en la base compartida del job; se cambió para crear una base PostgreSQL efímera, ejecutar allí la cadena Alembic completa y eliminarla al finalizar. No era un fallo de la migración, sino de aislamiento de la prueba.
+- PR #92: `https://github.com/luquemariano/mediturnos/pull/92`. Segundo CI (`Turnelia CI`, run `38778506901`, commit `1dc2088e8749640f292bb74e27fded0877aa9c19`): Backend, PostgreSQL, Frontend y Playwright E2E completados con `success`. PR abierto, sin merge ni despliegue.
