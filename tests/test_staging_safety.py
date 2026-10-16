@@ -1,4 +1,5 @@
 import re
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from pydantic import SecretStr, ValidationError
@@ -7,8 +8,17 @@ from tempfile import TemporaryDirectory
 
 from app.core.config import Settings
 from app.scripts import seed_staging
+from app.schemas.auth import LoginDatos
+from app.core.security import generar_hash_password
+from app.models.cuenta import Cuenta
+from app.models.consultorio import Consultorio
+from app.models.invitacion_consultorio import InvitacionConsultorio
+from app.models.paciente import Paciente
+from app.models.profesional import Profesional
+from app.models.usuario import Usuario
 from scripts.staging.generate_env import create_env_file
 from app.services.email_service import EmailDeliveryError, ResendEmailProvider, TransactionalEmail
+from tests.conftest import SessionTest
 
 
 def test_scripts_staging_invocan_python_con_version_explicita():
@@ -73,6 +83,88 @@ def test_staging_acepta_solo_base_y_urls_loopback_dedicadas():
 def test_staging_rechaza_configuracion_que_puede_colisionar(field, value, message):
     with pytest.raises(ValidationError, match=message):
         staging_settings(**{field: value})
+
+
+def test_emails_de_cuentas_del_seed_son_aceptados_por_el_schema_de_login():
+    for key in ("admin", "clinical", "aesthetic"):
+        email = seed_staging.EMAILS[key]
+        assert email.startswith("staging-")
+        assert email.endswith("@turnelia.com.ar")
+        assert LoginDatos(email=email, password="synthetic-only").email == email
+
+
+def test_login_http_acepta_los_emails_profesionales_del_seed(client):
+    password = "synthetic-test-password"
+    with SessionTest() as db:
+        for key in ("admin", "clinical", "aesthetic"):
+            db.add(Usuario(
+                nombre=f"Cuenta {key}",
+                email=seed_staging.EMAILS[key],
+                password_hash=generar_hash_password(password),
+                rol="profesional",
+                activo=True,
+                email_verificado=True,
+            ))
+        db.commit()
+
+    for key in ("admin", "clinical", "aesthetic"):
+        response = client.post("/auth/login", json={"email": seed_staging.EMAILS[key], "password": password})
+        assert response.status_code == 200
+        assert response.json()["access_token"]
+
+
+def test_seed_renombra_identidades_legacy_idempotentemente_y_conserva_password():
+    with SessionTest() as db:
+        account = Cuenta(nombre="Cuenta staging test", tipo="individual")
+        organization = Cuenta(nombre="Consultorio staging test", tipo="organizacion")
+        user = Usuario(
+            nombre="Administradora Sintética",
+            email=seed_staging.LEGACY_EMAILS["admin"],
+            password_hash=generar_hash_password("synthetic-test-password"),
+            rol="profesional",
+            activo=True,
+            email_verificado=True,
+        )
+        db.add_all((account, organization, user))
+        db.flush()
+        clinic = Consultorio(cuenta_id=organization.id, nombre="Consultorio staging test")
+        db.add(clinic)
+        db.flush()
+        professional = Profesional(
+            usuario_id=user.id,
+            cuenta=account,
+            nombre="Administradora",
+            apellido="Sintética",
+            email=seed_staging.LEGACY_EMAILS["admin"],
+            slug_publico="staging-admin",
+        )
+        patient = Paciente(
+            nombre="Paciente",
+            apellido="Sintético",
+            email=seed_staging.LEGACY_EMAILS["patient"],
+            activo=True,
+        )
+        pending_invite = InvitacionConsultorio(
+            consultorio_id=clinic.id,
+            email_normalizado=seed_staging.LEGACY_EMAILS["pending"],
+            token_hash="a" * 64,
+            estado="pendiente",
+            invitante_usuario_id=user.id,
+            vence_en=datetime.now(UTC) + timedelta(days=7),
+        )
+        db.add_all((professional, patient, pending_invite))
+        db.commit()
+        original_password_hash = user.password_hash
+
+        assert seed_staging.actualizar_emails_sinteticos(db) == 3
+        db.commit()
+        assert user.email == seed_staging.EMAILS["admin"]
+        assert professional.email == seed_staging.EMAILS["admin"]
+        assert patient.email == seed_staging.EMAILS["patient"]
+        assert pending_invite.email_normalizado == seed_staging.EMAILS["pending"]
+        assert user.password_hash == original_password_hash
+        assert seed_staging.actualizar_emails_sinteticos(db) == 0
+        db.rollback()
 
 
 def test_staging_rechaza_credenciales_whatsapp_meta():
@@ -181,7 +273,7 @@ def test_semilla_requiere_modo_y_base_staging(monkeypatch):
             seed_staging.validar_entorno(invalid)
 
 
-def test_semilla_rechaza_identidades_fuera_de_example_invalid(monkeypatch):
+def test_semilla_rechaza_identidades_fuera_del_dominio_staging(monkeypatch):
     monkeypatch.setattr(seed_staging.settings, "app_env", "staging")
     invalid = {
         "APP_ENV": "staging",
@@ -190,5 +282,5 @@ def test_semilla_rechaza_identidades_fuera_de_example_invalid(monkeypatch):
         "STAGING_DEMO_PASSWORD": "synthetic-only",
         "STAGING_ADMIN_EMAIL": "real.person@example.com",
     }
-    with pytest.raises(SystemExit, match="example.invalid"):
+    with pytest.raises(SystemExit, match="staging-.*@turnelia.com.ar"):
         seed_staging.validar_entorno(invalid)
