@@ -127,7 +127,9 @@ def obtener_ocurrencia(db: Session, consultorio_id: int, ocurrencia_id: int, blo
         .filter(OcurrenciaModulo.consultorio_id == consultorio_id, OcurrenciaModulo.id == ocurrencia_id)
     )
     if bloquear:
-        consulta = consulta.with_for_update()
+        # Lock only the occurrence row; PostgreSQL rejects FOR UPDATE on the
+        # nullable side of the joined professional relationship.
+        consulta = consulta.with_for_update(of=OcurrenciaModulo)
     return consulta.one_or_none()
 
 

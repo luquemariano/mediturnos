@@ -32,6 +32,7 @@ type AgendaPropiaProps = {
   nombre?: string;
   onVolver: () => void;
   onAbrirPacientes?: () => void;
+  onAbrirConsultorio?: () => void;
   onAbrirDisponibilidad?: () => void;
   onAbrirPrestaciones?: () => void;
   onAbrirPerfil?: () => void;
@@ -99,6 +100,7 @@ export default function AgendaPropia({
   tipo,
   nombre = "Profesional",
   onVolver,
+  onAbrirConsultorio,
   onAbrirPacientes = onVolver,
   onAbrirDisponibilidad = onVolver,
   onAbrirPrestaciones = onVolver,
@@ -227,6 +229,7 @@ export default function AgendaPropia({
     onAbrirInicio={onVolver}
     onAbrirAgenda={() => undefined}
     onAbrirPacientes={onAbrirPacientes}
+    onAbrirConsultorio={tipo === "profesional" ? onAbrirConsultorio : undefined}
     onAbrirDisponibilidad={onAbrirDisponibilidad}
     onAbrirPrestaciones={onAbrirPrestaciones}
     onAbrirPerfil={onAbrirPerfil}

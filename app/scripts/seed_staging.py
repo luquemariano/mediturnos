@@ -19,6 +19,8 @@ from app.models.actividad_profesional import ActividadProfesional
 from app.models.cuenta import Cuenta
 from app.models.cuenta_usuario import CuentaUsuario
 from app.models.disponibilidad import Disponibilidad
+from app.models.turno import Turno
+from app.models.evolucion_clinica import EvolucionClinica
 from app.models.especialidad import Especialidad
 from app.models.invitacion_consultorio import InvitacionConsultorio
 from app.models.ocurrencia_modulo import OcurrenciaModulo
@@ -41,7 +43,12 @@ EMAILS = {
     "admin": "staging-consultorio-admin@turnelia.com.ar",
     "clinical": "staging-profesional-clinico@turnelia.com.ar",
     "aesthetic": "staging-profesional-estetica@turnelia.com.ar",
+    "aesthetic_2": "staging-profesional-estetica-2@turnelia.com.ar",
     "patient": "staging-paciente@turnelia.com.ar",
+    "patient_admin": "staging-paciente-admin@turnelia.com.ar",
+    "patient_clinical": "staging-paciente-clinico@turnelia.com.ar",
+    "patient_aesthetic": "staging-paciente-estetica-1@turnelia.com.ar",
+    "patient_aesthetic_2": "staging-paciente-estetica-2@turnelia.com.ar",
     "pending": "staging-invitacion-pendiente@turnelia.com.ar",
 }
 LEGACY_EMAILS = {
@@ -55,15 +62,25 @@ EMAIL_ENV_DEFAULTS = {
     "STAGING_ADMIN_EMAIL": EMAILS["admin"],
     "STAGING_CLINICAL_EMAIL": EMAILS["clinical"],
     "STAGING_AESTHETIC_EMAIL": EMAILS["aesthetic"],
+    "STAGING_AESTHETIC_2_EMAIL": EMAILS["aesthetic_2"],
     "STAGING_PATIENT_EMAIL": EMAILS["patient"],
     "STAGING_PENDING_INVITE_EMAIL": EMAILS["pending"],
+    "STAGING_PATIENT_ADMIN_EMAIL": EMAILS["patient_admin"],
+    "STAGING_PATIENT_CLINICAL_EMAIL": EMAILS["patient_clinical"],
+    "STAGING_PATIENT_AESTHETIC_EMAIL": EMAILS["patient_aesthetic"],
+    "STAGING_PATIENT_AESTHETIC_2_EMAIL": EMAILS["patient_aesthetic_2"],
 }
 EMAIL_ENV_KEYS = {
     "admin": "STAGING_ADMIN_EMAIL",
     "clinical": "STAGING_CLINICAL_EMAIL",
     "aesthetic": "STAGING_AESTHETIC_EMAIL",
+    "aesthetic_2": "STAGING_AESTHETIC_2_EMAIL",
     "patient": "STAGING_PATIENT_EMAIL",
     "pending": "STAGING_PENDING_INVITE_EMAIL",
+    "patient_admin": "STAGING_PATIENT_ADMIN_EMAIL",
+    "patient_clinical": "STAGING_PATIENT_CLINICAL_EMAIL",
+    "patient_aesthetic": "STAGING_PATIENT_AESTHETIC_EMAIL",
+    "patient_aesthetic_2": "STAGING_PATIENT_AESTHETIC_2_EMAIL",
 }
 
 
@@ -197,8 +214,13 @@ def _obtener_o_crear_profesional(db, key: str, nombre: str, apellido: str, activ
         )
         db.add(professional)
         db.flush()
-    elif professional.cuenta_id != account.id:
+    elif professional.cuenta_id != account.id or professional.slug_publico != f"staging-{key}":
         raise RuntimeError("El perfil sintético preexistente no coincide con la cuenta staging.")
+    else:
+        professional.nombre = nombre
+        professional.apellido = apellido
+        professional.email = email
+        professional.actividad_profesional = actividad
 
     association = db.get(ProfesionalEspecialidad, (professional.id, especialidad.id))
     if association is None:
@@ -245,27 +267,30 @@ def _obtener_o_crear_serie(db, *, clinic, room, user, professional_id, invitatio
 
     tz = ZoneInfo(clinic.zona_horaria)
     local_date = effective_date + timedelta(days=(weekday - effective_date.weekday()) % 7)
-    occurrence_exists = db.scalar(select(OcurrenciaModulo.id).where(
-        OcurrenciaModulo.regla_id == rule.id,
-        OcurrenciaModulo.fecha_origen == local_date,
-    ))
-    if occurrence_exists is None:
-        local_start = datetime.combine(local_date, start_time, tzinfo=tz)
-        start_utc = local_start.astimezone(UTC)
-        db.add(OcurrenciaModulo(
-            consultorio_id=clinic.id,
-            serie_id=series.id,
-            regla_id=rule.id,
-            sala_id=room.id,
-            profesional_id=professional_id,
-            invitacion_id=invitation_id,
-            fecha_inicio=start_utc,
-            fecha_fin=start_utc + timedelta(hours=4),
-            fecha_origen=local_date,
-            estado="activa",
-            origen=origin,
-            creado_por_usuario_id=user.id,
+    horizon = date.today() + timedelta(days=90)
+    while local_date <= horizon and (rule.vigente_hasta is None or local_date <= rule.vigente_hasta):
+        occurrence_exists = db.scalar(select(OcurrenciaModulo.id).where(
+            OcurrenciaModulo.regla_id == rule.id,
+            OcurrenciaModulo.fecha_origen == local_date,
         ))
+        if occurrence_exists is None:
+            local_start = datetime.combine(local_date, start_time, tzinfo=tz)
+            start_utc = local_start.astimezone(UTC)
+            db.add(OcurrenciaModulo(
+                consultorio_id=clinic.id,
+                serie_id=series.id,
+                regla_id=rule.id,
+                sala_id=room.id,
+                profesional_id=professional_id,
+                invitacion_id=invitation_id,
+                fecha_inicio=start_utc,
+                fecha_fin=start_utc + timedelta(minutes=rule.duracion_minutos),
+                fecha_origen=local_date,
+                estado="activa",
+                origen=origin,
+                creado_por_usuario_id=user.id,
+            ))
+        local_date += timedelta(days=7)
     return series, rule
 
 
@@ -285,28 +310,40 @@ def main(actualizar_emails_only: bool = False) -> None:
         if not all((activity_clinical, activity_aesthetic, clinical_specialty, aesthetic_specialty)):
             raise RuntimeError("Faltan los catálogos esperados; ejecutá primero las migraciones staging.")
 
-        admin_user, admin_professional = _obtener_o_crear_profesional(db, "admin", "Administradora", "Sintética", activity_clinical, clinical_specialty)
-        clinical_user, clinical_professional = _obtener_o_crear_profesional(db, "clinical", "Profesional", "Clínico", activity_clinical, clinical_specialty)
-        aesthetic_user, aesthetic_professional = _obtener_o_crear_profesional(db, "aesthetic", "Profesional", "Estética", activity_aesthetic, aesthetic_specialty)
+        admin_user, admin_professional = _obtener_o_crear_profesional(db, "admin", "Administradora Clínica", "Sintética", activity_clinical, clinical_specialty)
+        clinical_user, clinical_professional = _obtener_o_crear_profesional(db, "clinical", "Profesional Clínico", "Sintético", activity_clinical, clinical_specialty)
+        aesthetic_user, aesthetic_professional = _obtener_o_crear_profesional(db, "aesthetic", "Profesional Estética 1", "Sintética", activity_aesthetic, aesthetic_specialty)
+        aesthetic_2_user, aesthetic_2_professional = _obtener_o_crear_profesional(db, "aesthetic_2", "Profesional Estética 2", "Sintética", activity_aesthetic, aesthetic_specialty)
 
         patient_email = _email_configurado("patient")
         patient = db.scalar(select(Paciente).where(Paciente.email == patient_email))
         if patient is None:
-            patient = Paciente(nombre="Paciente", apellido="Sintético", email=patient_email, activo=True)
-            db.add(patient)
-            db.flush()
-        for professional, note in (
-            (clinical_professional, "Registro clínico sintético exclusivo del profesional clínico."),
-            (aesthetic_professional, "Nota sintética exclusiva del profesional de estética."),
-        ):
+            patient = Paciente(nombre="Paciente Compartido", apellido="Sintético QA", email=patient_email, activo=True)
+            db.add(patient); db.flush()
+        fixture_professionals = (admin_professional, clinical_professional, aesthetic_professional, aesthetic_2_professional)
+        own_patients = {}
+        for key, professional in zip(("admin", "clinical", "aesthetic", "aesthetic_2"), fixture_professionals):
+            email = _email_configurado(f"patient_{key}")
+            own = db.scalar(select(Paciente).where(Paciente.email == email))
+            if own is None:
+                own = Paciente(nombre=f"Paciente QA {key}", apellido="Sintético No Real", email=email, activo=True); db.add(own); db.flush()
+            own_patients[key] = own
+            if db.scalar(select(ProfesionalPaciente.id).where(ProfesionalPaciente.profesional_id == professional.id, ProfesionalPaciente.paciente_id == own.id)) is None:
+                db.add(ProfesionalPaciente(profesional_id=professional.id, paciente_id=own.id, activo=True))
+        for professional in (admin_professional, clinical_professional):
             if db.scalar(select(ProfesionalPaciente.id).where(ProfesionalPaciente.profesional_id == professional.id, ProfesionalPaciente.paciente_id == patient.id)) is None:
                 db.add(ProfesionalPaciente(profesional_id=professional.id, paciente_id=patient.id, activo=True))
             if db.scalar(select(ClinicalProfile.id).where(ClinicalProfile.profesional_id == professional.id, ClinicalProfile.paciente_id == patient.id)) is None:
-                db.add(ClinicalProfile(paciente_id=patient.id, profesional_id=professional.id, antecedentes=note, updated_by_profesional_id=professional.id))
+                db.add(ClinicalProfile(paciente_id=patient.id, profesional_id=professional.id, antecedentes=f"Registro sintético privado QA {professional.slug_publico}.", updated_by_profesional_id=professional.id))
+            contenido = f"Evolución clínica sintética privada QA {professional.slug_publico}. Sin información real."
+            if db.scalar(select(EvolucionClinica.id).where(EvolucionClinica.profesional_id == professional.id, EvolucionClinica.paciente_id == patient.id, EvolucionClinica.contenido == contenido)) is None:
+                db.add(EvolucionClinica(paciente_id=patient.id, profesional_id=professional.id, contenido=contenido))
 
         prestation_data = (
+            (admin_professional, clinical_specialty, "Consulta clínica sintética"),
             (clinical_professional, clinical_specialty, "Consulta clínica sintética"),
             (aesthetic_professional, aesthetic_specialty, "Servicio estético sintético"),
+            (aesthetic_2_professional, aesthetic_specialty, "Servicio estético sintético"),
         )
         for professional, specialty, name in prestation_data:
             if db.scalar(select(Prestacion.id).where(Prestacion.profesional_id == professional.id, Prestacion.nombre == name)) is None:
@@ -319,6 +356,7 @@ def main(actualizar_emails_only: bool = False) -> None:
             "admin": (admin_professional, admin_user, 0, time(9)),
             "clinical": (clinical_professional, clinical_user, 3, time(9)),
             "aesthetic": (aesthetic_professional, aesthetic_user, 1, time(13)),
+            "aesthetic_2": (aesthetic_2_professional, aesthetic_2_user, 4, time(9)),
         }
         for key, (professional, user, weekday, start_time) in starts.items():
             availability_exists = db.scalar(select(Disponibilidad.id).where(Disponibilidad.profesional_id == professional.id, Disponibilidad.dia_semana == weekday))
@@ -337,7 +375,7 @@ def main(actualizar_emails_only: bool = False) -> None:
             db.flush()
         if db.scalar(select(ConsultorioAdministrador.id).where(ConsultorioAdministrador.consultorio_id == clinic.id, ConsultorioAdministrador.usuario_id == admin_user.id)) is None:
             db.add(ConsultorioAdministrador(consultorio_id=clinic.id, usuario_id=admin_user.id, rol="propietaria"))
-        for professional in (admin_professional, clinical_professional, aesthetic_professional):
+        for professional in fixture_professionals:
             relation = db.scalar(select(ConsultorioProfesional).where(ConsultorioProfesional.consultorio_id == clinic.id, ConsultorioProfesional.profesional_id == professional.id))
             if relation is None:
                 db.add(ConsultorioProfesional(consultorio_id=clinic.id, profesional_id=professional.id, estado="activo"))
@@ -354,17 +392,51 @@ def main(actualizar_emails_only: bool = False) -> None:
             accepted_invite = InvitacionConsultorio(consultorio_id=clinic.id, email_normalizado=clinical_user.email.lower(), nombre_visible="Profesional Clínico Sintético", estado="aceptada", token_hash=hashlib.sha256(secrets.token_bytes(32)).hexdigest(), invitante_usuario_id=admin_user.id, vence_en=None, aceptada_por_usuario_id=clinical_user.id, aceptada_por_profesional_id=clinical_professional.id)
             db.add(accepted_invite)
             db.flush()
+        clinic.cupo_profesionales = 4
+        pending_email = _email_configurado("pending")
+        pending = db.scalar(select(InvitacionConsultorio).where(InvitacionConsultorio.consultorio_id == clinic.id, InvitacionConsultorio.email_normalizado == pending_email))
+        if pending is not None and pending.estado in ("pendiente", "preparacion"):
+            if pending.nombre_visible != "Invitada pendiente sintética" or pending.invitante_usuario_id != admin_user.id:
+                raise RuntimeError("La invitación que reserva plaza no coincide con el fixture sintético; no se revocó.")
+            for occurrence in db.scalars(select(OcurrenciaModulo).where(OcurrenciaModulo.invitacion_id == pending.id, OcurrenciaModulo.estado == "activa")):
+                occurrence.estado = "cancelada"
+            for series in db.scalars(select(SerieModulo).where(SerieModulo.invitacion_id == pending.id)):
+                for rule in db.scalars(select(ReglaRecurrenciaModulo).where(ReglaRecurrenciaModulo.serie_id == series.id, ReglaRecurrenciaModulo.estado == "activa")):
+                    rule.estado = "cancelada"
+            pending.estado = "revocada"; pending.token_hash = None; pending.revocada_en = datetime.now(UTC)
+        for professional in fixture_professionals:
+            relation = db.scalar(select(ConsultorioProfesional).where(ConsultorioProfesional.consultorio_id == clinic.id, ConsultorioProfesional.profesional_id == professional.id))
+            if relation is None: db.add(ConsultorioProfesional(consultorio_id=clinic.id, profesional_id=professional.id, estado="activo"))
+            else: relation.estado = "activo"
         _obtener_o_crear_serie(db, clinic=clinic, room=room, user=admin_user, professional_id=admin_professional.id, invitation_id=None, weekday=0, start_time=time(9), effective_date=next_monday, origin="recurrente")
         _obtener_o_crear_serie(db, clinic=clinic, room=room, user=admin_user, professional_id=clinical_professional.id, invitation_id=None, weekday=3, start_time=time(9), effective_date=next_monday, origin="recurrente")
         _obtener_o_crear_serie(db, clinic=clinic, room=room, user=admin_user, professional_id=aesthetic_professional.id, invitation_id=None, weekday=1, start_time=time(13), effective_date=next_monday, origin="recurrente")
-
-        pending_email = _email_configurado("pending")
-        pending = db.scalar(select(InvitacionConsultorio).where(InvitacionConsultorio.consultorio_id == clinic.id, InvitacionConsultorio.email_normalizado == pending_email))
-        if pending is None:
-            pending = InvitacionConsultorio(consultorio_id=clinic.id, email_normalizado=pending_email, nombre_visible="Invitada pendiente sintética", estado="pendiente", token_hash=hashlib.sha256(secrets.token_bytes(32)).hexdigest(), invitante_usuario_id=admin_user.id, vence_en=datetime.now(UTC) + timedelta(days=7))
-            db.add(pending)
-            db.flush()
-        _obtener_o_crear_serie(db, clinic=clinic, room=room, user=admin_user, professional_id=None, invitation_id=pending.id, weekday=4, start_time=time(13), effective_date=next_monday, origin="recurrente")
+        _obtener_o_crear_serie(db, clinic=clinic, room=room, user=admin_user, professional_id=aesthetic_2_professional.id, invitation_id=None, weekday=4, start_time=time(9), effective_date=next_monday, origin="recurrente")
+        db.flush()
+        for key, professional in zip(("admin", "clinical", "aesthetic", "aesthetic_2"), fixture_professionals):
+            occurrence = db.scalar(select(OcurrenciaModulo).where(
+                OcurrenciaModulo.consultorio_id == clinic.id,
+                OcurrenciaModulo.profesional_id == professional.id,
+                OcurrenciaModulo.estado == "activa",
+                OcurrenciaModulo.fecha_inicio > datetime.now(UTC),
+            ).order_by(OcurrenciaModulo.fecha_inicio))
+            prestation = db.scalar(select(Prestacion).where(Prestacion.profesional_id == professional.id, Prestacion.activa.is_(True)).order_by(Prestacion.id))
+            if occurrence is None or prestation is None:
+                raise RuntimeError(f"El profesional sintético {key} no tiene módulo o prestación futura.")
+            patients = [(own_patients[key], 30), (own_patients[key], 90)]
+            if key in ("admin", "clinical"):
+                patients.append((patient, 150))
+            for patient_turno, offset in patients:
+                start = occurrence.fecha_inicio + timedelta(minutes=offset)
+                exists = db.scalar(select(Turno.id).where(Turno.profesional_id == professional.id, Turno.paciente_id == patient_turno.id, Turno.fecha_hora == start))
+                if exists is None:
+                    db.add(Turno(paciente_id=patient_turno.id, prestacion_id=prestation.id, profesional_id=professional.id, fecha_hora=start, fecha_fin=start + timedelta(minutes=30), estado="reservado", observaciones="Turno futuro sintético QA; no corresponde a persona real."))
+        activos = db.scalars(select(ConsultorioProfesional).where(ConsultorioProfesional.consultorio_id == clinic.id, ConsultorioProfesional.estado == "activo")).all()
+        if {item.profesional_id for item in activos} != {item.id for item in fixture_professionals}:
+            raise RuntimeError("El consultorio sintético debe tener exactamente los cuatro profesionales QA esperados; no se alteraron vínculos ajenos.")
+        invitaciones_reservadas = db.scalar(select(InvitacionConsultorio.id).where(InvitacionConsultorio.consultorio_id == clinic.id, InvitacionConsultorio.estado.in_(("pendiente", "preparacion"))))
+        if invitaciones_reservadas is not None:
+            raise RuntimeError("Quedó una invitación sintética pendiente que reservaría una quinta plaza.")
         db.commit()
         print("Semilla staging sintética aplicada; no se muestran credenciales ni tokens.")
     except Exception:

@@ -58,6 +58,22 @@ test("administradora consulta ocupación privada y prepara/envía invitación co
   await expect(page.locator("body")).not.toContainText(/#token=|token plano/i);
 });
 
+test("administradora conserva Consultorio en inicio, agenda, pacientes y disponibilidad", async ({ page }) => {
+  await iniciarSesion(page, "profesional.consultorio.e2e@example.com");
+  const nav = page.getByRole("navigation", { name: "Navegación profesional" });
+  await expect(nav.getByRole("button", { name: "Consultorio" })).toBeVisible();
+  await expect(nav.getByRole("button", { name: "Consultorio" })).toBeVisible();
+  for (const seccion of ["Inicio", "Mi agenda", "Pacientes", "Mi disponibilidad"]) {
+    await nav.getByRole("button", { name: seccion }).click();
+    await expect(nav.getByRole("button", { name: "Consultorio" })).toBeVisible();
+    await nav.getByRole("button", { name: "Consultorio" }).click();
+    await expect(page).toHaveURL(/\/app\/consultorio$/);
+    await expect(page.getByRole("heading", { name: "Consultorio E2E" })).toBeVisible();
+    await page.getByRole("navigation", { name: "Navegación profesional" }).getByRole("button", { name: "Agenda profesional", exact: true }).click();
+    await expect(page).toHaveURL(/\/app$/);
+  }
+});
+
 test("panel explica el primer conflicto de recurrencia y convierte horas a minutos al guardar", async ({ page }) => {
   await iniciarSesion(page, "profesional.consultorio.e2e@example.com");
   await page.getByRole("button", { name: /Abrir panel de Consultorio/i }).click();
@@ -111,4 +127,39 @@ test("profesional no administradora no ve el acceso y la ruta protegida no revel
   const list = await page.request.get(`${apiBase}/consultorios`, { headers: { Authorization: `Bearer ${accessToken}` } });
   expect(list.ok()).toBeTruthy();
   expect(await list.json()).toEqual([]);
+});
+
+test("módulo con turno bloquea suspensión con sólo el conteo y un módulo libre admite cambios", async ({ page }) => {
+  page.on("dialog", (dialog) => dialog.accept());
+  await iniciarSesion(page, "profesional.consultorio.e2e@example.com");
+  await page.getByRole("button", { name: /Abrir panel de Consultorio/i }).click();
+  await page.getByRole("button", { name: "Semana siguiente" }).click();
+  await page.getByRole("button", { name: "Módulos" }).click();
+  const lista = page.locator(".consultorio-admin__lista-reglas li");
+  const ocupado = lista.filter({ hasText: "09:00–13:00" }).first();
+  await ocupado.getByRole("button", { name: "Suspender" }).click();
+  const alerta = page.getByRole("alert");
+  await expect(alerta).toHaveText("El cambio está bloqueado porque afecta a 1 turno. No se modificó ningún turno.");
+  await expect(alerta).not.toContainText(/Paciente|E2E|clínic/i);
+
+  const token = await page.evaluate(() => localStorage.getItem("access_token"));
+  expect(token).toBeTruthy();
+  const headers = { Authorization: `Bearer ${token}` };
+  const consultorios = await page.request.get(`${apiBase}/consultorios`, { headers });
+  expect(consultorios.ok()).toBeTruthy();
+  const consultorioId = (await consultorios.json())[0].id as number;
+  const ahora = new Date();
+  const desde = ahora.toISOString();
+  const hasta = new Date(ahora.getTime() + 80 * 86400000).toISOString();
+  const respuestaModulos = await page.request.get(`${apiBase}/consultorios/${consultorioId}/modulos`, { headers, params: { desde, hasta } });
+  expect(respuestaModulos.ok()).toBeTruthy();
+  const modulos = await respuestaModulos.json() as Array<{ id: number; estado: string; fecha_inicio: string; fecha_fin: string; profesional_id: number | null }>;
+  const lunesesLibres = modulos.filter((item) => item.estado === "activa" && item.profesional_id !== null && new Date(item.fecha_inicio).getUTCDay() === 1 && new Date(item.fecha_inicio) > ahora).sort((a, b) => a.fecha_inicio.localeCompare(b.fecha_inicio));
+  expect(lunesesLibres.length).toBeGreaterThan(1);
+  const libre = lunesesLibres[lunesesLibres.length - 1];
+  const nuevoInicio = new Date(new Date(libre.fecha_inicio).getTime() - 60 * 60 * 1000);
+  const nuevoFin = new Date(new Date(libre.fecha_fin).getTime() - 60 * 60 * 1000);
+  const cambio = await page.request.patch(`${apiBase}/consultorios/${consultorioId}/modulos/${libre.id}`, { headers, data: { fecha_inicio: nuevoInicio.toISOString(), fecha_fin: nuevoFin.toISOString() } });
+  expect(cambio.status()).toBe(200);
+  expect((await cambio.json()).estado).toBe("activa");
 });

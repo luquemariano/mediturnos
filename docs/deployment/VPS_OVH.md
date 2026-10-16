@@ -61,6 +61,14 @@ Para volver a la imagen anterior, conservar el tag o digest desplegado y ejecuta
 
 La migración de base debe planificarse como operación separada: backup probado, ventana de escritura, compatibilidad de migraciones Alembic, restauración en una base OVH aislada, validación de healthchecks y datos, y cambio de DNS/proxy sólo después de verificar. No existe actualmente una sincronización o replicación declarada entre Render/Aiven y OVH.
 
+## Fixture sintético de QA del Consultorio
+
+`STAGING_SEED_ENABLED=true` habilita `python3 -m app.scripts.seed_staging` únicamente después de validar `APP_ENV=staging`, `DATABASE_URL` hacia el servicio/base `db/turnelia_staging`, el password de demo y emails `staging-*`. La semilla es idempotente y deja cuatro profesionales activos (administradora clínica, profesional clínico y dos profesionales de estética), con pacientes propios, recurrencias semanales dentro del horizonte de 90 días y turnos futuros sintéticos. La persona `staging-paciente@turnelia.com.ar` se comparte entre las dos profesionales clínicas, con perfiles y evoluciones separados por ownership.
+
+La invitación sintética pendiente anterior se revoca sólo si conserva el email/nombre y la titular sintéticos esperados; se cancelan sus ocurrencias para liberar cupo y sala. Una invitación que no coincide detiene la semilla sin modificarla. Se valida que queden exactamente los cuatro vínculos activos previstos y ninguna invitación pendiente que reserve una quinta plaza. La semilla no imprime contraseñas ni tokens, y no envía correo, WhatsApp ni mensajes. Usar sólo la base desechable de staging o una copia de QA aislada; nunca una base productiva.
+
+Los módulos recurrentes incluyen semanas ocupadas con turnos sintéticos y semanas libres para verificar los bloqueos por turnos y los cambios permitidos. Los datos usan identificadores/correos de staging y textos QA explícitos; no representan personas reales.
+
 ### Riesgo de infraestructura Entrega 07
 
 No fue posible inspeccionar el VPS: SSH al IP productivo rechazó la autenticación, y `staging.turnelia.com.ar` aún no resuelve. Por ello no se creó recurso remoto ni se puede afirmar la disponibilidad de puertos, espacio, Caddy, backups o cron. Para continuar, el propietario debe habilitar acceso SSH de solo lectura para la identidad operativa acordada y crear/confirmar el registro DNS staging. Esto no autoriza despliegue ni cambios de producción.

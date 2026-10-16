@@ -49,12 +49,13 @@ export default function ProfesionalShell({
   accionTopbar,
   onAbrirNotificacion,
 }: ProfesionalShellProps) {
+  const abrirConsultorio = onAbrirConsultorio;
   const iniciales = nombre.split(" ").slice(0, 2)
     .map((parte) => parte.charAt(0)).join("").toUpperCase();
 
   const items = modoConsultorio ? [
     { id: "inicio" as const, texto: "Agenda profesional", icono: "inicio" as const, accion: onAbrirInicio },
-    ...(onAbrirConsultorio ? [{ id: "consultorio" as const, texto: "Consultorio", icono: "agenda" as const, accion: onAbrirConsultorio }] : []),
+    ...(abrirConsultorio ? [{ id: "consultorio" as const, texto: "Consultorio", icono: "agenda" as const, accion: abrirConsultorio }] : []),
   ] : [
     { id: "inicio" as const, texto: "Inicio", icono: "inicio" as const, accion: onAbrirInicio },
     { id: "agenda" as const, texto: "Mi agenda", icono: "agenda" as const, accion: onAbrirAgenda },
@@ -65,7 +66,7 @@ export default function ProfesionalShell({
     { id: "lista-espera" as const, texto: "Lista de espera", icono: "reloj" as const, accion: onAbrirListaEspera },
     { id: "perfil" as const, texto: "Mi perfil", icono: "perfil" as const, accion: onAbrirPerfil },
     { id: "ayuda" as const, texto: "Ayuda", icono: "ayuda" as const, accion: onAbrirAyuda },
-    ...(onAbrirConsultorio ? [{ id: "consultorio" as const, texto: "Consultorio", icono: "agenda" as const, accion: onAbrirConsultorio }] : []),
+    ...(abrirConsultorio ? [{ id: "consultorio" as const, texto: "Consultorio" as const, icono: "agenda" as const, accion: abrirConsultorio }] : []),
   ];
 
   return <div className="prof-app-shell">
