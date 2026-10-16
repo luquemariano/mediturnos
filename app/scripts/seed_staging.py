@@ -1,6 +1,7 @@
 """Create only deterministic, synthetic fixtures in the isolated staging database."""
 
 import hashlib
+import argparse
 import os
 import secrets
 import sys
@@ -37,6 +38,13 @@ from app.models.usuario import Usuario
 
 
 EMAILS = {
+    "admin": "staging-consultorio-admin@turnelia.com.ar",
+    "clinical": "staging-profesional-clinico@turnelia.com.ar",
+    "aesthetic": "staging-profesional-estetica@turnelia.com.ar",
+    "patient": "staging-paciente@turnelia.com.ar",
+    "pending": "staging-invitacion-pendiente@turnelia.com.ar",
+}
+LEGACY_EMAILS = {
     "admin": "admin.consultorio@example.invalid",
     "clinical": "profesional.clinico@example.invalid",
     "aesthetic": "profesional.estetica@example.invalid",
@@ -49,6 +57,13 @@ EMAIL_ENV_DEFAULTS = {
     "STAGING_AESTHETIC_EMAIL": EMAILS["aesthetic"],
     "STAGING_PATIENT_EMAIL": EMAILS["patient"],
     "STAGING_PENDING_INVITE_EMAIL": EMAILS["pending"],
+}
+EMAIL_ENV_KEYS = {
+    "admin": "STAGING_ADMIN_EMAIL",
+    "clinical": "STAGING_CLINICAL_EMAIL",
+    "aesthetic": "STAGING_AESTHETIC_EMAIL",
+    "patient": "STAGING_PATIENT_EMAIL",
+    "pending": "STAGING_PENDING_INVITE_EMAIL",
 }
 
 
@@ -65,8 +80,73 @@ def validar_entorno(environ: dict[str, str] | None = None) -> None:
         raise SystemExit("Semilla abortada: falta STAGING_DEMO_PASSWORD.")
     for key, default in EMAIL_ENV_DEFAULTS.items():
         value = env.get(key, default)
-        if not value.lower().endswith("@example.invalid"):
-            raise SystemExit(f"Semilla abortada: {key} debe terminar en @example.invalid.")
+        local_part, separator, domain = value.strip().lower().partition("@")
+        if not separator or domain != "turnelia.com.ar" or not local_part.startswith("staging-"):
+            raise SystemExit(f"Semilla abortada: {key} debe ser una dirección staging-*@turnelia.com.ar.")
+
+
+def _email_configurado(key: str) -> str:
+    return os.getenv(EMAIL_ENV_KEYS[key], EMAILS[key]).strip().lower()
+
+
+def actualizar_emails_sinteticos(db) -> int:
+    """Renombra en forma idempotente las identidades legacy del seed, sin tocar sus credenciales ni datos clínicos."""
+    actualizados = 0
+    for key in ("admin", "clinical", "aesthetic"):
+        old_email = LEGACY_EMAILS[key]
+        new_email = _email_configurado(key)
+        legacy_user = db.scalar(select(Usuario).where(Usuario.email == old_email))
+        current_user = db.scalar(select(Usuario).where(Usuario.email == new_email))
+        if legacy_user is None:
+            continue
+        if current_user is not None and current_user.id != legacy_user.id:
+            raise RuntimeError(f"Hay cuentas staging duplicadas para el rol sintético {key}; no se renombró ninguna.")
+        professional = db.scalar(select(Profesional).where(Profesional.usuario_id == legacy_user.id))
+        if legacy_user.rol != "profesional" or professional is None or professional.slug_publico != f"staging-{key}":
+            raise RuntimeError(f"La identidad legacy de {key} no coincide con el perfil sintético esperado.")
+        profile_email = professional.email
+        if profile_email not in (None, old_email, new_email):
+            raise RuntimeError(f"El email del perfil sintético {key} no coincide con su identidad legacy.")
+        conflicting_profile = db.scalar(select(Profesional).where(Profesional.email == new_email, Profesional.id != professional.id))
+        if conflicting_profile is not None:
+            raise RuntimeError(f"El email destino del perfil sintético {key} ya está en uso.")
+        legacy_user.email = new_email
+        professional.email = new_email
+        actualizados += 1
+
+    old_patient_email = LEGACY_EMAILS["patient"]
+    new_patient_email = _email_configurado("patient")
+    legacy_patient = db.scalar(select(Paciente).where(Paciente.email == old_patient_email))
+    current_patient = db.scalar(select(Paciente).where(Paciente.email == new_patient_email))
+    if legacy_patient is not None:
+        if current_patient is not None and current_patient.id != legacy_patient.id:
+            raise RuntimeError("Hay registros staging duplicados para el paciente sintético; no se renombró ninguno.")
+        if (legacy_patient.nombre, legacy_patient.apellido) != ("Paciente", "Sintético"):
+            raise RuntimeError("El registro legacy no coincide con el paciente sintético esperado.")
+        legacy_patient.email = new_patient_email
+        actualizados += 1
+
+    db.flush()
+    admin_user = db.scalar(select(Usuario).where(Usuario.email == _email_configurado("admin")))
+    for key in ("clinical", "pending"):
+        old_email = LEGACY_EMAILS[key]
+        new_email = _email_configurado(key)
+        legacy_invitations = db.scalars(select(InvitacionConsultorio).where(InvitacionConsultorio.email_normalizado == old_email)).all()
+        for invitation in legacy_invitations:
+            if admin_user is None or invitation.invitante_usuario_id != admin_user.id:
+                raise RuntimeError("Una invitación legacy no pertenece a la administradora sintética; no se modificó.")
+            if invitation.estado in ("pendiente", "preparacion"):
+                conflict = db.scalar(select(InvitacionConsultorio.id).where(
+                    InvitacionConsultorio.consultorio_id == invitation.consultorio_id,
+                    InvitacionConsultorio.email_normalizado == new_email,
+                    InvitacionConsultorio.estado.in_(("pendiente", "preparacion")),
+                    InvitacionConsultorio.id != invitation.id,
+                ))
+                if conflict is not None:
+                    raise RuntimeError("Una invitación staging activa ya usa el email destino; no se modificó.")
+            invitation.email_normalizado = new_email
+            actualizados += 1
+    return actualizados
 
 
 def _obtener_o_crear_usuario(db, email: str, nombre: str, password_hash: str) -> Usuario:
@@ -89,8 +169,7 @@ def _obtener_o_crear_usuario(db, email: str, nombre: str, password_hash: str) ->
 
 
 def _obtener_o_crear_profesional(db, key: str, nombre: str, apellido: str, actividad, especialidad) -> tuple[Usuario, Profesional]:
-    email_env = f"STAGING_{key.upper()}_EMAIL"
-    email = os.getenv(email_env, EMAILS[key])
+    email = _email_configurado(key)
     user = _obtener_o_crear_usuario(db, email, f"{nombre} {apellido}", generar_hash_password(os.environ["STAGING_DEMO_PASSWORD"]))
     account = db.scalar(select(Cuenta).where(Cuenta.nombre == f"Cuenta individual Staging {key}"))
     if account is None:
@@ -190,10 +269,15 @@ def _obtener_o_crear_serie(db, *, clinic, room, user, professional_id, invitatio
     return series, rule
 
 
-def main() -> None:
+def main(actualizar_emails_only: bool = False) -> None:
     validar_entorno()
     db = SessionLocal()
     try:
+        cantidad_emails = actualizar_emails_sinteticos(db)
+        if actualizar_emails_only:
+            db.commit()
+            print(f"Corrección idempotente de identidades staging completada ({cantidad_emails} registros actualizados).")
+            return
         activity_clinical = db.scalar(select(ActividadProfesional).where(ActividadProfesional.codigo == "profesional_matriculable", ActividadProfesional.activa.is_(True)))
         activity_aesthetic = db.scalar(select(ActividadProfesional).where(ActividadProfesional.codigo == "servicios_estetica", ActividadProfesional.activa.is_(True)))
         clinical_specialty = db.scalar(select(Especialidad).where(Especialidad.nombre.ilike("clínica médica"), Especialidad.activa.is_(True)))
@@ -205,7 +289,7 @@ def main() -> None:
         clinical_user, clinical_professional = _obtener_o_crear_profesional(db, "clinical", "Profesional", "Clínico", activity_clinical, clinical_specialty)
         aesthetic_user, aesthetic_professional = _obtener_o_crear_profesional(db, "aesthetic", "Profesional", "Estética", activity_aesthetic, aesthetic_specialty)
 
-        patient_email = os.getenv("STAGING_PATIENT_EMAIL", EMAILS["patient"])
+        patient_email = _email_configurado("patient")
         patient = db.scalar(select(Paciente).where(Paciente.email == patient_email))
         if patient is None:
             patient = Paciente(nombre="Paciente", apellido="Sintético", email=patient_email, activo=True)
@@ -274,7 +358,7 @@ def main() -> None:
         _obtener_o_crear_serie(db, clinic=clinic, room=room, user=admin_user, professional_id=clinical_professional.id, invitation_id=None, weekday=3, start_time=time(9), effective_date=next_monday, origin="recurrente")
         _obtener_o_crear_serie(db, clinic=clinic, room=room, user=admin_user, professional_id=aesthetic_professional.id, invitation_id=None, weekday=1, start_time=time(13), effective_date=next_monday, origin="recurrente")
 
-        pending_email = os.getenv("STAGING_PENDING_INVITE_EMAIL", EMAILS["pending"]).strip().lower()
+        pending_email = _email_configurado("pending")
         pending = db.scalar(select(InvitacionConsultorio).where(InvitacionConsultorio.consultorio_id == clinic.id, InvitacionConsultorio.email_normalizado == pending_email))
         if pending is None:
             pending = InvitacionConsultorio(consultorio_id=clinic.id, email_normalizado=pending_email, nombre_visible="Invitada pendiente sintética", estado="pendiente", token_hash=hashlib.sha256(secrets.token_bytes(32)).hexdigest(), invitante_usuario_id=admin_user.id, vence_en=datetime.now(UTC) + timedelta(days=7))
@@ -292,7 +376,10 @@ def main() -> None:
 
 if __name__ == "__main__":
     try:
-        main()
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--actualizar-emails-sinteticos", action="store_true")
+        argumentos = parser.parse_args()
+        main(actualizar_emails_only=argumentos.actualizar_emails_sinteticos)
     except (RuntimeError, SystemExit) as error:
         print(str(error), file=sys.stderr)
         raise SystemExit(1) from None

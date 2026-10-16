@@ -164,6 +164,8 @@ En Windows, usar Git Bash con `STAGING_ENV_FILE` apuntando al archivo externo. E
 
 Validación local de la Entrega 07 en Docker Desktop: PostgreSQL 18 saludable; `alembic upgrade head` en vacío hasta `a7b8c9d0e1f2`; seed sintético idempotente dos veces; backup/checksum/restore correctos; API y frontend saludables; puertos sólo loopback; `robots.txt` bloqueado y `X-Robots-Tag: noindex, nofollow, noarchive`. Esta prueba local no acredita disponibilidad ni configuración del VPS.
 
+Las cuentas profesionales seed usan direcciones `staging-*@turnelia.com.ar` válidas para `/auth/login`; `python -m app.scripts.seed_staging --actualizar-emails-sinteticos` renombra de forma idempotente los alias legacy `@example.invalid`, conservando hashes de contraseña y registros clínicos. El paciente sintético es un registro, no una cuenta de login.
+
 Pendiente de preproducción remota: acceso SSH autorizado para inspección, DNS `staging.turnelia.com.ar`, validación de espacio/puertos/containers/backups/cron y revisión de Caddy antes de configurar proxy/TLS. No desplegar ni recargar Caddy como parte de la Entrega 07.
 
 Para correo real de prueba (aún apagado): `STAGING_EMAIL_SEND_ENABLED=true`, `EMAIL_PROVIDER=resend`, `RESEND_API_KEY`, `EMAIL_FROM` verificado y `STAGING_EMAIL_ALLOWLIST` con la única dirección previamente autorizada. El owner debe entregar esa dirección y credenciales Resend de staging; no hubo envíos reales.
