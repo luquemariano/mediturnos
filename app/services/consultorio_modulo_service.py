@@ -119,36 +119,66 @@ def _fechas_solapan_reglas(
     dia_a: int, hora_a: time, dur_a: int, desde_a: date, hasta_a: date | None,
     dia_b: int, hora_b: time, dur_b: int, desde_b: date, hasta_b: date | None,
 ) -> bool:
-    inicio = max(desde_a, desde_b)
+    return _primer_solapamiento_reglas(
+        dia_a, hora_a, dur_a, desde_a, hasta_a,
+        dia_b, hora_b, dur_b, desde_b, hasta_b,
+        "UTC", "UTC",
+    ) is not None
+
+
+def _primer_solapamiento_reglas(
+    dia_a: int, hora_a: time, dur_a: int, desde_a: date, hasta_a: date | None,
+    dia_b: int, hora_b: time, dur_b: int, desde_b: date, hasta_b: date | None,
+    zona_a: str, zona_b: str,
+) -> tuple[date, datetime, datetime] | None:
+    """Return the first actual overlap, comparing weekly civil dates as UTC instants."""
+    inicio = max(desde_a, desde_b) - timedelta(days=1)
     fin = min(hasta_a or date.max, hasta_b or date.max)
     if inicio > fin:
-        return False
-    # Two complete weeks cover every pair of weekly weekdays and overnight modules.
-    fechas = [inicio - timedelta(days=1) + timedelta(days=i) for i in range(16)]
-    for fecha_a in fechas:
+        return None
+    tz_a, tz_b = _tz(zona_a), _tz(zona_b)
+    for fecha_a in (inicio + timedelta(days=i) for i in range(16)):
         if fecha_a.weekday() != dia_a or fecha_a < desde_a or fecha_a > fin or (hasta_a and fecha_a > hasta_a):
             continue
-        a_inicio = datetime.combine(fecha_a, hora_a.replace(tzinfo=None))
+        a_inicio = _instante_local_utc(fecha_a, hora_a, tz_a)
+        if a_inicio is None:
+            continue
         a_fin = a_inicio + timedelta(minutes=dur_a)
-        for fecha_b in fechas:
+        for fecha_b in (fecha_a - timedelta(days=1), fecha_a, fecha_a + timedelta(days=1)):
             if fecha_b.weekday() != dia_b or fecha_b < desde_b or fecha_b > fin or (hasta_b and fecha_b > hasta_b):
                 continue
-            b_inicio = datetime.combine(fecha_b, hora_b.replace(tzinfo=None))
+            b_inicio = _instante_local_utc(fecha_b, hora_b, tz_b)
+            if b_inicio is None:
+                continue
             b_fin = b_inicio + timedelta(minutes=dur_b)
             if a_inicio < b_fin and a_fin > b_inicio:
-                return True
-    return False
+                return fecha_b, b_inicio, b_fin
+    return None
 
 
-def _validar_regla_sin_solape(db: Session, sala_id: int, nueva: dict, excluir_regla_id: int | None = None) -> None:
+def _validar_regla_sin_solape(
+    db: Session, sala_id: int, nueva: dict, excluir_regla_id: int | None = None, zona_horaria: str | None = None
+) -> None:
     for existente in repository.listar_reglas_sala(db, sala_id):
         if existente.id == excluir_regla_id:
             continue
-        if _fechas_solapan_reglas(
+        solapamiento = _primer_solapamiento_reglas(
             nueva["dia_semana"], nueva["hora_inicio"], nueva["duracion_minutos"], nueva["vigente_desde"], nueva.get("vigente_hasta"),
             existente.dia_semana, existente.hora_inicio, existente.duracion_minutos, existente.vigente_desde, existente.vigente_hasta,
-        ):
-            raise HTTPException(status_code=409, detail=MENSAJE_SOLAPAMIENTO_SALA)
+            zona_horaria or existente.zona_horaria, existente.zona_horaria,
+        )
+        if solapamiento:
+            fecha, inicio, fin = solapamiento
+            profesional = existente.serie.profesional
+            nombre = f"{profesional.nombre} {profesional.apellido}" if profesional else "Invitación pendiente"
+            zona = _tz(existente.zona_horaria)
+            raise HTTPException(status_code=409, detail={
+                "mensaje": MENSAJE_SOLAPAMIENTO_SALA,
+                "fecha": fecha.isoformat(),
+                "hora_inicio": inicio.astimezone(zona).strftime("%H:%M"),
+                "hora_fin": fin.astimezone(zona).strftime("%H:%M"),
+                "profesional": nombre,
+            })
 
 
 def _traducir_integridad(error: IntegrityError) -> HTTPException:
@@ -189,7 +219,7 @@ def crear_regla(db: Session, usuario: Usuario, consultorio_id: int, datos: Regla
         "vigente_desde": datos.vigente_desde,
         "vigente_hasta": datos.vigente_hasta,
     }
-    _validar_regla_sin_solape(db, sala.id, regla_datos)
+    _validar_regla_sin_solape(db, sala.id, regla_datos, zona_horaria=consultorio.zona_horaria)
     serie = repository.crear_serie(db, consultorio_id, sala.id, datos.profesional_id, usuario.id)
     regla = repository.crear_regla(
         db,
@@ -240,7 +270,11 @@ def actualizar_regla_desde_fecha(
             raise HTTPException(status_code=422, detail="Los campos informados no pueden ser nulos.")
     if nueva["vigente_hasta"] is not None and nueva["vigente_hasta"] < nueva["vigente_desde"]:
         raise HTTPException(status_code=422, detail="La vigencia final no puede preceder a la fecha efectiva.")
-    _validar_regla_sin_solape(db, nueva_sala_id, nueva, excluir_regla_id=regla.id if nueva_sala_id == serie.sala_id else None)
+    _validar_regla_sin_solape(
+        db, nueva_sala_id, nueva,
+        excluir_regla_id=regla.id if nueva_sala_id == serie.sala_id else None,
+        zona_horaria=consultorio.zona_horaria,
+    )
     ocurrencias = (
         db.query(OcurrenciaModulo)
         .filter(OcurrenciaModulo.regla_id == regla.id, OcurrenciaModulo.fecha_origen >= datos.vigente_desde, OcurrenciaModulo.estado == "activa")

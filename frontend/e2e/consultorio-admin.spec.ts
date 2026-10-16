@@ -46,7 +46,7 @@ test("administradora consulta ocupación privada y prepara/envía invitación co
   const fecha = await page.getByLabel("Desde").getAttribute("min");
   await page.getByLabel("Desde").fill(fecha!);
   await page.getByLabel("Día").selectOption("1");
-  await page.getByLabel("Hora").fill("15:00");
+  await page.getByRole("textbox", { name: "Hora", exact: true }).fill("15:00");
   await page.getByRole("button", { name: "Preparar invitación" }).click();
   await expect(page.locator(".consultorio-admin__mensaje")).toContainText("La invitación quedó preparada");
 
@@ -56,6 +56,46 @@ test("administradora consulta ocupación privada y prepara/envía invitación co
   await expect(page.locator(".consultorio-admin__mensaje")).toContainText("La invitación fue enviada");
   await expect(fila).toContainText("Pendiente");
   await expect(page.locator("body")).not.toContainText(/#token=|token plano/i);
+});
+
+test("panel explica el primer conflicto de recurrencia y convierte horas a minutos al guardar", async ({ page }) => {
+  await iniciarSesion(page, "profesional.consultorio.e2e@example.com");
+  await page.getByRole("button", { name: /Abrir panel de Consultorio/i }).click();
+  await expect(page.getByRole("heading", { name: "Consultorio E2E" })).toBeVisible();
+
+  await page.getByRole("button", { name: "Semana siguiente" }).click();
+  const lunes = await page.locator(".consultorio-admin__dia time").first().getAttribute("dateTime");
+  expect(lunes).toBeTruthy();
+  await page.getByRole("button", { name: "Módulos" }).click();
+  const formulario = page.locator("form.consultorio-admin__formulario").first();
+  const duracion = formulario.getByLabel("Duración (horas)");
+  await expect(duracion).toHaveValue("4");
+  await expect(formulario.getByLabel("Día")).toHaveValue("0");
+  await formulario.getByLabel("Profesional").selectOption({ label: "Valentina E2E" });
+  await formulario.getByLabel("Sala").selectOption({ label: "Sala E2E" });
+  await formulario.getByLabel("Desde").fill(lunes!);
+  await formulario.getByLabel("Hora de inicio").fill("10:00");
+  const requests: Array<{ duracion_minutos: number; dia_semana: number }> = [];
+  page.on("request", (request) => {
+    if (request.method() === "POST" && request.url().includes("/reglas-modulo")) {
+      const body = request.postDataJSON();
+      requests.push({ duracion_minutos: body.duracion_minutos, dia_semana: body.dia_semana });
+    }
+  });
+  await formulario.getByRole("button", { name: "Crear módulo recurrente" }).click();
+  const alerta = page.getByRole("alert");
+  await expect(alerta).toContainText("Valentina E2E");
+  await expect(alerta).toContainText("09:00 a 13:00");
+  await expect(alerta).toContainText("oct");
+  expect(requests[0]).toEqual({ duracion_minutos: 240, dia_semana: 0 });
+
+  await duracion.fill("1.5");
+  await formulario.getByLabel("Día").selectOption("1");
+  await formulario.getByLabel("Hora de inicio").fill("10:00");
+  await formulario.getByRole("button", { name: "Crear módulo recurrente" }).click();
+  await expect(page.locator(".consultorio-admin__mensaje")).toContainText("La recurrencia quedó configurada");
+  expect(requests[1]).toEqual({ duracion_minutos: 90, dia_semana: 1 });
+  await expect(page.getByText(/10:00 · 1,5 horas/)).toBeVisible();
 });
 
 test("profesional no administradora no ve el acceso y la ruta protegida no revela el consultorio", async ({ page }) => {
