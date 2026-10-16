@@ -128,6 +128,26 @@ def test_reglas_semanales_solapadas_se_rechazan_aunque_estan_fuera_del_horizonte
     db.close()
 
 
+def test_solapamiento_recurrente_informa_primer_bloque_y_profesional_sin_datos_clinicos(client, consultorio_modulos):
+    data = consultorio_modulos
+    fecha = _proxima_fecha(0)
+    existente = _crear_regla(client, data, dia=0, hora="09:00:00", fecha=fecha)
+    assert existente.status_code == 201, existente.text
+
+    conflicto = _crear_regla(client, data, dia=0, hora="10:00:00", fecha=fecha)
+
+    assert conflicto.status_code == 409
+    detalle = conflicto.json()["detail"]
+    assert detalle == {
+        "mensaje": "El horario de la sala ya no está disponible.",
+        "fecha": fecha.isoformat(),
+        "hora_inicio": "09:00",
+        "hora_fin": "13:00",
+        "profesional": "Profesional Piloto",
+    }
+    assert not {"paciente", "turno", "historia", "documento", "prestacion"} & set(detalle)
+
+
 def test_modulo_extraordinario_se_suspende_y_cambio_ajeno_es_404(client, consultorio_modulos):
     data = consultorio_modulos
     _autenticar(data["titular"])

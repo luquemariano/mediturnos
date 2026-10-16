@@ -32,7 +32,7 @@ import type {
 import "./ConsultorioAdminPanel.css";
 
 type Pestaña = "ocupacion" | "modulos" | "invitaciones";
-type ModuloBorrador = { sala_id: string; dia_semana: string; hora_inicio: string; duracion_minutos: string; vigente_desde: string; vigente_hasta: string };
+type ModuloBorrador = { sala_id: string; dia_semana: string; hora_inicio: string; duracion_horas: string; vigente_desde: string; vigente_hasta: string };
 
 const DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 const zonaPredeterminada = "America/Argentina/Buenos_Aires";
@@ -95,17 +95,38 @@ function mensajeError(error: unknown, respaldo: string): string {
     const cantidad = detail.turnos_afectados;
     return `El cambio está bloqueado porque afecta a ${cantidad} ${cantidad === 1 ? "turno" : "turnos"}. No se modificó ningún turno.`;
   }
+  if (detail && typeof detail === "object" && typeof detail.fecha === "string"
+    && typeof detail.hora_inicio === "string" && typeof detail.hora_fin === "string"
+    && typeof detail.profesional === "string") {
+    const fecha = new Intl.DateTimeFormat("es-AR", { dateStyle: "full", timeZone: "UTC" }).format(new Date(`${detail.fecha}T12:00:00Z`));
+    return `La sala ya está ocupada el ${fecha}, de ${detail.hora_inicio} a ${detail.hora_fin}, por ${detail.profesional}.`;
+  }
+  if (detail && typeof detail === "object" && typeof detail.mensaje === "string") return detail.mensaje;
   return typeof detail === "string" ? detail : respaldo;
 }
 
 function borradorModulo(salaId = "", fecha = ""): ModuloBorrador {
-  return { sala_id: salaId, dia_semana: "0", hora_inicio: "09:00", duracion_minutos: "240", vigente_desde: fecha, vigente_hasta: "" };
+  return { sala_id: salaId, dia_semana: "0", hora_inicio: "09:00", duracion_horas: "4", vigente_desde: fecha, vigente_hasta: "" };
+}
+
+function duracionEnMinutos(horas: string): number {
+  const minutos = Number(horas) * 60;
+  if (!Number.isFinite(minutos) || !Number.isInteger(minutos) || minutos < 1 || minutos > 1440) {
+    throw new Error("Ingresá una duración en horas válida, en incrementos de 0,25 horas.");
+  }
+  return minutos;
+}
+
+function etiquetaDuracion(minutos: number): string {
+  const horas = minutos / 60;
+  const valor = new Intl.NumberFormat("es-AR", { maximumFractionDigits: 2 }).format(horas);
+  return `${valor} ${horas === 1 ? "hora" : "horas"}`;
 }
 
 function payloadModulo(modulo: ModuloBorrador): ModuloSemanalPayload {
   return {
     sala_id: Number(modulo.sala_id), dia_semana: Number(modulo.dia_semana),
-    hora_inicio: modulo.hora_inicio, duracion_minutos: Number(modulo.duracion_minutos),
+    hora_inicio: modulo.hora_inicio, duracion_minutos: duracionEnMinutos(modulo.duracion_horas),
     vigente_desde: modulo.vigente_desde,
     ...(modulo.vigente_hasta ? { vigente_hasta: modulo.vigente_hasta } : {}),
   };
@@ -140,7 +161,7 @@ export default function ConsultorioAdminPanel({ nombre, onVolver, onCerrarSesion
   const [reglaEditando, setReglaEditando] = useState<number | null>(null);
   const [efectivaDesde, setEfectivaDesde] = useState("");
   const [horaNueva, setHoraNueva] = useState("09:00");
-  const [duracionNueva, setDuracionNueva] = useState("240");
+  const [duracionNueva, setDuracionNueva] = useState("4");
   const [salaNueva, setSalaNueva] = useState("");
   const [profesionalNuevo, setProfesionalNuevo] = useState("");
   const [moduloEditando, setModuloEditando] = useState<number | null>(null);
@@ -198,10 +219,10 @@ export default function ConsultorioAdminPanel({ nombre, onVolver, onCerrarSesion
   useEffect(() => {
     if (!consultorio) return;
     const salaId = salas[0]?.id ? String(salas[0].id) : "";
-    setRecurrencia((actual) => ({ ...actual, sala_id: actual.sala_id || salaId, duracion_minutos: String(consultorio.duracion_modulo_minutos) }));
+    setRecurrencia((actual) => ({ ...actual, sala_id: actual.sala_id || salaId, duracion_horas: String(consultorio.duracion_modulo_minutos / 60) }));
     setExtraSala((actual) => actual || salaId);
     setModuloSalaNueva((actual) => actual || salaId);
-    setInviteModulos((actual) => actual.map((item) => ({ ...item, sala_id: item.sala_id || salaId, duracion_minutos: String(consultorio.duracion_modulo_minutos) })));
+    setInviteModulos((actual) => actual.map((item) => ({ ...item, sala_id: item.sala_id || salaId, duracion_horas: String(consultorio.duracion_modulo_minutos / 60) })));
     setExtraFecha((actual) => actual || fechaClave(new Date(), consultorio.zona_horaria));
   }, [consultorio, salas]);
 
@@ -228,7 +249,7 @@ export default function ConsultorioAdminPanel({ nombre, onVolver, onCerrarSesion
   async function guardarCambioRegla(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault(); if (!consultorioId || reglaEditando === null) return;
     if (!window.confirm("El cambio se aplicará desde la fecha indicada. Si afecta turnos, el sistema lo bloqueará y no los modificará. ¿Continuar?")) return;
-    const payload: Record<string, unknown> = { vigente_desde: efectivaDesde, hora_inicio: horaNueva, duracion_minutos: Number(duracionNueva), sala_id: Number(salaNueva), profesional_id: Number(profesionalNuevo) };
+    const payload: Record<string, unknown> = { vigente_desde: efectivaDesde, hora_inicio: horaNueva, duracion_minutos: duracionEnMinutos(duracionNueva), sala_id: Number(salaNueva), profesional_id: Number(profesionalNuevo) };
     await ejecutarAccion(() => actualizarReglaConsultorio(consultorioId, reglaEditando, payload), "La recurrencia cambió desde la fecha indicada.");
     setReglaEditando(null);
   }
@@ -332,7 +353,7 @@ export default function ConsultorioAdminPanel({ nombre, onVolver, onCerrarSesion
             <label>Día<select value={recurrencia.dia_semana} onChange={(event) => setRecurrencia({ ...recurrencia, dia_semana: event.target.value })}>{DIAS.map((dia, index) => <option key={dia} value={index}>{dia}</option>)}</select></label>
             <label>Desde<input type="date" min={hoy} required value={recurrencia.vigente_desde} onChange={(event) => setRecurrencia({ ...recurrencia, vigente_desde: event.target.value })} /></label>
             <label>Hora de inicio<input type="time" required value={recurrencia.hora_inicio} onChange={(event) => setRecurrencia({ ...recurrencia, hora_inicio: event.target.value })} /></label>
-            <label>Duración (minutos)<input type="number" min="1" max="1440" required value={recurrencia.duracion_minutos} onChange={(event) => setRecurrencia({ ...recurrencia, duracion_minutos: event.target.value })} /></label>
+            <label>Duración (horas)<input type="number" min="0.25" max="24" step="0.25" required value={recurrencia.duracion_horas} onChange={(event) => setRecurrencia({ ...recurrencia, duracion_horas: event.target.value })} /></label>
             <label>Vigente hasta (opcional)<input type="date" min={recurrencia.vigente_desde || hoy} value={recurrencia.vigente_hasta} onChange={(event) => setRecurrencia({ ...recurrencia, vigente_hasta: event.target.value })} /></label>
             <button type="submit" disabled={guardando || profesionales.length === 0 || salas.length === 0}>Crear módulo recurrente</button>
           </form>
@@ -354,8 +375,8 @@ export default function ConsultorioAdminPanel({ nombre, onVolver, onCerrarSesion
         <section className="consultorio-admin__panel" aria-labelledby="consultorio-reglas-titulo">
           <header className="consultorio-admin__seccion-header"><div><h2 id="consultorio-reglas-titulo">Recurrencias vigentes</h2><p>Los cambios se aplican desde una fecha futura y se validan contra los turnos existentes.</p></div></header>
           {reglas.length === 0 ? <p className="consultorio-admin__vacio">Todavía no hay recurrencias activas.</p> : <ul className="consultorio-admin__lista-reglas">{reglas.map((regla) => <li key={regla.id}>
-            <div><strong>{DIAS[regla.dia_semana]} · {regla.hora_inicio.slice(0, 5)} · {regla.duracion_minutos} min</strong><span>{regla.sala_nombre} · {regla.invitacion_pendiente ? "Invitación pendiente" : regla.profesional_nombre}</span><small>Desde {regla.vigente_desde}{regla.vigente_hasta ? ` hasta ${regla.vigente_hasta}` : " · sin fecha de cierre"}</small></div>
-            {regla.profesional_id !== null && <button type="button" disabled={guardando} onClick={() => { setReglaEditando(regla.id); setEfectivaDesde(moverFecha(hoy, 1) > regla.vigente_desde ? moverFecha(hoy, 1) : regla.vigente_desde); setHoraNueva(regla.hora_inicio.slice(0, 5)); setDuracionNueva(String(regla.duracion_minutos)); setSalaNueva(String(regla.sala_id)); setProfesionalNuevo(String(regla.profesional_id)); }}>Cambiar desde una fecha</button>}
+            <div><strong>{DIAS[regla.dia_semana]} · {regla.hora_inicio.slice(0, 5)} · {etiquetaDuracion(regla.duracion_minutos)}</strong><span>{regla.sala_nombre} · {regla.invitacion_pendiente ? "Invitación pendiente" : regla.profesional_nombre}</span><small>Desde {regla.vigente_desde}{regla.vigente_hasta ? ` hasta ${regla.vigente_hasta}` : " · sin fecha de cierre"}</small></div>
+            {regla.profesional_id !== null && <button type="button" disabled={guardando} onClick={() => { setReglaEditando(regla.id); setEfectivaDesde(moverFecha(hoy, 1) > regla.vigente_desde ? moverFecha(hoy, 1) : regla.vigente_desde); setHoraNueva(regla.hora_inicio.slice(0, 5)); setDuracionNueva(String(regla.duracion_minutos / 60)); setSalaNueva(String(regla.sala_id)); setProfesionalNuevo(String(regla.profesional_id)); }}>Cambiar desde una fecha</button>}
           </li>)}</ul>}
           {reglaEditando !== null && <form className="consultorio-admin__formulario consultorio-admin__formulario--edicion" onSubmit={(event) => void guardarCambioRegla(event)}>
             <h3>Nuevo tramo de recurrencia</h3>
@@ -363,7 +384,7 @@ export default function ConsultorioAdminPanel({ nombre, onVolver, onCerrarSesion
             <label>Profesional<select value={profesionalNuevo} required onChange={(event) => setProfesionalNuevo(event.target.value)}>{profesionales.map((item) => <option key={item.profesional_id} value={item.profesional_id}>{item.nombre}</option>)}</select></label>
             <label>Sala<select value={salaNueva} required onChange={(event) => setSalaNueva(event.target.value)}>{salas.filter((item) => item.estado === "activa").map((item) => <option key={item.id} value={item.id}>{item.nombre}</option>)}</select></label>
             <label>Hora<input type="time" required value={horaNueva} onChange={(event) => setHoraNueva(event.target.value)} /></label>
-            <label>Duración<input type="number" min="1" max="1440" required value={duracionNueva} onChange={(event) => setDuracionNueva(event.target.value)} /></label>
+            <label>Duración (horas)<input type="number" min="0.25" max="24" step="0.25" required value={duracionNueva} onChange={(event) => setDuracionNueva(event.target.value)} /></label>
             <div className="consultorio-admin__acciones-form"><button type="submit" disabled={guardando}>Confirmar cambio</button><button type="button" className="secundario" onClick={() => setReglaEditando(null)}>Cancelar</button></div>
           </form>}
         </section>
@@ -397,7 +418,7 @@ export default function ConsultorioAdminPanel({ nombre, onVolver, onCerrarSesion
               <label>Día<select value={item.dia_semana} onChange={(event) => setInviteModulos((actual) => actual.map((row, rowIndex) => rowIndex === index ? { ...row, dia_semana: event.target.value } : row))}>{DIAS.map((dia, diaIndex) => <option key={dia} value={diaIndex}>{dia}</option>)}</select></label>
               <label>Desde<input type="date" min={hoy} required value={item.vigente_desde} onChange={(event) => setInviteModulos((actual) => actual.map((row, rowIndex) => rowIndex === index ? { ...row, vigente_desde: event.target.value } : row))} /></label>
               <label>Hora<input type="time" required value={item.hora_inicio} onChange={(event) => setInviteModulos((actual) => actual.map((row, rowIndex) => rowIndex === index ? { ...row, hora_inicio: event.target.value } : row))} /></label>
-              <label>Duración<input type="number" min="1" max="1440" required value={item.duracion_minutos} onChange={(event) => setInviteModulos((actual) => actual.map((row, rowIndex) => rowIndex === index ? { ...row, duracion_minutos: event.target.value } : row))} /></label>
+              <label>Duración (horas)<input type="number" min="0.25" max="24" step="0.25" required value={item.duracion_horas} onChange={(event) => setInviteModulos((actual) => actual.map((row, rowIndex) => rowIndex === index ? { ...row, duracion_horas: event.target.value } : row))} /></label>
               {inviteModulos.length > 1 && <button type="button" className="secundario" onClick={() => setInviteModulos((actual) => actual.filter((_, rowIndex) => rowIndex !== index))}>Quitar módulo</button>}
             </fieldset>)}
             <button type="button" className="secundario consultorio-admin__agregar-modulo" disabled={inviteModulos.length >= 28} onClick={() => setInviteModulos((actual) => [...actual, borradorModulo(salas[0] ? String(salas[0].id) : "", hoy)])}>Agregar otro módulo semanal</button></div>
