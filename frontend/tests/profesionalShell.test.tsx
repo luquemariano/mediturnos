@@ -37,3 +37,20 @@ it("mantiene Pacientes en la navegación profesional desde cualquier sección", 
   expect(container.querySelector('.prof-marca-movil img[src="/brand/mediturnos-symbol.svg"]')).toBeInTheDocument();
   expect(container.querySelectorAll(".prof-marca-simbolo[aria-hidden='true']")).toHaveLength(2);
 });
+
+it("muestra Consultorio en todas las secciones sólo para quien administra un consultorio", async () => {
+  const accion = vi.fn();
+  const props = { nombre: "Admin QA", tituloTopbar: "Panel", onAbrirInicio: accion, onAbrirAgenda: accion, onAbrirPacientes: accion, onAbrirDisponibilidad: accion, onAbrirPrestaciones: accion, onAbrirPerfil: accion, onCerrarSesion: accion, onAbrirConsultorio: accion, children: <p>Contenido</p> };
+  const { rerender, unmount } = render(<ProfesionalShell {...props} activo="inicio" />);
+  expect(screen.getAllByRole("button", { name: "Consultorio" })).toHaveLength(2);
+  for (const activo of ["inicio", "agenda", "pacientes", "disponibilidad"] as const) {
+    rerender(<ProfesionalShell {...props} activo={activo} />);
+    const nav = screen.getByRole("navigation", { name: "Navegación profesional" });
+    within(nav).getByRole("button", { name: "Consultorio" }).click();
+  }
+  expect(accion).toHaveBeenCalledTimes(4);
+
+  unmount();
+  render(<ProfesionalShell {...props} onAbrirConsultorio={undefined} activo="pacientes" />);
+  expect(screen.queryByRole("button", { name: "Consultorio" })).not.toBeInTheDocument();
+});

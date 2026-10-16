@@ -29,6 +29,7 @@ type PerfilProfesionalProps = {
   onAbrirDisponibilidad: () => void;
   onAbrirPrestaciones: () => void;
   onAbrirPerfil: () => void;
+  onAbrirConsultorio?: () => void;
   onCerrarSesion: () => void;
 };
 
@@ -163,6 +164,7 @@ function PerfilProfesional(props: PerfilProfesionalProps) {
 
   return <ProfesionalShell
     activo="perfil"
+    onAbrirConsultorio={props.tipo === "profesional" ? props.onAbrirConsultorio : undefined}
     nombre={nombreShell}
     tituloTopbar="Mi perfil"
     onAbrirInicio={props.onVolver}

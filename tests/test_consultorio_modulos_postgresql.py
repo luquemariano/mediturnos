@@ -23,9 +23,13 @@ from app.models.regla_recurrencia_modulo import ReglaRecurrenciaModulo
 from app.models.profesional import Profesional
 from app.models.sala import Sala
 from app.models.usuario import Usuario
+from app.models.paciente import Paciente
+from app.models.especialidad import Especialidad
+from app.models.prestacion import Prestacion
+from app.models.turno import Turno
 from app.repositories.consultorio_modulo_repository import listar_mis_ocurrencias_activas
-from app.schemas.consultorio_modulo import ReglaModuloCrear
-from app.services.consultorio_modulo_service import _crear_ocurrencias_regla, crear_regla
+from app.schemas.consultorio_modulo import ReglaModuloCrear, ModuloOcurrenciaActualizar
+from app.services.consultorio_modulo_service import _crear_ocurrencias_regla, crear_regla, suspender_ocurrencia, actualizar_ocurrencia
 
 
 POSTGRES_URL = os.getenv("TEST_POSTGRES_CONSULTORIO_URL")
@@ -381,5 +385,55 @@ def test_consulta_postgresql_filtra_modulos_por_cuenta_y_vinculo():
             connection.execute(text("DELETE FROM profesionales WHERE id=:id"), {"id": professional_b_id}) if professional_b_id else None
             connection.execute(text("DELETE FROM usuarios WHERE id=:id"), {"id": user_b_id}) if user_b_id else None
             connection.execute(text("DELETE FROM cuentas WHERE id=:id"), {"id": account_b_id}) if account_b_id else None
+        _limpiar(engine, ids)
+        engine.dispose()
+
+
+def test_postgresql_bloquea_modulo_con_turno_y_permite_cambio_de_modulo_libre():
+    engine, Sessions, key, ids = _escenario()
+    user_id, professional_id, clinic_id, room_id, *_ = ids
+    turno_id = patient_id = specialty_id = prestation_id = None
+    try:
+        with Sessions() as db:
+            patient = Paciente(nombre="Paciente QA sintético", apellido="No real", activo=True)
+            specialty = Especialidad(nombre=f"QA-{key[:12]}", activa=True)
+            db.add_all((patient, specialty)); db.flush()
+            prestation = Prestacion(profesional_id=professional_id, especialidad_id=specialty.id, nombre="Consulta QA", duracion_minutos=30, precio=1, activa=True)
+            db.add(prestation); db.flush()
+            owner = db.get(Usuario, user_id)
+            occupied_start = datetime.now(UTC) + timedelta(days=35)
+            occupied = OcurrenciaModulo(consultorio_id=clinic_id, sala_id=room_id, profesional_id=professional_id, fecha_inicio=occupied_start, fecha_fin=occupied_start + timedelta(hours=4), estado="activa", origen="extraordinaria", creado_por_usuario_id=user_id)
+            free_start = occupied_start + timedelta(days=7)
+            free = OcurrenciaModulo(consultorio_id=clinic_id, sala_id=room_id, profesional_id=professional_id, fecha_inicio=free_start, fecha_fin=free_start + timedelta(hours=4), estado="activa", origen="extraordinaria", creado_por_usuario_id=user_id)
+            db.add_all((occupied, free)); db.flush()
+            appointment = Turno(paciente_id=patient.id, prestacion_id=prestation.id, profesional_id=professional_id, fecha_hora=occupied_start + timedelta(hours=1), fecha_fin=occupied_start + timedelta(hours=1, minutes=30), estado="reservado")
+            db.add(appointment); db.commit()
+            occupied_id, free_id = occupied.id, free.id
+            turno_id, patient_id, specialty_id, prestation_id = appointment.id, patient.id, specialty.id, prestation.id
+            try:
+                actualizar_ocurrencia(db, owner, clinic_id, occupied_id, ModuloOcurrenciaActualizar(
+                    fecha_fin=occupied_start + timedelta(minutes=45),
+                ))
+                raise AssertionError("El cambio de franja debía bloquearse por el turno.")
+            except HTTPException as error:
+                assert error.status_code == 409
+                assert error.detail == {"mensaje": "El cambio requiere resolver turnos comprometidos.", "turnos_afectados": 1}
+            try:
+                suspender_ocurrencia(db, owner, clinic_id, occupied_id)
+                raise AssertionError("La suspensión debía bloquearse por el turno.")
+            except HTTPException as error:
+                assert error.status_code == 409
+                assert error.detail == {"mensaje": "El módulo tiene turnos comprometidos.", "turnos_afectados": 1}
+            moved_start = free_start + timedelta(days=1)
+            updated = actualizar_ocurrencia(db, owner, clinic_id, free_id, ModuloOcurrenciaActualizar(fecha_inicio=moved_start, fecha_fin=moved_start + timedelta(hours=4)))
+            assert updated.fecha_inicio == moved_start
+            assert db.get(OcurrenciaModulo, occupied_id).estado == "activa"
+            assert db.get(OcurrenciaModulo, free_id).estado == "activa"
+    finally:
+        with engine.begin() as connection:
+            if turno_id: connection.execute(text("DELETE FROM turnos WHERE id=:id"), {"id": turno_id})
+            if prestation_id: connection.execute(text("DELETE FROM prestaciones WHERE id=:id"), {"id": prestation_id})
+            if patient_id: connection.execute(text("DELETE FROM pacientes WHERE id=:id"), {"id": patient_id})
+            if specialty_id: connection.execute(text("DELETE FROM especialidades WHERE id=:id"), {"id": specialty_id})
         _limpiar(engine, ids)
         engine.dispose()

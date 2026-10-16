@@ -17,6 +17,7 @@ type MiDisponibilidadProps = {
   nombre: string;
   onVolver: () => void;
   onAbrirAgenda: () => void;
+  onAbrirConsultorio?: () => void;
   onAbrirPacientes: () => void;
   onAbrirPerfil: () => void;
   onAbrirPrestaciones: () => void;
@@ -54,6 +55,7 @@ export default function MiDisponibilidad({
   nombre,
   onVolver,
   onAbrirAgenda,
+  onAbrirConsultorio,
   onAbrirPacientes,
   onAbrirPrestaciones,
   onAbrirPerfil,
@@ -246,6 +248,7 @@ export default function MiDisponibilidad({
 
   return <ProfesionalShell
     activo="disponibilidad"
+    onAbrirConsultorio={onAbrirConsultorio}
     nombre={nombre}
     tituloTopbar="Mi disponibilidad"
     onAbrirInicio={onVolver}

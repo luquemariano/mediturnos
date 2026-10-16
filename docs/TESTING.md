@@ -137,7 +137,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\verify.ps1 -E2E -Headed -S
 
 `-SlowMo` acepta valores de `0` a `5000` milisegundos, sólo es válido con `-E2E` y se recomienda para observación/debug local. La validación automática normal debe usar `verify.ps1 -E2E` sin demora.
 
-El E2E del panel Consultorio verifica que un solapamiento recurrente identifique la fecha, franja y profesional ocupante sin datos clínicos, y que las duraciones expresadas en horas se conviertan exactamente a minutos al conservar el contrato de la API.
+El E2E del panel Consultorio verifica que un solapamiento recurrente identifique la fecha, franja y profesional ocupante sin datos clínicos, que las duraciones expresadas en horas se conviertan exactamente a minutos al conservar el contrato de la API, que la navegación persista en Inicio/agenda/pacientes/disponibilidad, y que una suspensión con turnos se bloquee mostrando sólo el conteo mientras una ocurrencia libre admita cambios. La suite también verifica que una cuenta profesional no administradora no vea el acceso ni obtenga datos por URL directa.
 
 La ejecución E2E elimina y recrea únicamente el proyecto/volumen Docker `turnelia-e2e`, aplica migraciones sólo sobre esa base y carga un fixture sintético. Si Docker no está disponible, la validación falla; no se simula éxito.
 
@@ -164,7 +164,7 @@ En Windows, usar Git Bash con `STAGING_ENV_FILE` apuntando al archivo externo. E
 
 Validación local de la Entrega 07 en Docker Desktop: PostgreSQL 18 saludable; `alembic upgrade head` en vacío hasta `a7b8c9d0e1f2`; seed sintético idempotente dos veces; backup/checksum/restore correctos; API y frontend saludables; puertos sólo loopback; `robots.txt` bloqueado y `X-Robots-Tag: noindex, nofollow, noarchive`. Esta prueba local no acredita disponibilidad ni configuración del VPS.
 
-Las cuentas profesionales seed usan direcciones `staging-*@turnelia.com.ar` válidas para `/auth/login`; `python -m app.scripts.seed_staging --actualizar-emails-sinteticos` renombra de forma idempotente los alias legacy `@example.invalid`, conservando hashes de contraseña y registros clínicos. El paciente sintético es un registro, no una cuenta de login.
+Las cuentas profesionales seed usan direcciones `staging-*@turnelia.com.ar` válidas para `/auth/login`; `python -m app.scripts.seed_staging --actualizar-emails-sinteticos` renombra de forma idempotente los alias legacy `@example.invalid`, conservando hashes de contraseña y registros clínicos. El seed QA del Consultorio crea cuatro integrantes activos, pacientes propios, un paciente compartido entre las dos profesionales clínicas con registros separados, módulos recurrentes materializados hasta 90 días y turnos futuros. No crea cuentas de login para pacientes. Las pruebas PostgreSQL cubren el conteo privado de turnos al bloquear una suspensión y la modificación de un módulo libre; E2E verifica ambas rutas en una base Docker exclusiva `turnelia-e2e`.
 
 Pendiente de preproducción remota: acceso SSH autorizado para inspección, DNS `staging.turnelia.com.ar`, validación de espacio/puertos/containers/backups/cron y revisión de Caddy antes de configurar proxy/TLS. No desplegar ni recargar Caddy como parte de la Entrega 07.
 

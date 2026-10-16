@@ -54,6 +54,7 @@ import { reenviarVerificacion } from "./services/authService";
 import PublicBooking from "./pages/PublicBooking";
 import SelfService from "./pages/SelfService";
 import { capturePostHogEvent } from "./posthog";
+import { listarConsultoriosAdministrados } from "./services/consultorioService";
 import ListaEsperaProfesional from "./components/ListaEsperaProfesional";
 import WaitlistOfferPage from "./pages/WaitlistOfferPage";
 import CampaniasAdmin from "./pages/CampaniasAdmin";
@@ -104,6 +105,7 @@ function App({ tokenBaja = null }: { tokenBaja?: string | null }) {
 
   const [usuario, setUsuario] =
     useState<UsuarioActual | null>(null);
+  const [consultorioAdministrado, setConsultorioAdministrado] = useState(false);
 
   const [validandoSesion, setValidandoSesion] =
     useState(true);
@@ -116,6 +118,19 @@ function App({ tokenBaja = null }: { tokenBaja?: string | null }) {
     useState<Vista>("dashboard");
   const [pacienteIdInicial, setPacienteIdInicial] = useState<number | undefined>();
   const [studyRequestIdInicial, setStudyRequestIdInicial] = useState<number | undefined>();
+
+  useEffect(() => {
+    let vigente = true;
+    setConsultorioAdministrado(false);
+    if (usuario?.rol === "profesional") {
+      void listarConsultoriosAdministrados().then((items) => {
+        if (vigente) setConsultorioAdministrado(items.length > 0);
+      }).catch(() => { if (vigente) setConsultorioAdministrado(false); });
+    }
+    return () => { vigente = false; };
+  }, [usuario?.id, usuario?.rol]);
+
+  const abrirConsultorio = () => navegar("/app/consultorio");
 
   useEffect(() => {
     const abrirReservaOnline = () => setVista("reserva-online");
@@ -442,6 +457,7 @@ function App({ tokenBaja = null }: { tokenBaja?: string | null }) {
           }
           pacienteIdInicial={pacienteIdInicial}
           studyRequestIdInicial={studyRequestIdInicial}
+          onAbrirConsultorio={consultorioAdministrado ? abrirConsultorio : undefined}
           onAbrirAgenda={() => setVista("turnos")}
           onAbrirDisponibilidad={() => setVista("disponibilidades")}
           onAbrirPrestaciones={() => setVista("prestaciones")}
@@ -458,6 +474,7 @@ function App({ tokenBaja = null }: { tokenBaja?: string | null }) {
           nombre={usuario.nombre}
           onVolver={() => setVista("dashboard")}
           onAbrirPacientes={() => setVista("pacientes")}
+          onAbrirConsultorio={usuario.rol === "profesional" && consultorioAdministrado ? abrirConsultorio : undefined}
           onAbrirDisponibilidad={() => setVista("disponibilidades")}
           onAbrirPrestaciones={() => setVista("prestaciones")}
           onAbrirPerfil={() => setVista("perfil")}
@@ -483,6 +500,7 @@ function App({ tokenBaja = null }: { tokenBaja?: string | null }) {
           onVolver={() => setVista("dashboard")}
           onAbrirAgenda={() => setVista("turnos")}
           onAbrirPacientes={() => setVista("pacientes")}
+          onAbrirConsultorio={consultorioAdministrado ? abrirConsultorio : undefined}
           onAbrirPrestaciones={() => setVista("prestaciones")}
           onAbrirPerfil={() => setVista("perfil")}
           onCerrarSesion={cerrarSesion}
@@ -505,16 +523,17 @@ function App({ tokenBaja = null }: { tokenBaja?: string | null }) {
         onAbrirDisponibilidad={() => setVista("disponibilidades")}
         onAbrirPrestaciones={() => setVista("prestaciones")}
         onAbrirPerfil={() => setVista("perfil")}
+        onAbrirConsultorio={consultorioAdministrado ? abrirConsultorio : undefined}
         onCerrarSesion={cerrarSesion}
       />;
     }
 
     if (vista === "reserva-online" && usuario.rol === "profesional") {
-      return <ReservaOnline nombre={usuario.nombre} onVolver={() => setVista("dashboard")} onAbrirAgenda={() => setVista("turnos")} onAbrirPacientes={() => setVista("pacientes")} onAbrirDisponibilidad={() => setVista("disponibilidades")} onAbrirPrestaciones={() => setVista("prestaciones")} onAbrirPerfil={() => setVista("perfil")} onCerrarSesion={cerrarSesion} />;
+      return <ReservaOnline nombre={usuario.nombre} onVolver={() => setVista("dashboard")} onAbrirAgenda={() => setVista("turnos")} onAbrirPacientes={() => setVista("pacientes")} onAbrirDisponibilidad={() => setVista("disponibilidades")} onAbrirPrestaciones={() => setVista("prestaciones")} onAbrirPerfil={() => setVista("perfil")} onAbrirConsultorio={consultorioAdministrado ? abrirConsultorio : undefined} onCerrarSesion={cerrarSesion} />;
     }
 
     if (vista === "lista-espera" && usuario.rol === "profesional") {
-      return <ListaEsperaProfesional nombre={usuario.nombre} onVolver={abrirDashboard} onAbrirAgenda={() => setVista("turnos")} onAbrirPacientes={() => setVista("pacientes")} onAbrirDisponibilidad={() => setVista("disponibilidades")} onAbrirPrestaciones={() => setVista("prestaciones")} onAbrirPerfil={() => setVista("perfil")} onCerrarSesion={cerrarSesion} />;
+      return <ListaEsperaProfesional nombre={usuario.nombre} onVolver={abrirDashboard} onAbrirAgenda={() => setVista("turnos")} onAbrirPacientes={() => setVista("pacientes")} onAbrirDisponibilidad={() => setVista("disponibilidades")} onAbrirPrestaciones={() => setVista("prestaciones")} onAbrirPerfil={() => setVista("perfil")} onAbrirConsultorio={consultorioAdministrado ? abrirConsultorio : undefined} onCerrarSesion={cerrarSesion} />;
     }
 
     if (vista === "perfil" && usuario.rol === "paciente") {
@@ -562,6 +581,7 @@ function App({ tokenBaja = null }: { tokenBaja?: string | null }) {
         onAbrirPacientes={() => setVista("pacientes")}
         onAbrirDisponibilidad={() => setVista("disponibilidades")}
         onAbrirPerfil={() => setVista("perfil")}
+        onAbrirConsultorio={consultorioAdministrado ? abrirConsultorio : undefined}
         onCerrarSesion={cerrarSesion}
       />;
     }

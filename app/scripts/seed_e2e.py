@@ -212,8 +212,27 @@ def main() -> None:
             db.add(series); db.flush()
             rule = ReglaRecurrenciaModulo(serie_id=series.id, version=1, dia_semana=0, hora_inicio=time(9), duracion_minutos=240, zona_horaria=clinic.zona_horaria, vigente_desde=monday, vigente_hasta=None, estado="activa")
             db.add(rule); db.flush()
-            inicio = datetime.combine(monday, time(9), tzinfo=ZoneInfo(clinic.zona_horaria)).astimezone(UTC)
-            db.add(OcurrenciaModulo(consultorio_id=clinic.id, serie_id=series.id, regla_id=rule.id, sala_id=room.id, profesional_id=consultorio_professional.id, fecha_inicio=inicio, fecha_fin=inicio + timedelta(hours=4), fecha_origen=monday, estado="activa", origen="recurrente", creado_por_usuario_id=consultorio_user.id))
+            for offset in (0, 7):
+                local_date = monday + timedelta(days=offset)
+                inicio = datetime.combine(local_date, time(9), tzinfo=ZoneInfo(clinic.zona_horaria)).astimezone(UTC)
+                db.add(OcurrenciaModulo(consultorio_id=clinic.id, serie_id=series.id, regla_id=rule.id, sala_id=room.id, profesional_id=consultorio_professional.id, fecha_inicio=inicio, fecha_fin=inicio + timedelta(hours=4), fecha_origen=local_date, estado="activa", origen="recurrente", creado_por_usuario_id=consultorio_user.id))
+        series = db.query(SerieModulo).filter_by(consultorio_id=clinic.id, profesional_id=consultorio_professional.id).one()
+        rule = db.query(ReglaRecurrenciaModulo).filter_by(serie_id=series.id, estado="activa").one()
+        module_patient = db.query(Paciente).filter_by(email="consultorio.modulo.qa.e2e@example.invalid").one_or_none()
+        if module_patient is None:
+            module_patient = Paciente(nombre="Paciente QA", apellido="Sintético E2E", email="consultorio.modulo.qa.e2e@example.invalid", activo=True)
+            db.add(module_patient); db.flush()
+        if not db.query(ProfesionalPaciente).filter_by(profesional_id=consultorio_professional.id, paciente_id=module_patient.id).one_or_none():
+            db.add(ProfesionalPaciente(profesional_id=consultorio_professional.id, paciente_id=module_patient.id, activo=True))
+        module_prestation = db.query(Prestacion).filter_by(profesional_id=consultorio_professional.id, nombre="Consulta QA Consultorio E2E").one_or_none()
+        if module_prestation is None:
+            module_prestation = Prestacion(nombre="Consulta QA Consultorio E2E", descripcion="Fixture sintético para pruebas aisladas.", duracion_minutos=30, precio=Decimal("1.00"), modalidad="presencial", activa=True, habilitada_online=False, profesional_id=consultorio_professional.id, especialidad_id=specialty.id)
+            db.add(module_prestation); db.flush()
+        occupied_module = db.query(OcurrenciaModulo).filter_by(regla_id=rule.id).order_by(OcurrenciaModulo.fecha_inicio).first()
+        if occupied_module is None:
+            raise RuntimeError("Fixture E2E: no se encontró la ocurrencia sintética ocupada.")
+        if not db.query(Turno).filter_by(profesional_id=consultorio_professional.id, paciente_id=module_patient.id, observaciones="Turno sintético QA asociado a módulo E2E.").one_or_none():
+            db.add(Turno(paciente_id=module_patient.id, prestacion_id=module_prestation.id, profesional_id=consultorio_professional.id, fecha_hora=occupied_module.fecha_inicio + timedelta(hours=1), fecha_fin=occupied_module.fecha_inicio + timedelta(hours=1, minutes=30), estado="reservado", observaciones="Turno sintético QA asociado a módulo E2E."))
         db.commit()
     finally:
         db.close()
