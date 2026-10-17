@@ -404,10 +404,6 @@ def main(actualizar_emails_only: bool = False) -> None:
                 for rule in db.scalars(select(ReglaRecurrenciaModulo).where(ReglaRecurrenciaModulo.serie_id == series.id, ReglaRecurrenciaModulo.estado == "activa")):
                     rule.estado = "cancelada"
             pending.estado = "revocada"; pending.token_hash = None; pending.revocada_en = datetime.now(UTC)
-        for professional in fixture_professionals:
-            relation = db.scalar(select(ConsultorioProfesional).where(ConsultorioProfesional.consultorio_id == clinic.id, ConsultorioProfesional.profesional_id == professional.id))
-            if relation is None: db.add(ConsultorioProfesional(consultorio_id=clinic.id, profesional_id=professional.id, estado="activo"))
-            else: relation.estado = "activo"
         _obtener_o_crear_serie(db, clinic=clinic, room=room, user=admin_user, professional_id=admin_professional.id, invitation_id=None, weekday=0, start_time=time(9), effective_date=next_monday, origin="recurrente")
         _obtener_o_crear_serie(db, clinic=clinic, room=room, user=admin_user, professional_id=clinical_professional.id, invitation_id=None, weekday=3, start_time=time(9), effective_date=next_monday, origin="recurrente")
         _obtener_o_crear_serie(db, clinic=clinic, room=room, user=admin_user, professional_id=aesthetic_professional.id, invitation_id=None, weekday=1, start_time=time(13), effective_date=next_monday, origin="recurrente")
