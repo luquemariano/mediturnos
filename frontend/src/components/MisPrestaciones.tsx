@@ -10,7 +10,7 @@ import { crearMiPrestacion, desactivarMiPrestacion, editarMiPrestacion, obtenerM
 import { obtenerEspecialidades } from "../services/especialidadService";
 import { obtenerMiPerfilProfesional } from "../services/profesionalService";
 
-type Props={nombre:string;onVolver:()=>void;onAbrirAgenda:()=>void;onAbrirPacientes:()=>void;onAbrirDisponibilidad:()=>void;onAbrirPerfil:()=>void;onCerrarSesion:()=>void};
+type Props={nombre:string;onVolver:()=>void;onAbrirAgenda:()=>void;onAbrirPacientes:()=>void;onAbrirDisponibilidad:()=>void;onAbrirPerfil:()=>void;onAbrirConsultorio?:()=>void;onCerrarSesion:()=>void};
 const VACIO={nombre:"",duracion_minutos:"30",precio:"0",modalidad:"presencial" as ModalidadPrestacion,especialidad_id:""};
 const errorDetalle=(e:unknown)=>axios.isAxiosError(e)&&typeof e.response?.data?.detail==="string"?e.response.data.detail:"Ocurrió un error inesperado.";
 const precio=(valor:number|string)=>new Intl.NumberFormat("es-AR",{style:"currency",currency:"ARS"}).format(Number(valor));
@@ -37,7 +37,7 @@ export default function MisPrestaciones(props:Props){
     }catch(e){setError(errorDetalle(e));}
     finally{setReactivando(false)}
   }
-  return <ProfesionalShell activo="prestaciones" nombre={props.nombre} tituloTopbar="Mis prestaciones" onAbrirInicio={props.onVolver} onAbrirAgenda={props.onAbrirAgenda} onAbrirPacientes={props.onAbrirPacientes} onAbrirDisponibilidad={props.onAbrirDisponibilidad} onAbrirPrestaciones={()=>undefined} onAbrirPerfil={props.onAbrirPerfil} onCerrarSesion={props.onCerrarSesion}>
+  return <ProfesionalShell activo="prestaciones" nombre={props.nombre} tituloTopbar="Mis prestaciones" onAbrirInicio={props.onVolver} onAbrirAgenda={props.onAbrirAgenda} onAbrirPacientes={props.onAbrirPacientes} onAbrirDisponibilidad={props.onAbrirDisponibilidad} onAbrirPrestaciones={()=>undefined} onAbrirPerfil={props.onAbrirPerfil} onAbrirConsultorio={props.onAbrirConsultorio} onCerrarSesion={props.onCerrarSesion}>
     <div className="mis-prestaciones"><header><div><span>Servicios profesionales</span><h1>Mis prestaciones</h1><p>Definí los servicios disponibles para nuevas reservas.</p></div><button className="mp-boton primario" onClick={nueva}>Nueva prestación</button></header>
     {exito&&<p className="mp-feedback exito" role="status">{exito}</p>}{error&&<div className="mp-feedback error" role="alert"><span>{error}</span><button onClick={()=>void cargar()}>Reintentar</button></div>}
     {cargando?<div className="mp-estado">Cargando prestaciones...</div>:items.length===0?<div className="mp-estado"><h2>No tenés prestaciones registradas</h2><p>Creá la primera para habilitar nuevas reservas.</p></div>:<ul>{items.map(p=><li key={p.id}><div><strong>{p.nombre}</strong><span>{p.modalidad==="virtual"?"Virtual":"Presencial"}</span></div><dl><div><dt>Duración</dt><dd>{p.duracion_minutos} min</dd></div><div><dt>Precio</dt><dd>{precio(p.precio)}</dd></div><div><dt>Estado</dt><dd className={p.activa?"activa":"inactiva"}>{p.activa?"Activa":"Inactiva"}</dd></div></dl><button className="mp-boton secundario" onClick={()=>gestionar(p)}>Gestionar</button></li>)}</ul>}

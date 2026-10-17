@@ -9,7 +9,7 @@ import { obtenerMisPrestaciones } from "../services/prestacionService";
 import { cancelarWaitlist, crearWaitlist, listarWaitlist } from "../services/waitlistService";
 import "./ListaEsperaProfesional.css";
 
-type Props = { nombre: string; onVolver: () => void; onAbrirAgenda: () => void; onAbrirPacientes: () => void; onAbrirDisponibilidad: () => void; onAbrirPrestaciones: () => void; onAbrirPerfil: () => void; onCerrarSesion: () => void };
+type Props = { nombre: string; onVolver: () => void; onAbrirAgenda: () => void; onAbrirPacientes: () => void; onAbrirDisponibilidad: () => void; onAbrirPrestaciones: () => void; onAbrirPerfil: () => void; onAbrirConsultorio?: () => void; onCerrarSesion: () => void };
 type Filter = "todas" | WaitlistState;
 type Form = { paciente_id: string; prestacion_id: string; fecha_desde: string; fecha_hasta: string; hora_desde: string; hora_hasta: string };
 const VACIO: Form = { paciente_id: "", prestacion_id: "", fecha_desde: "", fecha_hasta: "", hora_desde: "", hora_hasta: "" };
@@ -76,7 +76,7 @@ export default function ListaEsperaProfesional(props: Props) {
     finally { setCancelando(null); }
   }
 
-  return <ProfesionalShell activo="lista-espera" nombre={props.nombre} tituloTopbar="Lista de espera" onAbrirInicio={props.onVolver} onAbrirAgenda={props.onAbrirAgenda} onAbrirPacientes={props.onAbrirPacientes} onAbrirDisponibilidad={props.onAbrirDisponibilidad} onAbrirPrestaciones={props.onAbrirPrestaciones} onAbrirPerfil={props.onAbrirPerfil} onCerrarSesion={props.onCerrarSesion}>
+  return <ProfesionalShell activo="lista-espera" nombre={props.nombre} tituloTopbar="Lista de espera" onAbrirInicio={props.onVolver} onAbrirAgenda={props.onAbrirAgenda} onAbrirPacientes={props.onAbrirPacientes} onAbrirDisponibilidad={props.onAbrirDisponibilidad} onAbrirPrestaciones={props.onAbrirPrestaciones} onAbrirPerfil={props.onAbrirPerfil} onAbrirConsultorio={props.onAbrirConsultorio} onCerrarSesion={props.onCerrarSesion}>
     <div className="waitlist-page">
       <header className="waitlist-header"><div><span className="waitlist-eyebrow">Continuidad de agenda</span><h1>Lista de espera</h1><p>Registrá preferencias y encontrá a quién avisar cuando se libera un horario.</p></div><button type="button" className="waitlist-primary" onClick={abrirNueva}>Agregar a la lista</button></header>
       {exito && <p className="waitlist-feedback success" role="status">{exito}</p>}{error && !modal && <p className="waitlist-feedback error" role="alert">{error}</p>}

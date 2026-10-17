@@ -86,7 +86,7 @@ def test_staging_rechaza_configuracion_que_puede_colisionar(field, value, messag
 
 
 def test_emails_de_cuentas_del_seed_son_aceptados_por_el_schema_de_login():
-    for key in ("admin", "clinical", "aesthetic"):
+    for key in ("admin", "clinical", "aesthetic", "aesthetic_2"):
         email = seed_staging.EMAILS[key]
         assert email.startswith("staging-")
         assert email.endswith("@turnelia.com.ar")
@@ -96,7 +96,7 @@ def test_emails_de_cuentas_del_seed_son_aceptados_por_el_schema_de_login():
 def test_login_http_acepta_los_emails_profesionales_del_seed(client):
     password = "synthetic-test-password"
     with SessionTest() as db:
-        for key in ("admin", "clinical", "aesthetic"):
+        for key in ("admin", "clinical", "aesthetic", "aesthetic_2"):
             db.add(Usuario(
                 nombre=f"Cuenta {key}",
                 email=seed_staging.EMAILS[key],
@@ -107,10 +107,18 @@ def test_login_http_acepta_los_emails_profesionales_del_seed(client):
             ))
         db.commit()
 
-    for key in ("admin", "clinical", "aesthetic"):
+    for key in ("admin", "clinical", "aesthetic", "aesthetic_2"):
         response = client.post("/auth/login", json={"email": seed_staging.EMAILS[key], "password": password})
         assert response.status_code == 200
         assert response.json()["access_token"]
+
+
+def test_seed_de_consultorio_define_cuatro_identidades_sinteticas_activas_y_pacientes_unicos():
+    profesionales = ("admin", "clinical", "aesthetic", "aesthetic_2")
+    assert len({seed_staging.EMAILS[key] for key in profesionales}) == 4
+    assert all(seed_staging.EMAILS[key].startswith("staging-") and seed_staging.EMAILS[key].endswith("@turnelia.com.ar") for key in profesionales)
+    assert all(seed_staging.EMAILS[f"patient_{key}"].startswith("staging-paciente-") for key in profesionales)
+    assert seed_staging.EMAILS["patient"] not in {seed_staging.EMAILS[f"patient_{key}"] for key in profesionales}
 
 
 def test_seed_renombra_identidades_legacy_idempotentemente_y_conserva_password():
