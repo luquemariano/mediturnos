@@ -135,3 +135,41 @@ def test_worker_normalizes_valid_production_public_api_url():
         public_api_url="https://api.turnelia.com.ar/",
     )
     assert settings.public_api_url == "https://api.turnelia.com.ar"
+
+
+def _staging_worker_values():
+    return {
+        "_env_file": None,
+        "database_url": "postgresql+psycopg://staging:synthetic@db:5432/turnelia_staging",
+        "app_env": "staging",
+        "email_provider": "in_memory",
+        "whatsapp_provider": "fake",
+        "whatsapp_enabled": False,
+    }
+
+
+def test_worker_staging_usa_solo_proveedores_seguros_y_base_aislada():
+    settings = AppointmentReminderWorkerSettings(**_staging_worker_values())
+    assert settings.app_env == "staging"
+    assert settings.email_provider == "in_memory"
+    assert settings.whatsapp_provider == "fake"
+
+
+@pytest.mark.parametrize("database_url", [
+    "postgresql+psycopg://user:pass@prod-db:5432/turnelia_staging",
+    "postgresql+psycopg://user:pass@db:5432/turnelia",
+    "sqlite:///./staging.db",
+])
+def test_worker_staging_rechaza_database_ajena(database_url):
+    with pytest.raises(ValidationError, match="PostgreSQL aislado"):
+        AppointmentReminderWorkerSettings(**{**_staging_worker_values(), "database_url": database_url})
+
+
+def test_worker_production_rechaza_banderas_exclusivas_de_staging():
+    with pytest.raises(ValidationError, match="exclusiva de comunicaciones de staging"):
+        AppointmentReminderWorkerSettings(
+            _env_file=None,
+            database_url="postgresql+psycopg://user:pass@db.example.com/app",
+            app_env="production",
+            staging_email_send_enabled=True,
+        )

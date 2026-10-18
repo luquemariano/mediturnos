@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from html import escape
 import logging
+import os
 from typing import Protocol
 from urllib.parse import urlencode
 
@@ -73,10 +74,19 @@ class ResendEmailProvider:
         self._destinatarios_permitidos = destinatarios_permitidos
 
     def enviar(self, email: TransactionalEmail) -> EmailDeliveryResult:
-        if (
-            self._destinatarios_permitidos is not None
-            and email.destinatario.strip().lower() not in self._destinatarios_permitidos
-        ):
+        permitidos = self._destinatarios_permitidos
+        if permitidos is None and os.getenv("APP_ENV", "").strip().lower() == "staging":
+            from pydantic import EmailStr, TypeAdapter
+            adapter = TypeAdapter(EmailStr)
+            try:
+                permitidos = frozenset(
+                    str(adapter.validate_python(item.strip())).lower()
+                    for item in os.getenv("STAGING_EMAIL_ALLOWLIST", "").split(",")
+                    if item.strip()
+                )
+            except ValueError:
+                permitidos = frozenset()
+        if permitidos is not None and email.destinatario.strip().lower() not in permitidos:
             raise EmailDeliveryError("El destinatario no está autorizado para el email de staging.")
         payload = {
             "from": self._remitente,

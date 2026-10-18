@@ -1,5 +1,6 @@
 from collections.abc import Mapping
 from dataclasses import dataclass
+import os
 from typing import Any
 
 import httpx
@@ -40,6 +41,7 @@ class MetaWhatsAppProvider:
         template_mapping: Mapping[str, MetaTemplateDefinition] | None = None,
         client: httpx.Client | None = None,
         timeout_seconds: float = META_TIMEOUT_SECONDS,
+        recipient_allowlist: frozenset[str] | None = None,
     ) -> None:
         self._api_version = self._required(api_version, "api_version")
         self._phone_number_id = self._required(phone_number_id, "phone_number_id")
@@ -53,6 +55,7 @@ class MetaWhatsAppProvider:
         self._template_mapping = dict(
             DEFAULT_TEMPLATE_MAPPING if template_mapping is None else template_mapping
         )
+        self._recipient_allowlist = recipient_allowlist
 
     def close(self) -> None:
         if self._owns_client:
@@ -70,6 +73,16 @@ class MetaWhatsAppProvider:
             raise MessagingProviderError("Meta WhatsApp sólo admite mensajes WhatsApp.")
         if not isinstance(message.recipient, str) or not message.recipient.isdigit():
             raise MessagingProviderError("El destinatario de WhatsApp no es válido.")
+        allowed = self._recipient_allowlist
+        if allowed is None and os.getenv("APP_ENV", "").strip().lower() == "staging":
+            from app.services.phone_service import normalize_phone_number
+            allowed = frozenset(
+                normalized
+                for item in os.getenv("STAGING_WHATSAPP_RECIPIENT_ALLOWLIST", "").split(",")
+                if (normalized := normalize_phone_number(item.strip())) is not None
+            )
+        if allowed is not None and message.recipient not in allowed:
+            raise MessagingProviderError("El destinatario no está autorizado para WhatsApp de staging.")
         definition = self._template_mapping.get(message.message_type)
         if definition is None:
             raise MessagingProviderError("El tipo de template de WhatsApp no está configurado.")

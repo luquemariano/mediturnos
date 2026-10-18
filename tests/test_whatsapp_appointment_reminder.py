@@ -126,3 +126,38 @@ def test_meta_config_se_pasa_al_factory_con_mapping(monkeypatch):
     assert captured["template_mapping"] is DEFAULT_TEMPLATE_MAPPING
     assert len(provider.sent_messages) == 1
     db.close()
+
+
+def test_staging_meta_rechaza_destinatario_que_no_esta_allowlisted_sin_llamar_provider():
+    turn = turno()
+    provider = FakeMessagingProvider()
+    meta_config = config()
+    meta_config.app_env = "staging"
+    meta_config.whatsapp_provider = "meta"
+    meta_config.whatsapp_enabled = True
+    meta_config.obtener_staging_whatsapp_recipient_allowlist = lambda: frozenset({"5491112345678"})
+    db = SessionTest()
+    real_get = db.get
+    db.get = lambda model, item_id: turn if model is Turno else real_get(model, item_id)
+    result = send_whatsapp_appointment_reminder(db, turn.id, provider=provider, config=meta_config)
+    assert result.status == "failed"
+    assert result.reason == "recipient_not_allowlisted"
+    assert provider.sent_messages == []
+    db.close()
+
+
+def test_staging_meta_permite_solo_destinatario_allowlisted_con_provider_fake():
+    turn = turno()
+    provider = FakeMessagingProvider()
+    meta_config = config()
+    meta_config.app_env = "staging"
+    meta_config.whatsapp_provider = "meta"
+    meta_config.whatsapp_enabled = True
+    meta_config.obtener_staging_whatsapp_recipient_allowlist = lambda: frozenset({"543511234567"})
+    db = SessionTest()
+    real_get = db.get
+    db.get = lambda model, item_id: turn if model is Turno else real_get(model, item_id)
+    result = send_whatsapp_appointment_reminder(db, turn.id, provider=provider, config=meta_config)
+    assert result.status == "sent"
+    assert len(provider.sent_messages) == 1
+    db.close()

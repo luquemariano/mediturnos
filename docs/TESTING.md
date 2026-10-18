@@ -41,6 +41,12 @@ Hay cobertura de sesión, recuperación, dashboards, agenda, pacientes, profesio
 
 La cobertura no es uniforme entre módulos. Consultar `frontend/tests/` para el detalle.
 
+### Comunicaciones staging (Entrega 08A)
+
+Pruebas focalizadas: `python -m pytest tests/test_staging_communications_preflight.py tests/test_staging_communications_integration.py tests/test_staging_safety.py tests/test_whatsapp_appointment_reminder.py tests/test_meta_whatsapp_provider.py tests/test_appointment_reminder_worker_config.py tests/test_appointment_reminders.py tests/test_appointment_reminder_email.py tests/test_appointment_actions_http.py tests/test_whatsapp_webhook.py`. Cubren defaults fake/in-memory, preflight estrictamente staging, presencia de nombres de variables, callback HTTPS, mapping de plantilla, allowlists, rechazo previo al provider, recordatorio e idempotencia, enlaces firmados de confirmación/cancelación, `POST` de acción idempotente y rechazo de config staging en production. Los providers fake/mocks no hacen solicitudes externas.
+
+El preflight manual sólo lee el archivo indicado y no ejecuta Compose ni contacta servicios: `python3 scripts/staging/communications_preflight.py --env-file <archivo-privado-de-staging>`. Su salida enumera nombres y estado, nunca valores. No interpreta el resultado como prueba de entrega de email/WhatsApp, aprobación Meta o disponibilidad del webhook. No hay cambios de esquema en Entrega 08A; el job PostgreSQL existente y E2E se ejecutan como gates de regresión, no porque esta entrega requiera migración.
+
 ## Limitaciones actuales
 
 - Playwright está configurado para Chromium y la suite MVP vive en `frontend/e2e/`.
