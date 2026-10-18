@@ -25,8 +25,10 @@ from app.repositories import consultorio_modulo_repository
 from app.services.consultorio_modulo_service import (
     _fechas_solapan_reglas,
     _instante_local_utc,
+    crear_modulo_extraordinario,
     validar_turno_en_modulo,
 )
+from app.schemas.consultorio_modulo import ModuloExtraordinarioCrear
 from app.core.dependencies import obtener_usuario_actual
 from app.main import app
 from tests.conftest import SessionTest
@@ -361,6 +363,90 @@ def test_ocupacion_de_invitacion_no_revela_nombre_como_profesional_activo(client
     assert pendiente["profesional_nombre"] == "Invitación pendiente"
     assert "Nombre privado de invitada" not in listado.text
     assert "invitada-sintetica@example.com" not in listado.text
+
+
+def test_reserva_de_invitacion_revocada_se_libera_y_no_aparece_en_ocupacion(client, consultorio_modulos):
+    data = consultorio_modulos
+    zona = ZoneInfo("America/Argentina/Buenos_Aires")
+    fecha = ahora_utc().astimezone(zona).date() + timedelta(days=14)
+    while fecha.weekday() != 4:
+        fecha += timedelta(days=1)
+    inicio = datetime.combine(fecha, time(13), tzinfo=zona)
+    fin = inicio + timedelta(hours=4)
+
+    _autenticar(data["titular"])
+    creada = client.post(f"/consultorios/{data['consultorio'].id}/invitaciones", json={
+        "email": "reserva-pendiente-sintetica@example.com",
+        "nombre_visible": "Nombre sintético privado",
+        "modulos": [{"sala_id": data["sala"].id, "dia_semana": fecha.weekday(), "hora_inicio": "13:00", "vigente_desde": fecha.isoformat()}],
+    })
+    assert creada.status_code == 201, creada.text
+    invite_id = creada.json()["id"]
+    desde = inicio.astimezone(UTC).isoformat()
+    hasta = (inicio + timedelta(days=1)).astimezone(UTC).isoformat()
+    ocupacion = client.get(f"/consultorios/{data['consultorio'].id}/modulos", params={"desde": desde, "hasta": hasta})
+    assert ocupacion.status_code == 200
+    pendiente = next(item for item in ocupacion.json() if item["profesional_id"] is None)
+    assert pendiente["estado"] == "activa"
+    assert pendiente["fecha_inicio"]
+    assert "Nombre sintético privado" not in ocupacion.text
+    assert "reserva-pendiente-sintetica" not in ocupacion.text
+    assert not {"paciente", "turno_id", "historia_clinica"} & pendiente.keys()
+
+    # Simula una fila histórica inconsistente: invitación terminal con ocurrencias todavía activas.
+    db = SessionTest()
+    invite = db.get(InvitacionConsultorio, invite_id)
+    invite.estado = "revocada"
+    invite.token_hash = None
+    invite.revocada_en = ahora_utc()
+    occurrence = db.query(OcurrenciaModulo).filter_by(invitacion_id=invite_id, estado="activa").first()
+    occurrence_id = occurrence.id
+    db.commit()
+    db.close()
+
+    ocupacion = client.get(f"/consultorios/{data['consultorio'].id}/modulos", params={"desde": desde, "hasta": hasta})
+    assert ocupacion.status_code == 200
+    assert all(item["id"] != occurrence_id for item in ocupacion.json())
+    assert "Invitación pendiente" not in ocupacion.text
+    db = SessionTest()
+    assert db.get(InvitacionConsultorio, invite_id).estado == "revocada"
+    assert db.query(OcurrenciaModulo).filter_by(invitacion_id=invite_id, estado="activa").count() == 0
+    assert db.query(OcurrenciaModulo).filter_by(id=occurrence_id).one().estado == "cancelada"
+    db.close()
+
+    liberado = crear_modulo_extraordinario(
+        (db := SessionTest()), data["titular"], data["consultorio"].id,
+        ModuloExtraordinarioCrear(sala_id=data["sala"].id, profesional_id=data["pro_b"].id, fecha_inicio=inicio, fecha_fin=fin),
+    )
+    assert liberado.estado == "activa"
+    db.close()
+
+    fecha_vencida = ahora_utc().astimezone(zona).date() + timedelta(days=14)
+    while fecha_vencida.weekday() != 6:
+        fecha_vencida += timedelta(days=1)
+    inicio_vencido = datetime.combine(fecha_vencida, time(14), tzinfo=zona)
+    _autenticar(data["titular"])
+    creada_vencida = client.post(f"/consultorios/{data['consultorio'].id}/invitaciones", json={
+        "email": "reserva-expirada-sintetica@example.com",
+        "modulos": [{"sala_id": data["sala"].id, "dia_semana": fecha_vencida.weekday(), "hora_inicio": "14:00", "vigente_desde": fecha_vencida.isoformat()}],
+    })
+    assert creada_vencida.status_code == 201, creada_vencida.text
+    vencida_id = creada_vencida.json()["id"]
+    db = SessionTest()
+    invite_vencida = db.get(InvitacionConsultorio, vencida_id)
+    invite_vencida.vence_en = ahora_utc() - timedelta(seconds=1)
+    db.commit()
+    db.close()
+    vencimiento = client.get(f"/consultorios/{data['consultorio'].id}/modulos", params={
+        "desde": inicio_vencido.astimezone(UTC).isoformat(),
+        "hasta": (inicio_vencido + timedelta(days=1)).astimezone(UTC).isoformat(),
+    })
+    assert vencimiento.status_code == 200
+    assert all(item["profesional_id"] is not None for item in vencimiento.json())
+    db = SessionTest()
+    assert db.get(InvitacionConsultorio, vencida_id).estado == "expirada"
+    assert db.query(OcurrenciaModulo).filter_by(invitacion_id=vencida_id, estado="activa").count() == 0
+    db.close()
 
 
 def test_invitacion_vencida_invalida_token_y_libera_sala(client, consultorio_modulos, monkeypatch):

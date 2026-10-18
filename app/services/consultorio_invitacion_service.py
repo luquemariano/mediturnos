@@ -105,7 +105,7 @@ def crear_invitacion(db: Session, user: Usuario, clinic_id: int, datos: Invitaci
             }
             if slot.vigente_desde < now.astimezone(_tz(locked.zona_horaria)).date():
                 raise HTTPException(422, "La recurrencia no puede comenzar en una fecha pasada.")
-            _validar_regla_sin_solape(db, sala.id, rule_data)
+            _validar_regla_sin_solape(db, clinic_id, sala.id, rule_data)
             series = SerieModulo(consultorio_id=clinic_id, sala_id=sala.id, profesional_id=None, invitacion_id=invite.id, creado_por_usuario_id=user.id)
             db.add(series)
             db.flush()

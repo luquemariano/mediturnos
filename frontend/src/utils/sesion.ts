@@ -18,13 +18,18 @@ export async function restaurarSesion(
   }
 
   try {
-    return await obtenerUsuario();
+    const usuario = await obtenerUsuario();
+    return almacenamiento.getItem("access_token") === token
+      ? usuario
+      : null;
   } catch (error) {
     if (
       axios.isAxiosError(error)
       && error.response?.status === 401
     ) {
-      almacenamiento.removeItem("access_token");
+      if (almacenamiento.getItem("access_token") === token) {
+        almacenamiento.removeItem("access_token");
+      }
     }
 
     return null;

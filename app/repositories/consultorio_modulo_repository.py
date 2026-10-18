@@ -1,10 +1,11 @@
 from datetime import date, datetime
 
-from sqlalchemy import func
+from sqlalchemy import and_, exists, func, or_, select, update
 from sqlalchemy.orm import Session, joinedload
 
 from app.models.consultorio import Consultorio
 from app.models.consultorio_profesional import ConsultorioProfesional
+from app.models.invitacion_consultorio import InvitacionConsultorio
 from app.models.ocurrencia_modulo import OcurrenciaModulo
 from app.models.profesional import Profesional
 from app.models.regla_recurrencia_modulo import ReglaRecurrenciaModulo
@@ -38,10 +39,12 @@ def bloquear_salas(db: Session, consultorio_id: int, sala_ids: set[int]) -> list
 def profesional_vinculado_preparado(db: Session, consultorio_id: int, profesional_id: int) -> bool:
     return (
         db.query(ConsultorioProfesional.id)
+        .join(Profesional, Profesional.id == ConsultorioProfesional.profesional_id)
         .filter(
             ConsultorioProfesional.consultorio_id == consultorio_id,
             ConsultorioProfesional.profesional_id == profesional_id,
             ConsultorioProfesional.estado.in_(("preparatorio", "activo")),
+            Profesional.activo.is_(True),
         )
         .first()
         is not None
@@ -83,7 +86,7 @@ def consultorio_de_regla(db: Session, regla_id: int) -> tuple[ReglaRecurrenciaMo
     return fila
 
 
-def listar_reglas_consultorio(db: Session, consultorio_id: int) -> list[ReglaRecurrenciaModulo]:
+def listar_reglas_consultorio(db: Session, consultorio_id: int, ahora: datetime) -> list[ReglaRecurrenciaModulo]:
     return (
         db.query(ReglaRecurrenciaModulo)
         .join(SerieModulo, SerieModulo.id == ReglaRecurrenciaModulo.serie_id)
@@ -94,18 +97,149 @@ def listar_reglas_consultorio(db: Session, consultorio_id: int) -> list[ReglaRec
         .filter(
             SerieModulo.consultorio_id == consultorio_id,
             ReglaRecurrenciaModulo.estado == "activa",
+            or_(
+                and_(
+                    SerieModulo.profesional_id.is_not(None),
+                    _profesional_activo_en_consultorio(SerieModulo.consultorio_id, SerieModulo.profesional_id),
+                ),
+                and_(
+                    SerieModulo.invitacion_id.is_not(None),
+                    _invitacion_vigente(SerieModulo.consultorio_id, SerieModulo.invitacion_id, ahora),
+                ),
+            ),
         )
         .order_by(ReglaRecurrenciaModulo.dia_semana, ReglaRecurrenciaModulo.hora_inicio, ReglaRecurrenciaModulo.id)
         .all()
     )
 
 
-def listar_reglas_sala(db: Session, sala_id: int) -> list[ReglaRecurrenciaModulo]:
+def _profesional_activo_en_consultorio(consultorio_id, profesional_id):
+    return exists(
+        select(ConsultorioProfesional.id)
+        .join(Profesional, Profesional.id == ConsultorioProfesional.profesional_id)
+        .where(
+            ConsultorioProfesional.consultorio_id == consultorio_id,
+            ConsultorioProfesional.profesional_id == profesional_id,
+            ConsultorioProfesional.estado.in_(("preparatorio", "activo")),
+            Profesional.activo.is_(True),
+        )
+    )
+
+
+def _invitacion_vigente(consultorio_id, invitacion_id, ahora: datetime):
+    return exists(
+        select(InvitacionConsultorio.id).where(
+            InvitacionConsultorio.id == invitacion_id,
+            InvitacionConsultorio.consultorio_id == consultorio_id,
+            InvitacionConsultorio.estado.in_(("preparacion", "pendiente")),
+            InvitacionConsultorio.vence_en > ahora,
+        )
+    )
+
+
+def cancelar_reservas_sin_vigencia(db: Session, consultorio_id: int, ahora: datetime) -> None:
+    """Release stale room reservations while retaining invitation and occurrence history."""
+    db.execute(
+        update(InvitacionConsultorio)
+        .where(
+            InvitacionConsultorio.consultorio_id == consultorio_id,
+            InvitacionConsultorio.estado.in_(("preparacion", "pendiente")),
+            InvitacionConsultorio.vence_en <= ahora,
+        )
+        .values(estado="expirada", token_hash=None)
+    )
+    invitaciones_invalidas = select(InvitacionConsultorio.id).where(
+        InvitacionConsultorio.consultorio_id == consultorio_id,
+        or_(
+            InvitacionConsultorio.estado.not_in(("preparacion", "pendiente")),
+            InvitacionConsultorio.vence_en.is_(None),
+            InvitacionConsultorio.vence_en <= ahora,
+        ),
+    )
+    db.execute(
+        update(OcurrenciaModulo)
+        .where(
+            OcurrenciaModulo.consultorio_id == consultorio_id,
+            OcurrenciaModulo.invitacion_id.in_(invitaciones_invalidas),
+            OcurrenciaModulo.estado == "activa",
+        )
+        .values(estado="cancelada")
+    )
+    series_invalidas = select(SerieModulo.id).where(
+        SerieModulo.consultorio_id == consultorio_id,
+        SerieModulo.invitacion_id.in_(invitaciones_invalidas),
+    )
+    db.execute(
+        update(ReglaRecurrenciaModulo)
+        .where(ReglaRecurrenciaModulo.serie_id.in_(series_invalidas), ReglaRecurrenciaModulo.estado == "activa")
+        .values(estado="cancelada")
+    )
+    series_sin_profesional_vigente = select(SerieModulo.id).where(
+        SerieModulo.consultorio_id == consultorio_id,
+        SerieModulo.profesional_id.is_not(None),
+        ~_profesional_activo_en_consultorio(SerieModulo.consultorio_id, SerieModulo.profesional_id),
+    )
+    db.execute(
+        update(OcurrenciaModulo)
+        .where(
+            OcurrenciaModulo.consultorio_id == consultorio_id,
+            OcurrenciaModulo.profesional_id.is_not(None),
+            ~_profesional_activo_en_consultorio(OcurrenciaModulo.consultorio_id, OcurrenciaModulo.profesional_id),
+            OcurrenciaModulo.estado == "activa",
+        )
+        .values(estado="cancelada")
+    )
+    db.execute(
+        update(ReglaRecurrenciaModulo)
+        .where(ReglaRecurrenciaModulo.serie_id.in_(series_sin_profesional_vigente), ReglaRecurrenciaModulo.estado == "activa")
+        .values(estado="cancelada")
+    )
+
+
+def listar_reglas_sala(db: Session, sala_id: int, ahora: datetime) -> list[ReglaRecurrenciaModulo]:
     return (
         db.query(ReglaRecurrenciaModulo)
         .join(SerieModulo, SerieModulo.id == ReglaRecurrenciaModulo.serie_id)
-        .filter(SerieModulo.sala_id == sala_id, ReglaRecurrenciaModulo.estado == "activa")
+        .filter(
+            SerieModulo.sala_id == sala_id,
+            ReglaRecurrenciaModulo.estado == "activa",
+            or_(
+                and_(
+                    SerieModulo.profesional_id.is_not(None),
+                    _profesional_activo_en_consultorio(SerieModulo.consultorio_id, SerieModulo.profesional_id),
+                ),
+                and_(
+                    SerieModulo.invitacion_id.is_not(None),
+                    _invitacion_vigente(SerieModulo.consultorio_id, SerieModulo.invitacion_id, ahora),
+                ),
+            ),
+        )
         .order_by(ReglaRecurrenciaModulo.id)
+        .all()
+    )
+
+
+def listar_reglas_materializables(db: Session, consultorio_id: int, ahora: datetime, hoy: date, hasta: date):
+    return (
+        db.query(ReglaRecurrenciaModulo)
+        .join(ReglaRecurrenciaModulo.serie)
+        .filter(
+            SerieModulo.consultorio_id == consultorio_id,
+            ReglaRecurrenciaModulo.estado == "activa",
+            ReglaRecurrenciaModulo.vigente_desde <= hasta,
+            ReglaRecurrenciaModulo.vigente_hasta.is_(None)
+            | (ReglaRecurrenciaModulo.vigente_hasta >= hoy),
+            or_(
+                and_(
+                    SerieModulo.profesional_id.is_not(None),
+                    _profesional_activo_en_consultorio(SerieModulo.consultorio_id, SerieModulo.profesional_id),
+                ),
+                and_(
+                    SerieModulo.invitacion_id.is_not(None),
+                    _invitacion_vigente(SerieModulo.consultorio_id, SerieModulo.invitacion_id, ahora),
+                ),
+            ),
+        )
         .all()
     )
 
@@ -133,7 +267,7 @@ def obtener_ocurrencia(db: Session, consultorio_id: int, ocurrencia_id: int, blo
     return consulta.one_or_none()
 
 
-def listar_ocurrencias(db: Session, consultorio_id: int, desde: datetime, hasta: datetime) -> list[OcurrenciaModulo]:
+def listar_ocurrencias(db: Session, consultorio_id: int, desde: datetime, hasta: datetime, ahora: datetime) -> list[OcurrenciaModulo]:
     return (
         db.query(OcurrenciaModulo)
         .options(joinedload(OcurrenciaModulo.sala), joinedload(OcurrenciaModulo.profesional))
@@ -141,6 +275,17 @@ def listar_ocurrencias(db: Session, consultorio_id: int, desde: datetime, hasta:
             OcurrenciaModulo.consultorio_id == consultorio_id,
             OcurrenciaModulo.fecha_inicio < hasta,
             OcurrenciaModulo.fecha_fin > desde,
+            or_(
+                and_(
+                    OcurrenciaModulo.profesional_id.is_not(None),
+                    _profesional_activo_en_consultorio(OcurrenciaModulo.consultorio_id, OcurrenciaModulo.profesional_id),
+                ),
+                and_(
+                    OcurrenciaModulo.invitacion_id.is_not(None),
+                    OcurrenciaModulo.estado == "activa",
+                    _invitacion_vigente(OcurrenciaModulo.consultorio_id, OcurrenciaModulo.invitacion_id, ahora),
+                ),
+            ),
         )
         .order_by(OcurrenciaModulo.fecha_inicio, OcurrenciaModulo.sala_id)
         .all()
@@ -217,6 +362,13 @@ def buscar_ocurrencia_vigente_para_turno(
         )
         .join(Consultorio, Consultorio.id == OcurrenciaModulo.consultorio_id)
         .join(Sala, Sala.id == OcurrenciaModulo.sala_id)
+        .join(
+            ConsultorioProfesional,
+            (ConsultorioProfesional.profesional_id == profesional_id)
+            & (ConsultorioProfesional.consultorio_id == OcurrenciaModulo.consultorio_id),
+        )
+        .join(Profesional, Profesional.id == profesional_id)
+        .filter(Profesional.activo.is_(True), ConsultorioProfesional.estado == "activo")
         .order_by(OcurrenciaModulo.id)
     )
     if bloquear:

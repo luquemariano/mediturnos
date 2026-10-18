@@ -99,18 +99,9 @@ def _crear_ocurrencias_regla(
 def _extender_horizonte(db: Session, consultorio: Consultorio, usuario_id: int | None) -> None:
     hoy = _fecha_hoy(consultorio)
     hasta = hoy + timedelta(days=consultorio.horizonte_materializacion_dias - 1)
-    reglas = (
-        db.query(ReglaRecurrenciaModulo)
-        .join(ReglaRecurrenciaModulo.serie)
-        .filter(
-            ReglaRecurrenciaModulo.estado == "activa",
-            ReglaRecurrenciaModulo.vigente_desde <= hasta,
-            ReglaRecurrenciaModulo.vigente_hasta.is_(None)
-            | (ReglaRecurrenciaModulo.vigente_hasta >= hoy),
-            ReglaRecurrenciaModulo.serie.has(consultorio_id=consultorio.id),
-        )
-        .all()
-    )
+    ahora = ahora_utc()
+    repository.cancelar_reservas_sin_vigencia(db, consultorio.id, ahora)
+    reglas = repository.listar_reglas_materializables(db, consultorio.id, ahora, hoy, hasta)
     for regla in reglas:
         _crear_ocurrencias_regla(db, consultorio, regla, hoy, hasta, usuario_id)
 
@@ -157,9 +148,11 @@ def _primer_solapamiento_reglas(
 
 
 def _validar_regla_sin_solape(
-    db: Session, sala_id: int, nueva: dict, excluir_regla_id: int | None = None, zona_horaria: str | None = None
+    db: Session, consultorio_id: int, sala_id: int, nueva: dict, excluir_regla_id: int | None = None, zona_horaria: str | None = None
 ) -> None:
-    for existente in repository.listar_reglas_sala(db, sala_id):
+    ahora = ahora_utc()
+    repository.cancelar_reservas_sin_vigencia(db, consultorio_id, ahora)
+    for existente in repository.listar_reglas_sala(db, sala_id, ahora):
         if existente.id == excluir_regla_id:
             continue
         solapamiento = _primer_solapamiento_reglas(
@@ -219,7 +212,7 @@ def crear_regla(db: Session, usuario: Usuario, consultorio_id: int, datos: Regla
         "vigente_desde": datos.vigente_desde,
         "vigente_hasta": datos.vigente_hasta,
     }
-    _validar_regla_sin_solape(db, sala.id, regla_datos, zona_horaria=consultorio.zona_horaria)
+    _validar_regla_sin_solape(db, consultorio.id, sala.id, regla_datos, zona_horaria=consultorio.zona_horaria)
     serie = repository.crear_serie(db, consultorio_id, sala.id, datos.profesional_id, usuario.id)
     regla = repository.crear_regla(
         db,
@@ -271,7 +264,7 @@ def actualizar_regla_desde_fecha(
     if nueva["vigente_hasta"] is not None and nueva["vigente_hasta"] < nueva["vigente_desde"]:
         raise HTTPException(status_code=422, detail="La vigencia final no puede preceder a la fecha efectiva.")
     _validar_regla_sin_solape(
-        db, nueva_sala_id, nueva,
+        db, consultorio.id, nueva_sala_id, nueva,
         excluir_regla_id=regla.id if nueva_sala_id == serie.sala_id else None,
         zona_horaria=consultorio.zona_horaria,
     )
@@ -325,6 +318,7 @@ def actualizar_regla_desde_fecha(
 
 def crear_modulo_extraordinario(db: Session, usuario: Usuario, consultorio_id: int, datos: ModuloExtraordinarioCrear) -> OcurrenciaModulo:
     consultorio = _administrar(db, usuario, consultorio_id)
+    repository.cancelar_reservas_sin_vigencia(db, consultorio.id, ahora_utc())
     if datos.fecha_inicio <= ahora_utc() or datos.fecha_inicio > ahora_utc() + timedelta(days=consultorio.horizonte_materializacion_dias):
         raise HTTPException(status_code=422, detail="El módulo extraordinario debe estar dentro del horizonte de 90 días.")
     sala = repository.bloquear_sala(db, consultorio_id, datos.sala_id)
@@ -353,6 +347,7 @@ def crear_modulo_extraordinario(db: Session, usuario: Usuario, consultorio_id: i
 
 def suspender_ocurrencia(db: Session, usuario: Usuario, consultorio_id: int, ocurrencia_id: int) -> dict:
     _administrar(db, usuario, consultorio_id)
+    repository.cancelar_reservas_sin_vigencia(db, consultorio_id, ahora_utc())
     ocurrencia = repository.obtener_ocurrencia(db, consultorio_id, ocurrencia_id, bloquear=True)
     if ocurrencia is None:
         raise HTTPException(status_code=404, detail="No se encontró el módulo.")
@@ -371,6 +366,7 @@ def suspender_ocurrencia(db: Session, usuario: Usuario, consultorio_id: int, ocu
 
 def actualizar_ocurrencia(db: Session, usuario: Usuario, consultorio_id: int, ocurrencia_id: int, datos: ModuloOcurrenciaActualizar) -> OcurrenciaModulo:
     consultorio = _administrar(db, usuario, consultorio_id)
+    repository.cancelar_reservas_sin_vigencia(db, consultorio_id, ahora_utc())
     ocurrencia = repository.obtener_ocurrencia(db, consultorio_id, ocurrencia_id, bloquear=True)
     if ocurrencia is None:
         raise HTTPException(status_code=404, detail="No se encontró el módulo.")
@@ -424,13 +420,13 @@ def listar_modulos(db: Session, usuario: Usuario, consultorio_id: int, desde: da
     if fin <= inicio:
         raise HTTPException(status_code=422, detail="El final debe ser posterior al inicio.")
     _commit(db)
-    return repository.listar_ocurrencias(db, consultorio_id, inicio, fin)
+    return repository.listar_ocurrencias(db, consultorio_id, inicio, fin, ahora_utc())
 
 
 def listar_reglas(db: Session, usuario: Usuario, consultorio_id: int) -> list[dict]:
     _administrar(db, usuario, consultorio_id)
     rows = []
-    for rule in repository.listar_reglas_consultorio(db, consultorio_id):
+    for rule in repository.listar_reglas_consultorio(db, consultorio_id, ahora_utc()):
         series = rule.serie
         professional = series.profesional
         rows.append({
