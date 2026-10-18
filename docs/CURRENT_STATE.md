@@ -32,7 +32,7 @@ Este documento combina estado del repositorio con evidencia operativa validada d
 | Consultorio (invitaciones) | INTEGRADO EN `main` | Entrega 04 integra plazas y reservas recurrentes pendientes, aceptación autenticada, revocación y reenvío; PostgreSQL protege cupos y sala. No cambia ownership clínico ni suscripciones. |
 | Consultorio (actividad/matrícula) | EN IMPLEMENTACIÓN EN RAMA | Entrega 06 agrega catálogo servidor, matrícula condicional, registro/onboarding y perfil propio. Migración aditiva `a7b8c9d0e1f2`. Validación local: pytest 912/39 skipped, Vitest 415/52 archivos, PostgreSQL migración/downgrade y Playwright 12/12; PR y CI remota pendientes. |
 | Consultorio (panel administrativo) | INTEGRADO EN `main` | Entrega 05 integrada por merge `40e8c36a77f59f7e7eb6c35b00bc61f74b4414cc`; añade acceso condicional, panel en el shell profesional, agenda semanal por sala, operación visual de módulos e invitaciones. Estado de despliegue no determinado. |
-| Comunicaciones de staging (Entrega 08A) | IMPLEMENTADA LOCALMENTE; PR/CI PENDIENTES | Preflight local sin red, defaults in_memory/fake, allowlists externas de destinatarios, validación fail-closed del worker/providers y pruebas fake. Full, PostgreSQL y E2E locales pasaron. Sin envío real ni cambios remotos. El webhook actual no ejecuta confirmación/cancelación inbound. |
+| Comunicaciones de staging (Entrega 08A) | PR #100 ABIERTO; CHECKS VERDES EN `403e603` | Preflight local sin red, defaults in_memory/fake, allowlists externas de destinatarios, validación fail-closed del worker/providers y pruebas fake. Full, PostgreSQL y E2E locales pasaron. Sin envío real ni cambios remotos. El webhook actual no ejecuta confirmación/cancelación inbound. |
 
 ## Infraestructura productiva
 

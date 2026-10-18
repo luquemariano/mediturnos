@@ -1,6 +1,6 @@
 # Entrega 08A — Preflight de comunicaciones controladas en staging
 
-Estado: **IMPLEMENTADA LOCALMENTE; PR/CI PENDIENTES**. Rama: `codex/staging-comms-preflight`. Base verificada: `origin/main` en `f797b19447fa93069a4aa5f1c25cd3abf3d9ba1e`.
+Estado: **PR #100 ABIERTO; CHECKS VERDES EN EL COMMIT DE IMPLEMENTACIÓN `403e603`**. Rama: `codex/staging-comms-preflight`. Base verificada: `origin/main` en `f797b19447fa93069a4aa5f1c25cd3abf3d9ba1e`.
 
 ## Objetivo y límites
 
@@ -46,7 +46,7 @@ Rollback: apagar inmediatamente `STAGING_EMAIL_SEND_ENABLED`, `STAGING_WHATSAPP_
 - [x] Implementar preflight sin red, allowlist de WhatsApp en servicio/provider/smoke y guards de Resend directos, worker y production.
 - [x] Agregar pruebas fake/in-memory de recordatorio, idempotencia, confirmación/cancelación HTTP, allowlists, preflight y configuración de worker; actualizar documentación y env examples.
 - [x] Validar localmente: pruebas focales 73 passed; `verify.ps1 -Full` completado; PostgreSQL 17 efímero con Alembic desde cero y suites CI 39 passed; `verify.ps1 -E2E` 17 passed; preflight sobre `.env.staging.example` aprobado en modo seguro; `git diff --check` limpio. No se ejecutó ninguna migración fuera de las bases de prueba y no hubo llamadas a proveedores reales.
-- [ ] Revisión final, commit/push/PR a `main` y CI verde. No mergear ni desplegar.
+- [x] Revisión final, commit `403e603`, push y PR #100 a `main`; Backend CI, PostgreSQL CI, Frontend CI y Playwright E2E CI pasaron en ese commit. No mergear ni desplegar.
 
 ## Intervención propietaria pendiente para prueba futura
 
