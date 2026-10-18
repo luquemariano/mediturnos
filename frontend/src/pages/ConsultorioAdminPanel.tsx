@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import axios from "axios";
 
@@ -173,6 +173,7 @@ export default function ConsultorioAdminPanel({ nombre, onVolver, onCerrarSesion
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteNombre, setInviteNombre] = useState("");
   const [inviteModulos, setInviteModulos] = useState<ModuloBorrador[]>([borradorModulo()]);
+  const cargaDatosActual = useRef(0);
 
   const consultorio = consultorios.find((item) => item.id === consultorioId) ?? null;
   const zona = consultorio?.zona_horaria ?? zonaPredeterminada;
@@ -197,6 +198,7 @@ export default function ConsultorioAdminPanel({ nombre, onVolver, onCerrarSesion
 
   const cargarDatos = useCallback(async () => {
     if (!consultorioId || !consultorio) return;
+    const carga = ++cargaDatosActual.current;
     setCargando(true); setErrorCarga("");
     const desde = isoZonado(semana, "00:00", zona);
     const hasta = isoZonado(moverFecha(semana, 7), "00:00", zona);
@@ -206,12 +208,13 @@ export default function ConsultorioAdminPanel({ nombre, onVolver, onCerrarSesion
         listarReglasConsultorio(consultorioId), listarModulosConsultorio(consultorioId, desde, hasta),
         listarInvitacionesConsultorio(consultorioId),
       ]);
+      if (carga !== cargaDatosActual.current) return;
       setSalas(salasData); setProfesionales(profesionalesData); setReglas(reglasData);
       setModulos(modulosData); setInvitaciones(invitacionesData);
       if (salaFiltro !== "todas" && !salasData.some((sala) => String(sala.id) === salaFiltro)) setSalaFiltro("todas");
     } catch (error) {
-      setErrorCarga(mensajeError(error, "No pudimos cargar la ocupación y la configuración del consultorio."));
-    } finally { setCargando(false); }
+      if (carga === cargaDatosActual.current) setErrorCarga(mensajeError(error, "No pudimos cargar la ocupación y la configuración del consultorio."));
+    } finally { if (carga === cargaDatosActual.current) setCargando(false); }
   }, [consultorioId, consultorio, semana, zona, salaFiltro]);
 
   useEffect(() => { void cargarDatos(); }, [cargarDatos]);

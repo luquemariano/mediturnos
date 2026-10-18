@@ -119,3 +119,23 @@ test("un 403 no limpia el token ni cierra la sesión", async () => {
   assert.equal(almacenamiento.valor(), "jwt-valido");
   assert.equal(notificaciones, 0);
 });
+
+
+test("no restaura una cuenta si el token cambia durante la validación", async () => {
+  const almacenamiento = crearAlmacenamiento("jwt-anterior");
+  let completar!: (usuario: UsuarioActual) => void;
+  const respuesta = new Promise<UsuarioActual>((resolve) => { completar = resolve; });
+  const restauracion = restaurarSesion(() => respuesta, almacenamiento);
+
+  almacenamiento.removeItem("access_token");
+  completar({
+    id: 7,
+    nombre: "Profesional sintético",
+    email: "profesional@example.com",
+    rol: "profesional",
+    activo: true,
+    creado_en: "2026-01-01T00:00:00Z",
+  });
+
+  assert.equal(await restauracion, null);
+});

@@ -6,6 +6,7 @@ from datetime import UTC, date, datetime, time, timedelta
 import secrets
 from threading import Barrier
 from uuid import uuid4
+from zoneinfo import ZoneInfo
 
 import pytest
 from fastapi import HTTPException
@@ -28,8 +29,10 @@ from app.models.especialidad import Especialidad
 from app.models.prestacion import Prestacion
 from app.models.turno import Turno
 from app.repositories.consultorio_modulo_repository import listar_mis_ocurrencias_activas
-from app.schemas.consultorio_modulo import ReglaModuloCrear, ModuloOcurrenciaActualizar
-from app.services.consultorio_modulo_service import _crear_ocurrencias_regla, crear_regla, suspender_ocurrencia, actualizar_ocurrencia
+from app.schemas.consultorio_modulo import ReglaModuloCrear, ModuloOcurrenciaActualizar, ModuloExtraordinarioCrear
+from app.schemas.consultorio_invitacion import InvitacionCrear
+from app.services.consultorio_invitacion_service import crear_invitacion
+from app.services.consultorio_modulo_service import _crear_ocurrencias_regla, crear_regla, suspender_ocurrencia, actualizar_ocurrencia, crear_modulo_extraordinario, listar_modulos
 
 
 POSTGRES_URL = os.getenv("TEST_POSTGRES_CONSULTORIO_URL")
@@ -435,5 +438,49 @@ def test_postgresql_bloquea_modulo_con_turno_y_permite_cambio_de_modulo_libre():
             if prestation_id: connection.execute(text("DELETE FROM prestaciones WHERE id=:id"), {"id": prestation_id})
             if patient_id: connection.execute(text("DELETE FROM pacientes WHERE id=:id"), {"id": patient_id})
             if specialty_id: connection.execute(text("DELETE FROM especialidades WHERE id=:id"), {"id": specialty_id})
+        _limpiar(engine, ids)
+        engine.dispose()
+
+
+def test_postgresql_reserva_revocada_deja_de_ocupar_y_liberar_gist():
+    engine, Sessions, key, ids = _escenario()
+    user_id, professional_id, clinic_id, room_id, *_ = ids
+    occurrence_ids = []
+    try:
+        zone = ZoneInfo("America/Argentina/Buenos_Aires")
+        fecha = datetime.now(UTC).astimezone(zone).date() + timedelta(days=35)
+        with Sessions() as db:
+            user = db.get(Usuario, user_id)
+            invitation = crear_invitacion(db, user, clinic_id, InvitacionCrear(
+                email=f"reserva-revocable-{key}@example.com",
+                modulos=[{"sala_id": room_id, "dia_semana": fecha.weekday(), "hora_inicio": "13:00", "vigente_desde": fecha}],
+            ))
+            invite_id = invitation["id"]
+            starts = datetime.combine(fecha, time(13), tzinfo=zone).astimezone(UTC)
+            visible = listar_modulos(db, user, clinic_id, starts, starts + timedelta(days=1))
+            pending = [item for item in visible if item.invitacion_id == invite_id]
+            assert len(pending) == 1 and pending[0].estado == "activa"
+            occurrence_ids = [item.id for item in db.query(OcurrenciaModulo).filter_by(invitacion_id=invite_id).all()]
+
+            invite_row = db.get(InvitacionConsultorio, invite_id)
+            invite_row.estado = "revocada"
+            invite_row.token_hash = None
+            db.commit()
+
+            after_revocation = listar_modulos(db, user, clinic_id, starts, starts + timedelta(days=1))
+            assert all(item.invitacion_id != invite_id for item in after_revocation)
+            assert db.get(InvitacionConsultorio, invite_id).estado == "revocada"
+            assert db.query(OcurrenciaModulo).filter_by(invitacion_id=invite_id, estado="activa").count() == 0
+            assert db.query(OcurrenciaModulo).filter(OcurrenciaModulo.id.in_(occurrence_ids)).filter_by(estado="cancelada").count() == len(occurrence_ids)
+
+            released = crear_modulo_extraordinario(db, user, clinic_id, ModuloExtraordinarioCrear(
+                sala_id=room_id,
+                profesional_id=professional_id,
+                fecha_inicio=starts,
+                fecha_fin=starts + timedelta(hours=4),
+            ))
+            assert released.estado == "activa"
+            db.commit()
+    finally:
         _limpiar(engine, ids)
         engine.dispose()

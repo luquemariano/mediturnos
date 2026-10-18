@@ -55,6 +55,22 @@ describe("panel administrativo de Consultorio", () => {
     expect(screen.getByRole("navigation", { name: "Secciones de administración" })).toBeInTheDocument();
   });
 
+  it("ignora una respuesta de una semana anterior que termina después", async () => {
+    let terminarSemanaAnterior!: (items: typeof ocurrencia[]) => void;
+    vi.mocked(consultorioService.listarModulosConsultorio)
+      .mockImplementationOnce(() => new Promise((resolve) => { terminarSemanaAnterior = resolve; }))
+      .mockResolvedValueOnce([ocurrencia]);
+    renderizar();
+    await screen.findByRole("heading", { name: "Consultorio E2E" });
+    await waitFor(() => expect(consultorioService.listarModulosConsultorio).toHaveBeenCalledTimes(1));
+    fireEvent.click(screen.getByRole("button", { name: "Semana siguiente" }));
+    await waitFor(() => expect(consultorioService.listarModulosConsultorio).toHaveBeenCalledTimes(2));
+    await screen.findByRole("option", { name: "Sala E2E" });
+    await waitFor(() => expect(screen.getAllByText("Invitación pendiente")).toHaveLength(2));
+    terminarSemanaAnterior([]);
+    await waitFor(() => expect(screen.getAllByText("Invitación pendiente")).toHaveLength(2));
+  });
+
   it("prepara una invitación con módulo semanal sin mostrar enlaces ni tokens", async () => {
     renderizar();
     await screen.findByRole("option", { name: "Sala E2E" });

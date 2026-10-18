@@ -58,6 +58,63 @@ test("administradora consulta ocupación privada y prepara/envía invitación co
   await expect(page.locator("body")).not.toContainText(/#token=|token plano/i);
 });
 
+test("revocar una invitación quita su módulo de la ocupación semanal", async ({ page }) => {
+  page.on("dialog", (dialog) => dialog.accept());
+  await iniciarSesion(page, "profesional.consultorio.e2e@example.com");
+  const token = await page.evaluate(() => localStorage.getItem("access_token"));
+  expect(token).toBeTruthy();
+  const headers = { Authorization: `Bearer ${token}` };
+  const consultorioResponse = await page.request.get(`${apiBase}/consultorios`, { headers });
+  expect(consultorioResponse.ok()).toBeTruthy();
+  const consultorio = (await consultorioResponse.json())[0] as { id: number; zona_horaria: string };
+  const salasResponse = await page.request.get(`${apiBase}/consultorios/${consultorio.id}/salas`, { headers });
+  expect(salasResponse.ok()).toBeTruthy();
+  const sala = (await salasResponse.json())[0] as { id: number };
+  const fecha = await page.evaluate(() => {
+    const hoy = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "America/Argentina/Buenos_Aires", year: "numeric", month: "2-digit", day: "2-digit",
+    }).format(new Date());
+    const [year, month, day] = hoy.split("-").map(Number);
+    const target = new Date(Date.UTC(year, month - 1, day + 7, 12));
+    while (target.getUTCDay() !== 5) target.setUTCDate(target.getUTCDate() + 1);
+    return { date: target.toISOString().slice(0, 10), weekday: (target.getUTCDay() + 6) % 7 };
+  });
+  const email = `qa-reserva-revocable-${Date.now()}@example.com`;
+  const created = await page.request.post(`${apiBase}/consultorios/${consultorio.id}/invitaciones`, {
+    headers,
+    data: { email, nombre_visible: "Reserva QA revocable", modulos: [{ sala_id: sala.id, dia_semana: fecha.weekday, hora_inicio: "13:00", vigente_desde: fecha.date }] },
+  });
+  expect(created.status()).toBe(201);
+  const invitation = await created.json() as { id: number };
+
+  await page.getByRole("button", { name: /Abrir panel de Consultorio/i }).click();
+  await expect(page.getByRole("heading", { name: "Consultorio E2E" })).toBeVisible();
+  const semanaActual = await page.locator(".consultorio-admin__dia time").first().getAttribute("dateTime");
+  const lunesUtc = (date: string) => {
+    const value = new Date(`${date}T12:00:00Z`);
+    value.setUTCDate(value.getUTCDate() - ((value.getUTCDay() + 6) % 7));
+    return value;
+  };
+  const distanciaSemanas = Math.max(0, Math.round((lunesUtc(fecha.date).getTime() - lunesUtc(semanaActual!).getTime()) / (7 * 24 * 60 * 60 * 1000)));
+  for (let semana = 0; semana < distanciaSemanas; semana += 1) {
+    await page.getByRole("button", { name: "Semana siguiente" }).click();
+  }
+  const diaReservado = page.locator(".consultorio-admin__dia").filter({ has: page.locator(`time[datetime="${fecha.date}"]`) });
+  await expect(diaReservado.locator(".consultorio-admin__bloque").filter({ hasText: "Invitación pendiente" })).toBeVisible();
+
+  await page.getByRole("button", { name: "Invitaciones" }).click();
+  const fila = page.getByRole("row").filter({ hasText: email });
+  await expect(fila).toContainText("Preparación");
+  await fila.getByRole("button", { name: "Enviar" }).click();
+  await expect(fila).toContainText("Pendiente");
+  await fila.getByRole("button", { name: "Revocar" }).click();
+  await expect(fila).toContainText("Revocada");
+
+  await page.getByRole("button", { name: "Ocupación semanal" }).click();
+  await expect(diaReservado.locator(".consultorio-admin__bloque").filter({ hasText: "Invitación pendiente" })).toHaveCount(0);
+  await expect(page.locator(".consultorio-admin__privacidad")).toContainText("No incluye turnos ni datos de pacientes");
+});
+
 test("administradora conserva Consultorio en inicio, agenda, pacientes y disponibilidad", async ({ page }) => {
   await iniciarSesion(page, "profesional.consultorio.e2e@example.com");
   const nav = page.getByRole("navigation", { name: "Navegación profesional" });

@@ -229,6 +229,13 @@ function App({ tokenBaja = null }: { tokenBaja?: string | null }) {
     if (usuario && usuario.rol !== "profesional" && ruta.startsWith("/onboarding/")) navegar("/app");
   }, [navegar, ruta, usuario]);
 
+  useEffect(() => {
+    if (!validandoSesion && !usuario && ruta.startsWith("/app")) {
+      setVistaAcceso("login");
+      navegar("/login");
+    }
+  }, [navegar, ruta, usuario, validandoSesion]);
+
   if (ruta === "/baja-novedades") return <BajaNovedades token={tokenBaja} />;
 
 
@@ -397,9 +404,12 @@ function App({ tokenBaja = null }: { tokenBaja?: string | null }) {
     localStorage.removeItem(
       "access_token",
     );
+    habilitarNotificacionDeSesion();
 
     setUsuario(null);
     setVista("dashboard");
+    setVistaAcceso("login");
+    setValidandoSesion(false);
     setPassword("");
     setMensaje("");
     navegar("/login");
