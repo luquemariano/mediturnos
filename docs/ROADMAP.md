@@ -57,3 +57,7 @@ Estados: **PENDIENTE**, **EN CURSO**, **COMPLETADO** y **NO DETERMINADO**. No se
 ## Entrega 07 — Preproducción aislada
 
 - **IMPLEMENTADA Y VALIDADA LOCALMENTE; PR #93 CON CI VERDE:** Compose separado, secretos externos, seed sintético, protecciones de correo/WhatsApp/analítica/indexación y procedimientos de backup/restore y cleanup. Staging remoto pendiente de acceso SSH de lectura, DNS staging y verificación de Caddy/recursos. Ver [`consultorio-07-preproduccion-y-validacion-operativa.md`](exec-plans/active/consultorio-07-preproduccion-y-validacion-operativa.md).
+
+## Entrega 08A — Preflight de comunicaciones controladas
+
+- **PR #100 ABIERTO; CHECKS VERDES EN `403e603`:** preflight local sin red; defaults staging email `in_memory` y WhatsApp `fake`; allowlists externas de destinatario; validación fail-closed para Resend/Meta y worker; pruebas fake de recordatorio/idempotencia/acciones. Full, PostgreSQL y Playwright local pasaron. Sin envío real, cambios remotos ni cobros. El webhook actual sólo verifica y registra eventos; no aplica confirmaciones/cancelaciones inbound. Plan: [`consultorio-08a-preflight-comunicaciones-staging.md`](exec-plans/active/consultorio-08a-preflight-comunicaciones-staging.md).

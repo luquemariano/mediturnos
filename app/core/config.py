@@ -90,6 +90,7 @@ class Settings(BaseSettings):
     staging_whatsapp_meta_test_number_confirmed: bool = False
     staging_whatsapp_phone_number_id_allowlist: str = ""
     staging_whatsapp_business_account_id_allowlist: str = ""
+    staging_whatsapp_recipient_allowlist: str = ""
     engagement_email_reply_to: str | None = None
     whatsapp_enabled: bool = False
     whatsapp_provider: Literal["fake", "meta"] = "fake"
@@ -219,6 +220,16 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def validar_configuracion_produccion(self) -> "Settings":
+        if self.app_env == "production" and (
+            self.staging_email_send_enabled
+            or self.staging_whatsapp_meta_enabled
+            or self.staging_whatsapp_meta_test_number_confirmed
+            or self.staging_email_allowlist.strip()
+            or self.staging_whatsapp_phone_number_id_allowlist.strip()
+            or self.staging_whatsapp_business_account_id_allowlist.strip()
+            or self.staging_whatsapp_recipient_allowlist.strip()
+        ):
+            raise ValueError("La configuración exclusiva de comunicaciones de staging no se admite en production.")
         if self.whatsapp_enabled and self.whatsapp_provider == "meta":
             faltantes = [
                 nombre
@@ -438,6 +449,8 @@ class Settings(BaseSettings):
                 raise ValueError("WHATSAPP_BUSINESS_ACCOUNT_ID debe coincidir con su allowlist de staging.")
             if not self.whatsapp_api_version:
                 raise ValueError("WhatsApp Meta staging requiere WHATSAPP_API_VERSION explícita.")
+            if not self.obtener_staging_whatsapp_recipient_allowlist():
+                raise ValueError("STAGING_WHATSAPP_RECIPIENT_ALLOWLIST debe incluir al menos un teléfono de prueba autorizado.")
         else:
             if self.whatsapp_enabled or self.whatsapp_provider != "fake":
                 raise ValueError("En staging, WhatsApp debe permanecer deshabilitado con proveedor fake.")
@@ -463,6 +476,21 @@ class Settings(BaseSettings):
             if direccion:
                 direcciones.add(str(adapter.validate_python(direccion)).lower())
         return frozenset(direcciones)
+
+    def obtener_staging_whatsapp_recipient_allowlist(self) -> frozenset[str]:
+        """Devuelve teléfonos normalizados; nunca registra ni devuelve valores en errores."""
+        from app.services.phone_service import normalize_phone_number
+
+        permitidos: set[str] = set()
+        for valor in self.staging_whatsapp_recipient_allowlist.split(","):
+            telefono = valor.strip()
+            if not telefono:
+                continue
+            normalizado = normalize_phone_number(telefono)
+            if normalizado is None:
+                raise ValueError("STAGING_WHATSAPP_RECIPIENT_ALLOWLIST contiene un teléfono inválido.")
+            permitidos.add(normalizado)
+        return frozenset(permitidos)
 
     @staticmethod
     def _lista_ids_staging(valor: str) -> frozenset[str]:

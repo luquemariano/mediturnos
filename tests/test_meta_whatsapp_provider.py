@@ -122,3 +122,18 @@ def test_default_template_mapping_includes_appointment_reminder():
     )
     assert customized._template_mapping == TEMPLATE_MAPPING
     customized.close()
+
+
+def test_staging_provider_enforces_recipient_allowlist_before_http(monkeypatch):
+    monkeypatch.setenv("APP_ENV", "staging")
+    monkeypatch.setenv("STAGING_WHATSAPP_RECIPIENT_ALLOWLIST", "+5493511234567")
+    calls = []
+    selected = provider(lambda request: (calls.append(request), httpx.Response(200, json={"messages": [{"id": "fake-id"}]}))[1])
+    allowed_message = OutboundMessage(channel="whatsapp", recipient="543511234567", message_type="appointment_reminder_v2")
+    selected.send(allowed_message)
+    assert len(calls) == 1
+
+    blocked_message = OutboundMessage(channel="whatsapp", recipient="543511765432", message_type="appointment_reminder_v2")
+    with pytest.raises(MessagingProviderError, match="no está autorizado"):
+        selected.send(blocked_message)
+    assert len(calls) == 1

@@ -37,7 +37,7 @@ class WhatsAppReminderResult:
 
 def _config_value(config, name: str):
     if config is not None:
-        return getattr(config, name)
+        return getattr(config, name, "test" if name == "app_env" else None)
     from app.core.config import settings
 
     return getattr(settings, name)
@@ -118,6 +118,17 @@ def send_whatsapp_appointment_reminder(
         confirm_token,
         cancel_token,
     )
+    if _config_value(config, "app_env") == "staging" and _config_value(config, "whatsapp_provider") == "meta":
+        try:
+            permitidos = config.obtener_staging_whatsapp_recipient_allowlist()
+        except (AttributeError, ValueError):
+            mark_failed(db, delivery, "staging_recipient_allowlist_invalid")
+            db.commit()
+            return WhatsAppReminderResult("failed", delivery.id, False, "recipient_not_allowlisted")
+        if recipient not in permitidos:
+            mark_failed(db, delivery, "staging_recipient_not_allowlisted")
+            db.commit()
+            return WhatsAppReminderResult("failed", delivery.id, False, "recipient_not_allowlisted")
     selected_provider = provider
     if selected_provider is None:
         provider_name = _config_value(config, "whatsapp_provider")
@@ -128,6 +139,11 @@ def send_whatsapp_appointment_reminder(
                 phone_number_id=_config_value(config, "whatsapp_phone_number_id"),
                 access_token=_config_value(config, "whatsapp_access_token"),
                 template_mapping=DEFAULT_TEMPLATE_MAPPING,
+                recipient_allowlist=(
+                    config.obtener_staging_whatsapp_recipient_allowlist()
+                    if _config_value(config, "app_env") == "staging"
+                    else None
+                ),
             )
         else:
             selected_provider = get_messaging_provider(provider_name)

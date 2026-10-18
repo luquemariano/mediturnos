@@ -195,6 +195,7 @@ def test_staging_whatsapp_meta_exige_numero_y_cuenta_de_prueba_allowlisted():
         "whatsapp_api_version": "v99.0",
         "staging_whatsapp_phone_number_id_allowlist": "test-phone-123",
         "staging_whatsapp_business_account_id_allowlist": "test-business-456",
+        "staging_whatsapp_recipient_allowlist": "+5493511234567",
     }
     config = staging_settings(**valores)
     assert config.staging_whatsapp_meta_enabled
@@ -205,6 +206,11 @@ def test_staging_whatsapp_meta_exige_numero_y_cuenta_de_prueba_allowlisted():
         staging_settings(**{**valores, "whatsapp_phone_number_id": "production-phone"})
     with pytest.raises(ValidationError, match="subdominio staging dedicado"):
         staging_settings(**{**valores, "public_api_url": "https://api.turnelia.com.ar"})
+
+
+def test_production_rechaza_banderas_y_allowlists_exclusivas_de_staging():
+    with pytest.raises(ValidationError, match="exclusiva de comunicaciones de staging"):
+        Settings(_env_file=None, app_env="production", jwt_secret_key="synthetic-only", staging_email_send_enabled=True)
 
 
 def test_resend_staging_exige_allowlist_y_solo_envia_a_destinatarios_permitidos(monkeypatch):
@@ -236,6 +242,20 @@ def test_resend_staging_exige_allowlist_y_solo_envia_a_destinatarios_permitidos(
         provider.enviar(TransactionalEmail("externo@example.org", "test", "body", "body"))
 
 
+def test_provider_resend_directo_tambien_aplica_allowlist_staging(monkeypatch):
+    monkeypatch.setenv("APP_ENV", "staging")
+    monkeypatch.setenv("STAGING_EMAIL_ALLOWLIST", "qa@example.test")
+    from app.services import email_service
+
+    def no_network(*args, **kwargs):
+        raise AssertionError("No debe llamar Resend cuando el destinatario no está autorizado.")
+
+    monkeypatch.setattr(email_service.requests, "post", no_network)
+    direct_provider = ResendEmailProvider("synthetic-key", "Turnelia <from@example.test>")
+    with pytest.raises(EmailDeliveryError, match="no está autorizado"):
+        direct_provider.enviar(TransactionalEmail("outsider@example.test", "test", "body", "body"))
+
+
 def test_email_staging_permanece_en_memoria_por_defecto():
     from app.services.email_service import InMemoryEmailProvider, obtener_email_provider
 
@@ -248,6 +268,7 @@ def test_generador_crea_secretos_fuera_del_repo_y_no_sobrescribe():
         target = Path(temporary) / "turnelia-staging.env"
         create_env_file(target)
         contents = target.read_text(encoding="utf-8")
+        assert "STAGING_WHATSAPP_RECIPIENT_ALLOWLIST=" in contents
         assert "STAGING_POSTGRES_DB=turnelia_staging" in contents
         assert "STAGING_EMAIL_SEND_ENABLED=false" in contents
         assert "WHATSAPP_ENABLED=false" in contents

@@ -68,13 +68,43 @@ def main(argv: list[str] | None = None) -> int:
     configuration = _validate_configuration()
     if configuration is None:
         return 1
+    app_env = os.getenv("APP_ENV", "").strip().lower()
+    if app_env == "production" and any(os.getenv(name, "").strip() for name in (
+        "STAGING_WHATSAPP_META_ENABLED", "STAGING_WHATSAPP_RECIPIENT_ALLOWLIST",
+        "STAGING_WHATSAPP_PHONE_NUMBER_ID_ALLOWLIST", "STAGING_WHATSAPP_BUSINESS_ACCOUNT_ID_ALLOWLIST",
+    )):
+        print("Configuración inválida: variables exclusivas de staging no se admiten en production.", file=sys.stderr)
+        return 1
+    if app_env == "staging":
+        from app.services.phone_service import normalize_phone_number
+
+        phone_id = os.getenv("WHATSAPP_PHONE_NUMBER_ID", "").strip()
+        phone_ids = {item.strip() for item in os.getenv("STAGING_WHATSAPP_PHONE_NUMBER_ID_ALLOWLIST", "").split(",") if item.strip()}
+        business_id = os.getenv("WHATSAPP_BUSINESS_ACCOUNT_ID", "").strip()
+        business_ids = {item.strip() for item in os.getenv("STAGING_WHATSAPP_BUSINESS_ACCOUNT_ID_ALLOWLIST", "").split(",") if item.strip()}
+        allowed = {
+            normalized
+            for item in os.getenv("STAGING_WHATSAPP_RECIPIENT_ALLOWLIST", "").split(",")
+            if (normalized := normalize_phone_number(item.strip())) is not None
+        }
+        if (
+            os.getenv("STAGING_WHATSAPP_META_ENABLED", "").strip().lower() != "true"
+            or os.getenv("STAGING_WHATSAPP_META_TEST_NUMBER_CONFIRMED", "").strip().lower() != "true"
+            or phone_id not in phone_ids or not phone_id
+            or business_id not in business_ids or not business_id
+            or os.getenv("PUBLIC_API_URL", "").rstrip("/") != "https://api.staging.turnelia.com.ar"
+            or not all(os.getenv(name, "").strip() for name in ("WHATSAPP_VERIFY_TOKEN", "WHATSAPP_APP_SECRET"))
+            or not allowed or recipient not in allowed
+        ):
+            print("Configuración inválida: configuración de prueba o destinatario fuera de allowlist de staging.", file=sys.stderr)
+            return 1
     api_version, phone_number_id, token = configuration
     message = OutboundMessage(channel="whatsapp", recipient=recipient, message_type="meta_smoke_test", payload={}, metadata={})
     if not args.send:
         print("Provider: meta")
         print("Template: hello_world")
         print("Language: en_US")
-        print(f"Recipient: {_masked(recipient)}")
+        print("Recipient: validado; valor omitido")
         print("Endpoint configured: yes")
         print("Access token configured: yes")
         print("SEND: disabled")
